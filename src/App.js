@@ -66,7 +66,8 @@ import {
   Truck,
   Banknote,
   Verified,
-  Languages
+  Languages,
+  Loader2
 } from 'lucide-react';
 
 // --- CONFIGURATION FIREBASE ---
@@ -80,7 +81,6 @@ const firebaseConfig = {
   measurementId: "G-NV2L9GZM6T"
 };
 
-// MANDATORY RULE 1: Consistent Pathing
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'devi-official-premium-v6';
 
 const app = initializeApp(firebaseConfig);
@@ -180,6 +180,7 @@ const SIZE_OPTIONS = {
 
 const formatIDR = (amount) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(amount);
 
+// Utiliti mampatan gambar untuk muat naik pantas
 const compressImage = async (file) => {
   return new Promise((resolve) => {
     const reader = new FileReader();
@@ -189,13 +190,13 @@ const compressImage = async (file) => {
       img.src = e.target.result;
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 1000;
+        const MAX_WIDTH = 800; // Dikurangkan sedikit untuk kelajuan maksimum
         const scale = MAX_WIDTH / img.width;
         canvas.width = MAX_WIDTH;
         canvas.height = img.height * scale;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.85);
+        canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.7); // Kualiti 0.7 untuk muat naik sangat laju
       };
     };
   });
@@ -504,6 +505,63 @@ function AdminDashboard({ products, rekening, orders, adminUsers, appId, onLogou
   const [activeTab, setActiveTab] = useState('orders');
   const [isEditing, setIsEditing] = useState(null);
   const [showOrderProof, setShowOrderProof] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [previewImage, setPreviewImage] = useState('');
+  const [formData, setFormData] = useState({ imageUrl: '', name: '', price: '', category: 'Gamis Syari', material: '', desc: '', sizes: [] });
+
+  const resetForm = () => {
+    setFormData({ imageUrl: '', name: '', price: '', category: 'Gamis Syari', material: '', desc: '', sizes: [] });
+    setIsEditing(null);
+    setPreviewImage('');
+  };
+
+  useEffect(() => {
+    if (isEditing) {
+      const p = products.find(prod => prod.id === isEditing);
+      if (p) {
+        setFormData(p);
+        setPreviewImage(p.imageUrl);
+      }
+    }
+  }, [isEditing, products]);
+
+  // Fungsi muat naik gambar pantas
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const compressed = await compressImage(file);
+      const storageRef = ref(storage, `artifacts/${appId}/public/data/products/${Date.now()}_prod`);
+      await uploadBytes(storageRef, compressed);
+      const url = await getDownloadURL(storageRef);
+      setFormData(prev => ({ ...prev, imageUrl: url }));
+      setPreviewImage(url);
+    } catch (err) {
+      console.error(err);
+      alert("Muat naik gagal.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const saveProduct = async (e) => {
+    e.preventDefault();
+    if (!formData.imageUrl) return alert("Sila muat naik gambar produk!");
+    
+    try {
+      const data = { ...formData, price: Number(formData.price) };
+      if (isEditing) {
+        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', isEditing), data);
+      } else {
+        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), { ...data, createdAt: serverTimestamp() });
+      }
+      resetForm();
+      alert("Berhasil disimpan!");
+    } catch {
+      alert("Simpan gagal!");
+    }
+  };
 
   const deleteItem = async (coll, id) => {
     if (confirm("Hapus data ini secara PERMANEN?")) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', coll, id));
@@ -518,7 +576,7 @@ function AdminDashboard({ products, rekening, orders, adminUsers, appId, onLogou
         </div>
         <div className="bg-white border border-zinc-100 rounded-[3.5rem] p-6 space-y-3 shadow-sm">
           {['orders', 'catalog', 'bank', 'admins'].map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)} className={`w-full text-left px-12 py-5 rounded-3xl text-[11px] font-bold uppercase tracking-[0.3em] transition-all ${activeTab === tab ? 'bg-zinc-950 text-white shadow-2xl scale-105' : 'text-zinc-400 hover:bg-zinc-50'}`}>
+            <button key={tab} onClick={() => { setActiveTab(tab); resetForm(); }} className={`w-full text-left px-12 py-5 rounded-3xl text-[11px] font-bold uppercase tracking-[0.3em] transition-all ${activeTab === tab ? 'bg-zinc-950 text-white shadow-2xl scale-105' : 'text-zinc-400 hover:bg-zinc-50'}`}>
               {t[tab] || tab.toUpperCase()}
             </button>
           ))}
@@ -560,36 +618,119 @@ function AdminDashboard({ products, rekening, orders, adminUsers, appId, onLogou
 
         {activeTab === 'catalog' && (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-20">
-             <form onSubmit={async (e) => {
-               e.preventDefault();
-               const data = {
-                 imageUrl: e.target.img.value, name: e.target.name.value, price: Number(e.target.price.value),
-                 category: e.target.cat.value, material: e.target.mat.value, desc: e.target.desc.value,
-                 sizes: e.target.sizes.value.split(',').map(s => s.trim())
-               };
-               if (isEditing) { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', isEditing), data); setIsEditing(null); }
-               else { await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), data); }
-               e.target.reset();
-             }} className="space-y-10">
-                <h3 className="text-[12px] font-bold uppercase text-[#D4AF37] border-b pb-4">EDITOR KATALOG</h3>
-                <input name="img" placeholder="Image URL (HD)" className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none text-xs font-mono shadow-inner" defaultValue={isEditing ? products.find(p => p.id === isEditing)?.imageUrl : ''} required />
-                <input name="name" placeholder="Product Name" className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none text-sm font-bold uppercase tracking-widest shadow-inner" defaultValue={isEditing ? products.find(p => p.id === isEditing)?.name : ''} required />
-                <div className="grid grid-cols-2 gap-8">
-                   <input name="price" type="number" placeholder="Price (IDR)" className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none font-bold text-sm shadow-inner" defaultValue={isEditing ? products.find(p => p.id === isEditing)?.price : ''} required />
-                   <select name="cat" className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none font-bold text-xs uppercase shadow-inner" defaultValue={isEditing ? products.find(p => p.id === isEditing)?.category : 'Gamis Syari'}>
-                     {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                   </select>
+             <div className="space-y-10">
+                <h3 className="text-[12px] font-bold uppercase text-[#D4AF37] border-b pb-4 tracking-[0.2em]">EDITOR KATALOG</h3>
+                
+                {/* Upload Gambar Dari Galeri */}
+                <div 
+                  onClick={() => !uploading && document.getElementById('productImgInput').click()}
+                  className="relative aspect-[3/4] rounded-[2.5rem] border-2 border-dashed border-zinc-100 bg-zinc-50 flex flex-col items-center justify-center cursor-pointer hover:bg-zinc-100 transition-all overflow-hidden group shadow-inner"
+                >
+                  {previewImage ? (
+                    <img src={previewImage} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt="Preview" />
+                  ) : (
+                    <div className="text-center p-8">
+                       {uploading ? (
+                         <Loader2 className="mx-auto mb-4 text-[#D4AF37] animate-spin" size={48} />
+                       ) : (
+                         <ImageIcon className="mx-auto mb-4 text-zinc-200 group-hover:text-[#D4AF37] transition-colors" size={48} />
+                       )}
+                       <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+                         {uploading ? "MEMPROSES..." : "MUAT NAIK GAMBAR DARI GALERI"}
+                       </p>
+                    </div>
+                  )}
+                  <input type="file" id="productImgInput" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                  {previewImage && !uploading && (
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                       <Zap className="text-white animate-pulse" size={32} />
+                    </div>
+                  )}
                 </div>
-                <input name="sizes" placeholder="Sizes (e.g. S, M, L, XL)" className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none text-sm font-bold shadow-inner" defaultValue={isEditing ? products.find(p => p.id === isEditing)?.sizes?.join(', ') : ''} required />
-                <textarea name="mat" placeholder="Material details..." className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none h-24 text-sm font-medium shadow-inner" defaultValue={isEditing ? products.find(p => p.id === isEditing)?.material : ''}></textarea>
-                <textarea name="desc" placeholder="Product description..." className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none h-40 text-sm font-medium shadow-inner" defaultValue={isEditing ? products.find(p => p.id === isEditing)?.desc : ''}></textarea>
-                <button type="submit" className="w-full bg-zinc-950 text-white py-7 rounded-[3rem] text-[12px] font-bold uppercase tracking-widest shadow-3xl hover:bg-[#3a7d44] transition-all uppercase">{isEditing ? 'UPDATE PRODUCT' : 'PUBLISH PRODUCT'}</button>
-             </form>
-             <div className="space-y-6 max-h-[1000px] overflow-y-auto pr-4 no-scrollbar xl:border-l xl:border-zinc-50 xl:pl-16">
+
+                <form onSubmit={saveProduct} className="space-y-8">
+                  <input 
+                    placeholder="Nama Produk" 
+                    className="w-full bg-zinc-50 p-6 rounded-2xl outline-none text-sm font-bold uppercase tracking-widest shadow-inner border-none focus:ring-1 focus:ring-black" 
+                    value={formData.name}
+                    onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    required 
+                  />
+                  <div className="grid grid-cols-2 gap-4">
+                     <input 
+                      type="number" 
+                      placeholder="Harga (IDR)" 
+                      className="w-full bg-zinc-50 p-6 rounded-2xl outline-none font-bold text-sm shadow-inner border-none focus:ring-1 focus:ring-black" 
+                      value={formData.price}
+                      onChange={e => setFormData(prev => ({ ...prev, price: e.target.value }))}
+                      required 
+                    />
+                     <select 
+                      className="w-full bg-zinc-50 p-6 rounded-2xl outline-none font-bold text-xs uppercase shadow-inner border-none focus:ring-1 focus:ring-black"
+                      value={formData.category}
+                      onChange={e => setFormData(prev => ({ ...prev, category: e.target.value, sizes: [] }))}
+                    >
+                       {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                     </select>
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 ml-4">Saiz Tersedia</p>
+                    <div className="flex flex-wrap gap-2">
+                       {SIZE_OPTIONS[formData.category]?.map(s => (
+                         <button 
+                          key={s} 
+                          type="button" 
+                          onClick={() => setFormData(prev => ({ ...prev, sizes: prev.sizes.includes(s) ? prev.sizes.filter(x => x !== s) : [...prev.sizes, s] }))}
+                          className={`px-6 py-2 rounded-xl text-[9px] font-bold border-2 transition-all ${formData.sizes.includes(s) ? 'bg-zinc-950 text-white border-black scale-105' : 'border-zinc-50 text-zinc-300'}`}
+                         >
+                           {s}
+                         </button>
+                       ))}
+                    </div>
+                  </div>
+
+                  <textarea 
+                    placeholder="Detail Material..." 
+                    className="w-full bg-zinc-50 p-6 rounded-2xl outline-none h-24 text-sm font-medium shadow-inner border-none focus:ring-1 focus:ring-black"
+                    value={formData.material}
+                    onChange={e => setFormData(prev => ({ ...prev, material: e.target.value }))}
+                  ></textarea>
+                  <textarea 
+                    placeholder="Deskripsi Produk..." 
+                    className="w-full bg-zinc-50 p-6 rounded-2xl outline-none h-32 text-sm font-medium shadow-inner border-none focus:ring-1 focus:ring-black"
+                    value={formData.desc}
+                    onChange={e => setFormData(prev => ({ ...prev, desc: e.target.value }))}
+                  ></textarea>
+                  
+                  <button 
+                    type="submit" 
+                    disabled={uploading}
+                    className="w-full bg-zinc-950 text-white py-6 rounded-3xl text-[11px] font-bold uppercase tracking-widest shadow-2xl hover:bg-[#3a7d44] transition-all disabled:opacity-50"
+                  >
+                    {isEditing ? 'KEMASKINI PRODUK' : 'TERBITKAN PRODUK'}
+                  </button>
+                  {isEditing && (
+                    <button type="button" onClick={resetForm} className="w-full text-zinc-400 text-[10px] font-bold uppercase tracking-widest hover:text-black">Batal Edit</button>
+                  )}
+                </form>
+             </div>
+
+             <div className="space-y-6 max-h-[1200px] overflow-y-auto pr-4 no-scrollbar xl:border-l xl:border-zinc-50 xl:pl-16">
+                <h3 className="text-[12px] font-bold uppercase text-zinc-300 tracking-[0.2em] mb-8">Senarai Stok</h3>
                 {products.map(p => (
-                  <div key={p.id} className="p-8 border border-zinc-100 rounded-[3rem] flex items-center justify-between bg-white shadow-sm hover:shadow-xl transition-all">
-                     <div className="flex items-center gap-10"><img src={p.imageUrl} className="w-20 h-20 rounded-[1.5rem] object-cover shadow-xl border border-zinc-50" /><div><h4 className="text-sm font-bold uppercase">{p.name}</h4><p className="text-[11px] font-serif text-[#D4AF37] mt-2 font-bold">{formatIDR(p.price)}</p></div></div>
-                     <div className="flex gap-3"><button onClick={() => { setIsEditing(p.id); window.scrollTo({top: 0, behavior: 'smooth'}); }} className="p-5 text-zinc-300 hover:text-black bg-zinc-50 rounded-[1.5rem] transition-all"><Edit2 size={24} /></button><button onClick={() => deleteItem('products', p.id)} className="p-5 text-zinc-300 hover:text-red-500 bg-zinc-50 rounded-[1.5rem] transition-all"><Trash2 size={24} /></button></div>
+                  <div key={p.id} className="p-8 border border-zinc-100 rounded-[3rem] flex items-center justify-between bg-white shadow-sm hover:shadow-2xl transition-all group">
+                     <div className="flex items-center gap-10">
+                        <img src={p.imageUrl} className="w-20 h-20 rounded-[1.5rem] object-cover shadow-xl border border-zinc-50 group-hover:scale-110 transition-transform" />
+                        <div>
+                          <h4 className="text-sm font-bold uppercase text-zinc-900">{p.name}</h4>
+                          <p className="text-[11px] font-serif text-[#D4AF37] mt-1 font-bold">{formatIDR(p.price)}</p>
+                        </div>
+                     </div>
+                     <div className="flex gap-3">
+                        <button onClick={() => { setIsEditing(p.id); window.scrollTo({top: 0, behavior: 'smooth'}); }} className="p-5 text-zinc-300 hover:text-black bg-zinc-50 rounded-[1.5rem] transition-all"><Edit2 size={24} /></button>
+                        <button onClick={() => deleteItem('products', p.id)} className="p-5 text-zinc-300 hover:text-red-500 bg-zinc-50 rounded-[1.5rem] transition-all"><Trash2 size={24} /></button>
+                     </div>
                   </div>
                 ))}
              </div>
@@ -754,14 +895,9 @@ function AdminLoginModal({ adminUsers, onSuccess, onClose, t }) {
   
   const handle = (e) => { 
     e.preventDefault(); 
-    // FIX Login HP: Normalisasi input agar tidak sensitif spasi/kapital otomatis HP
     const userLower = u.trim().toLowerCase();
     const passTrim = p.trim();
-
-    // Cek Master Passwords (admin123 & 123456)
     const isMaster = (userLower === 'admin' && (passTrim === 'admin123' || passTrim === '123456'));
-    
-    // Cek Admin dari Database
     const isDynamic = adminUsers.some(a => a.username.trim().toLowerCase() === userLower && a.password.trim() === passTrim);
     
     if(isMaster || isDynamic) onSuccess(); 
