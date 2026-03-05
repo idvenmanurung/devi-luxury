@@ -85,26 +85,17 @@ import {
   UserCheck
 } from 'lucide-react';
 
-// --- CONFIGURATION FIREBASE (FIXED: Hardcoded for Hosting stability) ---
-const firebaseConfig = {
-  apiKey: "AIzaSyA8ncdjMeCTu7JEbcP-4JCVEX_-cfq8xh8",
-  authDomain: "tabungan-a85ae.firebaseapp.com",
-  projectId: "tabungan-a85ae",
-  storageBucket: "tabungan-a85ae.firebasestorage.app",
-  messagingSenderId: "502871375543",
-  appId: "1:502871375543:web:5617b49ea6a25782ff5732",
-  measurementId: "G-NV2L9GZM6T"
-};
-
-// Gunakan ID unik untuk aplikasi Anda
-const appId = "devi-official-premium-production-v1";
+// --- CONFIGURATION FIREBASE ---
+const firebaseConfig = JSON.parse(__firebase_config);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'devi-official-premium-production-v1';
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+// Long polling diaktifkan untuk stabilitas di jaringan seluler/HP
 const db = initializeFirestore(app, { experimentalForceLongPolling: true });
 const storage = getStorage(app);
 
-// --- TRANSLATIONS (DEFINED AT GLOBAL SCOPE) ---
+// --- TRANSLATIONS ---
 const TRANSLATIONS = {
   ID: {
     shop: "Toko",
@@ -138,7 +129,6 @@ const BANK_LOGOS = {
 const CATEGORIES = ['Baju', 'Dress', 'Hijab', 'Abaya', 'Koko', 'Set Keluarga', 'Tas'];
 const SIZE_OPTIONS = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '38', '39', '40', 'All Size'];
 
-// --- GEMINI API INTEGRATION ---
 const callGemini = async (prompt, systemInstruction = "") => {
   const apiKey = ""; 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
@@ -163,7 +153,7 @@ export default function App() {
   const [view, setView] = useState('shop'); 
   const [user, setUser] = useState(null);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
-  const [adminCreds, setAdminCreds] = useState(null); // Mulai dari null agar tahu status memuat
+  const [adminCreds, setAdminCreds] = useState(null); 
   const [cart, setCart] = useState([]);
   const [products, setProducts] = useState([]);
   const [rekening, setRekening] = useState([]);
@@ -175,11 +165,14 @@ export default function App() {
 
   const t = TRANSLATIONS.ID;
 
-  // Inisialisasi Auth
   useEffect(() => {
     const initAuth = async () => {
       try {
-        await signInAnonymously(auth);
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
       } catch (err) { 
         console.error("Auth Fail");
       } finally {
@@ -191,7 +184,6 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // Sinkronisasi Data
   useEffect(() => {
     if (!user) return;
 
@@ -232,7 +224,7 @@ export default function App() {
     <div className="h-screen bg-black flex flex-col items-center justify-center gap-6">
       <div className="font-serif tracking-[0.6em] animate-pulse text-2xl text-[#D4AF37] italic">DEVI OFFICIAL</div>
       <div className="w-40 h-[1px] bg-[#D4AF37]/30 overflow-hidden relative">
-        <div className="absolute inset-0 bg-[#D4AF37] animate-pulse"></div>
+        <div className="absolute inset-0 bg-[#D4AF37] animate-progress-line"></div>
       </div>
     </div>
   );
@@ -260,7 +252,7 @@ export default function App() {
                 <div className="bg-zinc-50 px-3 py-1.5 rounded-full border border-zinc-100 flex items-center gap-2">
                    <User size={14} className="text-[#D4AF37]" />
                    <span className="text-[9px] font-bold uppercase text-zinc-500">
-                      {user?.email ? user.email.split('@')[0] : (isAdminLoggedIn ? "Admin" : "Guest")}
+                      {isAdminLoggedIn ? "Admin" : "Guest"}
                    </span>
                 </div>
                 {isAdminLoggedIn ? (
@@ -750,24 +742,48 @@ function CartView({ items, onRemove, onCheckout }) {
 function AdminLogin({ creds, onLoginSuccess, onBack }) {
   const [u, setU] = useState('');
   const [p, setP] = useState('');
+
   const handle = (e) => {
     e.preventDefault();
-    if (u === creds.username && p === creds.password) onLoginSuccess();
-    else alert("Identitas Tidak Dikenali!");
+    
+    // PERBAIKAN HP: Menghapus spasi dan mengubah ke huruf kecil agar login lebih mudah di layar sentuh
+    const inputUser = u.trim().toLowerCase();
+    const inputPass = p.trim();
+    const validUser = (creds?.username || 'admin').trim().toLowerCase();
+    const validPass = (creds?.password || 'admin123').trim();
+
+    if (inputUser === validUser && inputPass === validPass) {
+      onLoginSuccess();
+    } else {
+      alert("Identitas Tidak Dikenali!");
+    }
   };
+
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/98 backdrop-blur-3xl animate-in zoom-in duration-500">
       <div className="bg-white w-full max-w-sm rounded-[4rem] p-16 relative shadow-3xl overflow-hidden border border-[#D4AF37]/30 text-black">
-        <button onClick={onBack} className="absolute top-12 right-12 text-zinc-300 hover:text-black transition-all border-none bg-transparent"><X size={24} /></button>
+        <button onClick={onBack} className="absolute top-12 right-12 text-zinc-300 hover:text-black transition-all border-none bg-transparent outline-none cursor-pointer"><X size={24} /></button>
         <div className="text-center mb-16 text-black">
           <div className="w-20 h-20 bg-zinc-50 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-inner border border-[#D4AF37]/10"><Lock size={32} className="text-[#D4AF37]" /></div>
           <h3 className="text-2xl font-serif font-bold uppercase tracking-tight text-black">Security Portal</h3>
           <p className="text-[9px] text-zinc-400 mt-2 uppercase font-bold tracking-widest text-black">Admin Access Restricted</p>
         </div>
         <form onSubmit={handle} className="space-y-6">
-          <input placeholder="Username" value={u} onChange={(e) => setU(e.target.value)} className="w-full bg-zinc-50 p-8 rounded-[2rem] outline-none font-bold uppercase tracking-widest text-[10px] shadow-inner border-none focus:ring-1 focus:ring-black" />
-          <input type="password" placeholder="Pass-Key" value={p} onChange={(e) => setP(e.target.value)} className="w-full bg-zinc-50 p-8 rounded-[2rem] outline-none font-bold shadow-inner border-none focus:ring-1 focus:ring-black" />
-          <button type="submit" className="w-full bg-zinc-950 text-[#D4AF37] py-8 rounded-[2.5rem] font-bold uppercase text-[10px] tracking-[0.4em] shadow-2xl hover:bg-black transition-all active:scale-95 border-none text-black">Authorize Access</button>
+          <input 
+            placeholder="Username" 
+            value={u} 
+            onChange={(e) => setU(e.target.value)} 
+            autoCapitalize="none"
+            className="w-full bg-zinc-50 p-8 rounded-[2rem] outline-none font-bold uppercase tracking-widest text-[10px] shadow-inner border-none focus:ring-1 focus:ring-black" 
+          />
+          <input 
+            type="password" 
+            placeholder="Pass-Key" 
+            value={p} 
+            onChange={(e) => setP(e.target.value)} 
+            className="w-full bg-zinc-50 p-8 rounded-[2rem] outline-none font-bold shadow-inner border-none focus:ring-1 focus:ring-black" 
+          />
+          <button type="submit" className="w-full bg-zinc-950 text-[#D4AF37] py-8 rounded-[2.5rem] font-bold uppercase text-[10px] tracking-[0.4em] shadow-2xl hover:bg-black transition-all active:scale-95 border-none cursor-pointer">Authorize Access</button>
         </form>
       </div>
     </div>
