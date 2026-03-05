@@ -3,11 +3,10 @@ import { initializeApp } from 'firebase/app';
 import { 
   getAuth, 
   onAuthStateChanged,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
   signInAnonymously,
-  signInWithCustomToken
+  signInWithCustomToken,
+  signOut,
+  signInWithEmailAndPassword
 } from 'firebase/auth';
 import { 
   getFirestore, 
@@ -19,8 +18,11 @@ import {
   onSnapshot,
   query,
   serverTimestamp,
+  initializeFirestore,
+  orderBy,
   setDoc,
-  getDoc
+  getDocs,
+  limit
 } from 'firebase/firestore';
 import { 
   getStorage, 
@@ -67,341 +69,289 @@ import {
   Banknote,
   Verified,
   Languages,
-  Loader2
+  Loader2,
+  Sparkles,
+  Wand2,
+  Quote,
+  Instagram,
+  Link as LinkIcon,
+  WifiOff,
+  Facebook,
+  Twitter,
+  MapPin,
+  Phone,
+  LayoutDashboard,
+  Wallet,
+  Receipt,
+  ArrowRight,
+  RefreshCw,
+  UserCheck
 } from 'lucide-react';
 
 // --- CONFIGURATION FIREBASE ---
-const firebaseConfig = {
-  apiKey: "AIzaSyA8ncdjMeCTu7JEbcP-4JCVEX_-cfq8xh8",
-  authDomain: "tabungan-a85ae.firebaseapp.com",
-  projectId: "tabungan-a85ae",
-  storageBucket: "tabungan-a85ae.firebasestorage.app",
-  messagingSenderId: "502871375543",
-  appId: "1:502871375543:web:5617b49ea6a25782ff5732",
-  measurementId: "G-NV2L9GZM6T"
-};
-
+const firebaseConfig = JSON.parse(__firebase_config);
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'devi-official-premium-v6';
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
+// FIX: Menggunakan experimentalForceLongPolling untuk koneksi yang lebih stabil di lingkungan iframe
+const db = initializeFirestore(app, { experimentalForceLongPolling: true });
 const storage = getStorage(app);
 
-// --- TRANSLATIONS ---
-const TRANSLATIONS = {
-  ID: {
-    shop: "Toko",
-    signIn: "Masuk",
-    search: "Cari Produk...",
-    heroTitle: "Keanggunan Abadi",
-    heroSub: "Koleksi Eksklusif 2024",
-    heroBtn: "Belanja Sekarang",
-    all: "Semua",
-    back: "Kembali ke Katalog",
-    buyNow: "Beli Sekarang",
-    cart: "Keranjang",
-    material: "Detail Material",
-    specs: "Spesifikasi",
-    memberLogin: "Login Anggota",
-    joinLegacy: "Daftar Member",
-    securityCenter: "Pusat Keamanan Devi_Official",
-    needAccount: "Belum punya akun? Daftar di sini",
-    haveAccount: "Sudah jadi anggota? Login sekarang",
-    securedPayment: "Pembayaran Aman",
-    selectRek: "Pilih Satu Rekening Tujuan Devi Official",
-    approve: "SETUJUI",
-    logout: "KELUAR AKSES",
-    adminCenter: "DASHBOARD ADMIN",
-    language: "Bahasa",
-    footerText: "Toko online kami diawasi oleh hukum perdagangan elektronik Republik Indonesia. Keamanan data pelanggan dan keaslian produk material premium adalah janji kami kepada Anda.",
-    orders: "Pesanan",
-    catalog: "Katalog",
-    bank: "Rekening",
-    admins: "Identitas Admin"
-  },
-  EN: {
-    shop: "Shop",
-    signIn: "Sign In",
-    search: "Search Product...",
-    heroTitle: "Timeless Grace",
-    heroSub: "Exquisite Collection 2024",
-    heroBtn: "Shop The Legacy",
-    all: "All",
-    back: "Back to Catalog",
-    buyNow: "Buy Now",
-    cart: "Cart",
-    material: "Material Details",
-    specs: "Specs",
-    memberLogin: "Member Login",
-    joinLegacy: "Join Legacy",
-    securityCenter: "Devi_Official Security Center",
-    needAccount: "Need an account? Sign Up Here",
-    haveAccount: "Existing member? Log In Now",
-    securedPayment: "Secure Payment",
-    selectRek: "Select One Official Account",
-    approve: "APPROVE",
-    logout: "LOGOUT ACCESS",
-    adminCenter: "ADMIN CENTER",
-    language: "Language",
-    footerText: "Our online store is supervised by the electronic commerce laws of the Republic of Indonesia. Customer data security and authenticity of premium material products are our promise to you.",
-    orders: "Orders",
-    catalog: "Catalog",
-    bank: "Bank",
-    admins: "Admins"
-  }
-};
-
-const PAYMENT_LOGOS = {
-  'Bank Central Asia (BCA)': 'https://upload.wikimedia.org/wikipedia/commons/5/5c/Bank_Central_Asia.svg',
-  'Bank Mandiri': 'https://upload.wikimedia.org/wikipedia/commons/a/ad/Bank_Mandiri_logo_2016.svg',
-  'Bank Rakyat Indonesia (BRI)': 'https://upload.wikimedia.org/wikipedia/commons/2/2e/BRI_Logo.svg',
-  'Bank Negara Indonesia (BNI)': 'https://upload.wikimedia.org/wikipedia/id/f/fa/Bank_Negara_Indonesia_logo.svg',
-  'DANA': 'https://upload.wikimedia.org/wikipedia/commons/7/72/Logo_dan_automotive.png',
-  'OVO': 'https://upload.wikimedia.org/wikipedia/commons/e/eb/Logo_ovo_purple.svg',
-  'GoPay': 'https://upload.wikimedia.org/wikipedia/commons/8/86/Gopay_logo.svg'
-};
-
-const CATEGORIES = ['Gamis Syari', 'Koko Pria', 'Set Keluarga', 'Abaya', 'Hijab Premium', 'Kaos Oversize', 'Hoodie', 'Kemeja', 'Blouse', 'Dress Pesta', 'Tas Trendy'];
-
-const SIZE_OPTIONS = {
-  'Gamis Syari': ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
-  'Koko Pria': ['S', 'M', 'L', 'XL', 'XXL'],
-  'Set Keluarga': ['Couple', 'Family Set'],
-  'Abaya': ['S', 'M', 'L', 'XL'],
-  'Hijab Premium': ['All Size'],
-  'Kaos Oversize': ['L', 'XL', 'XXL'],
-  'Hoodie': ['M', 'L', 'XL'],
-  'Kemeja': ['S', 'M', 'L', 'XL'],
-  'Blouse': ['XS', 'S', 'M', 'L'],
-  'Dress Pesta': ['S', 'M', 'L', 'XL'],
-  'Tas Trendy': ['Standar']
-};
-
-const formatIDR = (amount) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(amount);
-
-// Utiliti mampatan gambar untuk muat naik pantas
-const compressImage = async (file) => {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (e) => {
-      const img = new Image();
-      img.src = e.target.result;
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 800; // Dikurangkan sedikit untuk kelajuan maksimum
-        const scale = MAX_WIDTH / img.width;
-        canvas.width = MAX_WIDTH;
-        canvas.height = img.height * scale;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.7); // Kualiti 0.7 untuk muat naik sangat laju
-      };
+// --- GEMINI API INTEGRATION ---
+const callGemini = async (prompt, systemInstruction = "") => {
+  const apiKey = ""; 
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+  try {
+    const payload = {
+      contents: [{ parts: [{ text: String(prompt) }] }],
+      systemInstruction: { parts: [{ text: String(systemInstruction) }] }
     };
-  });
+    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const result = await response.json();
+    return result.candidates?.[0]?.content?.parts?.[0]?.text || "AI sedang offline.";
+  } catch (err) { return "Gagal menghubungi AI."; }
 };
 
-// --- MAIN APP COMPONENT ---
+const formatIDR = (amount) => {
+  const val = Number(amount) || 0;
+  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val);
+};
+
+const CATEGORIES = ['Baju', 'Dress', 'Hijab', 'Abaya', 'Koko', 'Set Keluarga', 'Tas'];
+const SIZE_OPTIONS = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '38', '39', '40', 'All Size'];
+
+const BANK_LOGOS = {
+  "BCA": "https://upload.wikimedia.org/wikipedia/commons/5/5c/Bank_Central_Asia.svg",
+  "BRI": "https://upload.wikimedia.org/wikipedia/commons/2/2e/BRI_Logo.svg",
+  "Mandiri": "https://upload.wikimedia.org/wikipedia/commons/a/ad/Bank_Mandiri_logo_2016.svg",
+  "CIMB Niaga": "https://upload.wikimedia.org/wikipedia/commons/5/5e/CIMB_Niaga_logo.svg",
+  "DANA": "https://upload.wikimedia.org/wikipedia/commons/7/72/Logo_dan_automotive.png",
+  "OVO": "https://upload.wikimedia.org/wikipedia/commons/e/eb/Logo_ovo_purple.svg",
+  "GoPay": "https://upload.wikimedia.org/wikipedia/commons/8/86/Gopay_logo.svg"
+};
+
+// --- MAIN APP ---
 export default function App() {
   const [view, setView] = useState('shop'); 
-  const [lang, setLang] = useState('ID'); 
   const [user, setUser] = useState(null);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
-  const [showAdminLoginModal, setShowAdminLoginModal] = useState(false);
+  const [adminCreds, setAdminCreds] = useState({ username: 'admin', password: 'admin123' });
   const [cart, setCart] = useState([]);
   const [products, setProducts] = useState([]);
   const [rekening, setRekening] = useState([]);
   const [orders, setOrders] = useState([]);
-  const [adminUsers, setAdminUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [loading, setLoading] = useState(true);
 
-  const t = TRANSLATIONS[lang];
-
+  // RULE 3: Auth First - Memastikan proses sign-in selesai sebelum memulai query Firestore
   useEffect(() => {
     const initAuth = async () => {
       try {
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          try { await signInWithCustomToken(auth, __initial_auth_token); } catch { await signInAnonymously(auth); }
-        } else { await signInAnonymously(auth); }
-      } catch (err) { console.error("Auth Error:", err); }
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      } catch (err) { 
+        console.error("Auth System Fail:", err);
+      } finally {
+        setLoading(false);
+      }
     };
     initAuth();
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      setLoading(false);
-    });
+    const unsubscribe = onAuthStateChanged(auth, (u) => setUser(u));
     return () => unsubscribe();
   }, []);
 
+  // Sync Data Real-time & Admin Settings
   useEffect(() => {
+    // Guard: Jangan lakukan query apapun sebelum user terotentikasi
     if (!user) return;
-    const paths = {
-      p: collection(db, 'artifacts', appId, 'public', 'data', 'products'),
-      r: collection(db, 'artifacts', appId, 'public', 'data', 'rekening'),
-      o: collection(db, 'artifacts', appId, 'public', 'data', 'orders'),
-      a: collection(db, 'artifacts', appId, 'public', 'data', 'admins')
-    };
-    const unsubP = onSnapshot(paths.p, (s) => setProducts(s.docs.map(d => ({ id: d.id, ...d.data() }))));
-    const unsubR = onSnapshot(paths.r, (s) => setRekening(s.docs.map(d => ({ id: d.id, ...d.data() }))));
-    const unsubO = onSnapshot(paths.o, (s) => setOrders(s.docs.map(d => ({ id: d.id, ...d.data() }))));
-    const unsubA = onSnapshot(paths.a, (s) => setAdminUsers(s.docs.map(d => ({ id: d.id, ...d.data() }))));
+
+    const pRef = collection(db, 'artifacts', appId, 'public', 'data', 'products');
+    const rRef = collection(db, 'artifacts', appId, 'public', 'data', 'rekening');
+    const oRef = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
+    const aRef = collection(db, 'artifacts', appId, 'public', 'data', 'admin_settings');
+
+    // Callback error untuk mencegah console spam dan silent failure
+    const errorFn = (err) => console.warn("Firestore access pending auth or restricted:", err.message);
+
+    const unsubP = onSnapshot(pRef, (s) => setProducts(s.docs.map(d => ({ id: d.id, ...d.data() }))), errorFn);
+    const unsubR = onSnapshot(rRef, (s) => setRekening(s.docs.map(d => ({ id: d.id, ...d.data() }))), errorFn);
+    const unsubO = onSnapshot(oRef, (s) => setOrders(s.docs.map(d => ({ id: d.id, ...d.data() }))), errorFn);
+    
+    const unsubA = onSnapshot(aRef, (s) => {
+      if (!s.empty) {
+        setAdminCreds(s.docs[0].data());
+      } else {
+        // Hanya inisialisasi jika benar-benar kosong, gunakan Doc ID spesifik
+        // Note: Operasi write ini mungkin gagal jika aturan keamanan belum memperbolehkan anonim menulis
+        setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'admin_settings', 'main'), { 
+          username: 'admin', 
+          password: 'admin123' 
+        }).catch(() => {});
+      }
+    }, errorFn);
+    
     return () => { unsubP(); unsubR(); unsubO(); unsubA(); };
   }, [user]);
 
-  const filteredProducts = useMemo(() => 
-    products.filter(p => (categoryFilter === 'All' || p.category === categoryFilter) && p.name.toLowerCase().includes(searchTerm.toLowerCase())), [products, categoryFilter, searchTerm]);
+  const filteredProducts = useMemo(() => {
+    if (!Array.isArray(products)) return [];
+    return products.filter(p => {
+      const matchCat = categoryFilter === 'All' || p.category === categoryFilter;
+      const matchSearch = (p.name || '').toLowerCase().includes(searchTerm.toLowerCase());
+      return matchCat && matchSearch;
+    });
+  }, [products, categoryFilter, searchTerm]);
 
-  if (loading) return <div className="h-screen bg-black flex items-center justify-center font-serif text-[#D4AF37] tracking-[0.5em] animate-pulse italic uppercase">DEVI OFFICIAL</div>;
+  if (loading) return (
+    <div className="h-screen bg-black flex flex-col items-center justify-center gap-6">
+      <div className="font-serif tracking-[0.6em] animate-pulse text-2xl text-[#D4AF37] italic">DEVI OFFICIAL</div>
+      <div className="w-40 h-[1px] bg-[#D4AF37]/30 overflow-hidden relative">
+        <div className="absolute inset-0 bg-[#D4AF37] animate-progress-line"></div>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-[#FDFDFD] text-[#1A1A1A] font-sans selection:bg-[#3a7d44] selection:text-white">
-      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-zinc-100 px-6 h-20 md:h-24">
+    <div className="min-h-screen bg-[#F9F9F9] text-[#1A1A1A] font-sans selection:bg-[#D4AF37] selection:text-black">
+      <header className="sticky top-0 z-[100] bg-white/80 backdrop-blur-xl border-b border-zinc-100 px-6 h-20 md:h-24">
         <div className="max-w-7xl mx-auto h-full flex items-center justify-between">
-          <div className="flex-1 hidden lg:flex items-center gap-6">
-            <button onClick={() => { setView('shop'); setCategoryFilter('All'); }} className="text-[10px] font-bold uppercase tracking-[0.3em] hover:text-[#3a7d44] transition-colors">{t.shop}</button>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-300" size={16} />
-              <input type="text" placeholder={t.search} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="bg-zinc-50 border-none rounded-full pl-10 pr-4 py-2 text-[10px] w-40 focus:w-60 transition-all outline-none font-bold" />
+          <div className="flex-1 hidden lg:flex items-center gap-8">
+            <button onClick={() => { setView('shop'); setCategoryFilter('All'); }} className="text-[10px] font-bold uppercase tracking-[0.3em] hover:text-[#3a7d44] transition-all">Collections</button>
+            <div className="relative group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-[#D4AF37] transition-colors" size={14} />
+              <input type="text" placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="bg-zinc-100 border-none rounded-full pl-10 pr-6 py-2.5 text-[10px] w-40 focus:w-64 transition-all outline-none font-medium" />
             </div>
           </div>
           <div className="flex-1 flex justify-center">
-            <h1 className="text-xl md:text-3xl font-serif tracking-[0.4em] font-bold text-black cursor-pointer uppercase" onClick={() => setView('shop')}>DEVI<span className="text-[#D4AF37]">_OFFICIAL.ID</span></h1>
+            <h1 className="text-xl md:text-3xl font-serif tracking-[0.4em] font-bold text-black cursor-pointer uppercase select-none" onClick={() => setView('shop')}>DEVI<span className="text-[#D4AF37]">_OFFICIAL</span></h1>
           </div>
-          <div className="flex-1 flex justify-end gap-5 items-center">
-             <button onClick={() => setLang(lang === 'ID' ? 'EN' : 'ID')} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-50 border border-zinc-100 text-[10px] font-bold hover:bg-zinc-100 transition-all">
-               <Languages size={14} className="text-[#D4AF37]" /> {lang}
+          <div className="flex-1 flex justify-end gap-6 items-center">
+             <button onClick={() => setView('cart')} className="relative p-2 hover:bg-zinc-100 rounded-full transition-all">
+               <ShoppingBag size={20} />
+               {cart.length > 0 && <span className="absolute top-0 right-0 bg-[#D4AF37] text-black text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-bold border-2 border-white">{cart.length}</span>}
              </button>
-             <button onClick={() => setView('cart')} className="relative hover:text-[#3a7d44] transition-colors">
-               <ShoppingBag size={22} />
-               <span className="absolute -top-2 -right-2 bg-black text-white text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{cart.length}</span>
-             </button>
-             {user && !user.isAnonymous ? (
-                <div className="flex items-center gap-3 bg-zinc-50 px-4 py-1.5 rounded-full border border-zinc-100">
-                  <span className="text-[9px] font-bold uppercase text-[#3a7d44] truncate max-w-[100px]">{user.email.split('@')[0]}</span>
-                  <button onClick={() => { signOut(auth); setView('shop'); }} className="text-zinc-400 hover:text-red-500 transition-colors"><LogOut size={16} /></button>
+             <div className="flex items-center gap-4">
+                <div className="bg-zinc-50 px-3 py-1.5 rounded-full border border-zinc-100 flex items-center gap-2">
+                   <User size={14} className="text-[#D4AF37]" />
+                   <span className="text-[9px] font-bold uppercase text-zinc-500">
+                      {user?.email ? user.email.split('@')[0] : (isAdminLoggedIn ? "Admin" : "Guest")}
+                   </span>
                 </div>
-             ) : (
-                <button onClick={() => setView('login')} className="flex items-center gap-3 px-6 py-2.5 rounded-full bg-zinc-950 text-white hover:bg-[#3a7d44] transition-all text-[10px] font-bold uppercase tracking-widest shadow-xl">
-                  <User size={16} /> {t.signIn}
-                </button>
-             )}
+                {isAdminLoggedIn ? (
+                  <button onClick={() => setView('admin')} className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-full text-[9px] font-bold tracking-widest hover:bg-[#D4AF37] hover:text-black transition-all shadow-lg">
+                    <LayoutDashboard size={14} /> DASHBOARD
+                  </button>
+                ) : (
+                  <button onClick={() => setView('login')} className="p-2 hover:bg-zinc-100 rounded-full transition-all">
+                    <Key size={20} />
+                  </button>
+                )}
+             </div>
           </div>
         </div>
       </header>
 
-      <main>
+      <main className="animate-in fade-in duration-1000">
         {view === 'shop' && (
-          <div className="animate-in fade-in duration-700">
-            <HeroSection t={t} />
-            <FilterBar active={categoryFilter} onChange={setCategoryFilter} t={t} />
-            <ProductGrid products={filteredProducts} onView={(p) => { setSelectedProduct(p); setView('detail'); window.scrollTo(0,0); }} t={t} />
-          </div>
+          <>
+            <HeroSection onExplore={() => window.scrollTo({top: 800, behavior: 'smooth'})} />
+            <div className="bg-white border-b border-zinc-100 sticky top-20 md:top-24 z-40">
+              <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-start md:justify-center gap-8 overflow-x-auto no-scrollbar">
+                <button onClick={() => setCategoryFilter('All')} className={`text-[10px] uppercase font-bold tracking-[0.4em] transition-all px-6 py-2 rounded-full whitespace-nowrap ${categoryFilter === 'All' ? 'bg-black text-[#D4AF37]' : 'text-zinc-400 hover:text-black'}`}>Semua</button>
+                {CATEGORIES.map(c => <button key={c} onClick={() => setCategoryFilter(c)} className={`text-[10px] uppercase font-bold tracking-[0.4em] transition-all px-6 py-2 rounded-full whitespace-nowrap ${categoryFilter === c ? 'bg-black text-[#D4AF37]' : 'text-zinc-400 hover:text-black'}`}>{c}</button>)}
+              </div>
+            </div>
+            <ProductGrid products={filteredProducts} onView={(p) => { setSelectedProduct(p); setView('detail'); window.scrollTo(0,0); }} />
+          </>
         )}
-        {view === 'detail' && selectedProduct && <ProductDetailView product={selectedProduct} onBack={() => setView('shop')} onBuy={() => setShowPaymentModal(true)} onAddCart={() => setCart([...cart, selectedProduct])} t={t} />}
-        {view === 'login' && <AuthView type="login" onSwitch={() => setView('register')} onBack={() => setView('shop')} t={t} />}
-        {view === 'register' && <AuthView type="register" onSwitch={() => setView('login')} onBack={() => setView('shop')} t={t} />}
-        {view === 'cart' && <CartView items={cart} onRemove={(idx) => { const newCart = [...cart]; newCart.splice(idx,1); setCart(newCart); }} onCheckout={() => setView('shop')} t={t} />}
-        {view === 'admin' && isAdminLoggedIn && <AdminDashboard products={products} rekening={rekening} orders={orders} adminUsers={adminUsers} appId={appId} onLogout={() => { setIsAdminLoggedIn(false); setView('shop'); }} t={t} />}
+        {view === 'detail' && selectedProduct && <ProductDetailView product={selectedProduct} onBack={() => setView('shop')} onBuy={() => setView('checkout')} onAddCart={() => { setCart([...cart, selectedProduct]); }} />}
+        {view === 'checkout' && <CheckoutView product={selectedProduct} rekening={rekening} onComplete={() => setView('shop')} onBack={() => setView('shop')} />}
+        {view === 'cart' && <CartView items={cart} onRemove={(idx) => { const c = [...cart]; c.splice(idx,1); setCart(c); }} onCheckout={() => setView('checkout')} />}
+        {view === 'login' && <AdminLogin creds={adminCreds} onLoginSuccess={() => { setIsAdminLoggedIn(true); setView('admin'); }} onBack={() => setView('shop')} />}
+        {view === 'admin' && isAdminLoggedIn && <AdminDashboard products={products} orders={orders} rekening={rekening} adminCreds={adminCreds} appId={appId} onLogout={() => { setIsAdminLoggedIn(false); setView('shop'); }} />}
       </main>
 
-      {showAdminLoginModal && <AdminLoginModal adminUsers={adminUsers} onSuccess={() => { setIsAdminLoggedIn(true); setView('admin'); setShowAdminLoginModal(false); }} onClose={() => setShowAdminLoginModal(false)} t={t} />}
-      
-      {showPaymentModal && selectedProduct && <PaymentConfirmationModal product={selectedProduct} rekening={rekening} appId={appId} onClose={() => setShowPaymentModal(false)} t={t} />}
-
-      <footer className="bg-[#0A0A0A] text-white pt-32 pb-12 px-6 mt-40 border-t-4 border-[#D4AF37]">
-        <div className="max-w-7xl mx-auto mb-24 text-center">
-           <div className="inline-flex items-center gap-3 bg-white/5 border border-white/10 px-8 py-3 rounded-full mb-12 animate-pulse">
-              <ShieldCheck className="text-[#D4AF37]" size={20} />
-              <span className="text-[11px] font-bold uppercase tracking-[0.4em]">100% Verified Luxury Store</span>
-           </div>
-           <h2 className="text-xl font-bold uppercase tracking-[0.5em] text-white/50 mb-12">Official Partners & Logistics</h2>
-           <div className="flex flex-wrap justify-center items-center gap-16 opacity-20 grayscale hover:opacity-100 hover:grayscale-0 transition-all duration-1000">
-              <img src="https://upload.wikimedia.org/wikipedia/commons/5/5c/Bank_Central_Asia.svg" className="h-6" alt="BCA" />
-              <img src="https://upload.wikimedia.org/wikipedia/commons/a/ad/Bank_Mandiri_logo_2016.svg" className="h-6" alt="Mandiri" />
-              <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" className="h-6" alt="Paypal" />
-              <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" className="h-4" alt="Visa" />
-              <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" className="h-8" alt="Mastercard" />
-           </div>
-        </div>
-
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-20 border-t border-white/5 pt-20 mb-24">
+      <footer className="bg-[#050505] text-white pt-24 pb-12 px-6 mt-40 border-t-2 border-[#D4AF37]">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-16 mb-24">
           <div className="col-span-1 md:col-span-2">
-            <h2 className="text-3xl font-serif tracking-[0.6em] mb-10 italic font-bold uppercase">DEVI OFFICIAL</h2>
-            <p className="text-zinc-400 text-sm max-w-md leading-relaxed uppercase tracking-widest font-light">{t.footerText}</p>
+            <h2 className="text-4xl font-serif font-bold italic tracking-[0.2em] text-[#D4AF37] mb-8 uppercase">DEVI OFFICIAL</h2>
+            <p className="text-zinc-500 text-sm max-w-md leading-relaxed mb-10">Mendefinisikan ulang kemewahan busana muslim kontemporer. Estetika dan kemewahan dalam setiap helai material.</p>
+            <div className="flex gap-6">
+              {[Instagram, Facebook, Twitter].map((Icon, i) => (
+                <div key={i} className="p-3 bg-zinc-900 rounded-full hover:bg-[#D4AF37] hover:text-black transition-all cursor-pointer group">
+                  <Icon size={18} className="group-hover:scale-110 transition-transform" />
+                </div>
+              ))}
+            </div>
           </div>
           <div>
-            <h4 className="text-[#D4AF37] text-[11px] font-bold uppercase tracking-[0.4em] mb-10 italic border-b border-[#D4AF37]/20 pb-3 w-fit">Pelayanan Kami</h4>
-            <ul className="space-y-6 text-[10px] text-zinc-400 uppercase tracking-widest font-medium">
-              <li className="flex items-center gap-4 hover:text-white transition-colors"><Truck size={16} className="text-[#D4AF37]"/> Worldwide Shipping</li>
-              <li className="flex items-center gap-4 hover:text-white transition-colors"><Globe size={16} className="text-[#D4AF37]"/> Authentic Selection</li>
-              <li className="flex items-center gap-4 hover:text-white transition-colors"><Clock size={16} className="text-[#D4AF37]"/> Support 24H</li>
-            </ul>
+            <h4 className="text-[10px] font-bold uppercase tracking-[0.4em] mb-10 text-zinc-300">Payment Methods</h4>
+            <div className="grid grid-cols-3 gap-6 opacity-30">
+               {Object.values(BANK_LOGOS).slice(0, 6).map((l, i) => <img key={i} src={l} className="h-6 object-contain grayscale hover:grayscale-0 transition-all" alt="" />)}
+            </div>
           </div>
           <div>
-            <h4 className="text-[#D4AF37] text-[11px] font-bold uppercase tracking-[0.4em] mb-10 italic border-b border-[#D4AF37]/20 pb-3 w-fit">Security</h4>
-            <p className="text-[10px] text-zinc-500 leading-loose uppercase tracking-[0.2em] font-medium">Sistem kami menggunakan enkripsi SSL 256-bit. Pembayaran diverifikasi manual untuk menjamin keaslian Boutique Selection Anda.</p>
+            <h4 className="text-[10px] font-bold uppercase tracking-[0.4em] mb-10 text-zinc-300">Hubungi Kami</h4>
+            <div className="space-y-6 text-sm text-zinc-500 font-medium tracking-tight">
+               <div className="flex items-center gap-4 hover:text-white transition-colors cursor-pointer"><Phone size={14} /> +62 812-9988-7766</div>
+               <div className="flex items-center gap-4 hover:text-white transition-colors cursor-pointer"><Mail size={14} /> boutique@deviofficial.id</div>
+               <div className="flex items-start gap-4 hover:text-white transition-colors cursor-pointer"><MapPin size={14} className="mt-1" /> HQ: Jakarta Tower, ID</div>
+            </div>
           </div>
         </div>
-
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8 border-t border-white/5 pt-12">
-          <p className="text-zinc-600 text-[10px] uppercase tracking-[0.5em] font-bold">© 2024 Devi_Official.id Luxury Group</p>
-          <button onClick={() => isAdminLoggedIn ? setView('admin') : setShowAdminLoginModal(true)} className="flex items-center gap-3 text-zinc-500 text-[10px] uppercase tracking-[0.4em] hover:text-[#D4AF37] transition-all group">
-            <ShieldAlert size={18} className="group-hover:rotate-12 transition-transform" /> {t.adminCenter}
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8 border-t border-zinc-900 pt-12">
+          <p className="text-zinc-600 text-[9px] uppercase tracking-[0.6em] font-bold">© 2024 Devi_Official Luxury Group.</p>
+          <button onClick={() => setView('login')} className="flex items-center gap-2 text-zinc-600 text-[10px] font-bold tracking-widest hover:text-[#D4AF37] transition-all">
+             <ShieldAlert size={14} /> SECURE LOGIN
           </button>
         </div>
       </footer>
+
+      <style>{`
+        @keyframes progress-line { 0% { left: -100%; } 100% { left: 100%; } }
+        .animate-progress-line { width: 50%; position: absolute; animation: progress-line 2s infinite linear; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+      `}</style>
     </div>
   );
 }
 
-function HeroSection({ t }) {
+function HeroSection({ onExplore }) {
   return (
-    <section className="relative h-[85vh] flex items-center justify-center overflow-hidden bg-black">
-      <img src="https://images.unsplash.com/photo-1445205170230-053b830c6050?auto=format&fit=crop&q=80&w=2000" className="absolute inset-0 w-full h-full object-cover opacity-40 scale-105" alt="" />
-      <div className="relative z-10 text-center text-white px-6">
-        <p className="text-[10px] uppercase tracking-[1.2em] mb-10 font-bold text-[#D4AF37]">{t.heroSub}</p>
-        <h2 className="text-6xl md:text-9xl font-serif mb-16 italic tracking-tighter font-bold">{t.heroTitle}</h2>
-        <button className="px-16 py-5 bg-white text-black text-[11px] font-bold uppercase tracking-[0.6em] rounded-full hover:bg-[#D4AF37] transition-all">{t.heroBtn}</button>
+    <section className="relative h-[90vh] flex items-center justify-center overflow-hidden bg-black">
+      <img src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=2070&auto=format&fit=crop" className="absolute inset-0 w-full h-full object-cover opacity-60" alt="Hero" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/80"></div>
+      <div className="relative z-10 text-center text-white px-6 max-w-4xl animate-in fade-in slide-in-from-bottom-10 duration-1000">
+        <p className="text-[10px] uppercase tracking-[1.5em] mb-12 font-bold text-[#D4AF37]">The Pinnacle of Modesty</p>
+        <h2 className="text-6xl md:text-9xl font-serif mb-12 italic tracking-tighter font-bold uppercase leading-none text-white">Luxury <br/> <span className="text-[#D4AF37]">Collection</span></h2>
+        <button onClick={onExplore} className="mt-12 px-16 py-6 bg-[#D4AF37] text-black text-[11px] font-bold uppercase tracking-[0.6em] rounded-full hover:scale-105 transition-all shadow-2xl">Shop Now</button>
       </div>
     </section>
   );
 }
 
-function FilterBar({ active, onChange, t }) {
+function ProductGrid({ products, onView }) {
   return (
-    <div className="bg-white border-b border-zinc-100 sticky top-20 md:top-24 z-40">
-      <div className="max-w-7xl mx-auto px-6 py-8 flex items-center justify-start md:justify-center gap-10 overflow-x-auto no-scrollbar">
-        <button onClick={() => onChange('All')} className={`text-[10px] uppercase font-bold tracking-[0.4em] transition-all whitespace-nowrap px-4 py-2 rounded-full ${active === 'All' ? 'bg-[#3a7d44] text-white shadow-lg' : 'text-zinc-400 hover:text-black'}`}>{t.all}</button>
-        {CATEGORIES.map(c => <button key={c} onClick={() => onChange(c)} className={`text-[10px] uppercase font-bold tracking-[0.4em] transition-all whitespace-nowrap px-4 py-2 rounded-full ${active === c ? 'bg-[#3a7d44] text-white shadow-lg' : 'text-zinc-400 hover:text-black'}`}>{c}</button>)}
-      </div>
-    </div>
-  );
-}
-
-function ProductGrid({ products, onView, t }) {
-  return (
-    <section className="max-w-7xl mx-auto px-6 py-20">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-12 gap-y-24">
+    <section className="max-w-7xl mx-auto px-6 py-32">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12">
         {products.map((p) => (
-          <div key={p.id} className="group cursor-pointer bg-white border border-zinc-100 rounded-3xl p-4 hover:shadow-[0_30px_100px_rgba(0,0,0,0.08)] transition-all duration-700" onClick={() => onView(p)}>
-            <div className="relative aspect-[3/4.5] overflow-hidden rounded-[1.5rem] mb-10 bg-zinc-50 shadow-inner">
-              <img src={p.imageUrl} className="w-full h-full object-cover transition-transform duration-[3s] group-hover:scale-110" alt={p.name} />
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
-                 <button className="bg-white text-black px-12 py-4 text-[10px] font-bold uppercase tracking-widest rounded-full shadow-2xl">Details</button>
-              </div>
+          <div key={p.id} className="group cursor-pointer bg-white border border-zinc-100 rounded-[2rem] p-3 hover:shadow-2xl transition-all duration-500" onClick={() => onView(p)}>
+            <div className="relative aspect-[3/4.5] overflow-hidden rounded-[1.5rem] mb-8 bg-zinc-50 shadow-inner">
+              <img src={p.imageURL} className="w-full h-full object-cover transition-transform duration-[3s] group-hover:scale-110" alt={p.name} referrerPolicy="no-referrer" />
+              <div className="absolute top-4 right-4 bg-black/80 backdrop-blur-md text-[#D4AF37] px-4 py-2 rounded-full text-[9px] font-bold tracking-widest">{p.category}</div>
             </div>
-            <div className="text-center px-4 pb-4">
-              <p className="text-[16px] font-bold text-zinc-900 mb-2 tracking-widest font-serif">{formatIDR(p.price)}</p>
-              <h3 className="text-[12px] font-medium tracking-[0.2em] text-zinc-400 uppercase mb-6 line-clamp-1 group-hover:text-[#3a7d44] transition-colors">{p.name}</h3>
-              <div className="flex justify-center gap-1 mb-8">
+            <div className="text-center pb-6 px-4">
+              <p className="text-[18px] font-bold text-black mb-1 tracking-tighter font-serif">{formatIDR(p.price)}</p>
+              <h3 className="text-[11px] font-medium tracking-[0.2em] text-zinc-400 uppercase mb-6 line-clamp-1 group-hover:text-black transition-colors">{p.name}</h3>
+              <div className="flex justify-center gap-1">
                 {[...Array(5)].map((_, i) => <Star key={i} size={10} className="fill-[#D4AF37] text-[#D4AF37]" />)}
               </div>
-              <button className="w-full bg-[#3a7d44]/5 text-[#3a7d44] border border-[#3a7d44]/20 py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest shadow-sm group-hover:bg-[#3a7d44] group-hover:text-white transition-all">Details</button>
             </div>
           </div>
         ))}
@@ -410,29 +360,49 @@ function ProductGrid({ products, onView, t }) {
   );
 }
 
-function ProductDetailView({ product, onBack, onBuy, onAddCart, t }) {
-  const [size, setSize] = useState(product.sizes?.[0] || '');
+function ProductDetailView({ product, onBack, onBuy, onAddCart }) {
+  const [aiAdvice, setAiAdvice] = useState('');
+  const [loadingAi, setLoadingAi] = useState(false);
+  const [selectedSize, setSelectedSize] = useState('');
+
+  const getAiStyleAdvice = async () => {
+    setLoadingAi(true);
+    try {
+      const res = await callGemini(`Mix & match mewah untuk ${product.name}. Jelaskan kenapa material ${product.category} ini istimewa.`, "AI Stylist Devi Official");
+      setAiAdvice(String(res));
+    } catch { setAiAdvice("AI sedang tidak tersedia."); }
+    finally { setLoadingAi(false); }
+  };
+
   return (
-    <div className="max-w-7xl mx-auto px-6 py-12 animate-in slide-in-from-right duration-700">
-      <button onClick={onBack} className="flex items-center gap-4 text-zinc-400 mb-16 text-[10px] font-bold uppercase tracking-[0.5em] hover:text-black transition-all"><ChevronLeft size={24} /> {t.back}</button>
+    <div className="max-w-7xl mx-auto px-6 py-20 animate-in slide-in-from-right duration-700">
+      <button onClick={onBack} className="flex items-center gap-3 text-zinc-400 mb-12 text-[10px] font-bold uppercase tracking-[0.4em] hover:text-black transition-all"><ChevronLeft size={20} /> Back to Catalog</button>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-start">
-        <div className="aspect-[4/5] bg-zinc-50 rounded-[4rem] overflow-hidden shadow-[0_50px_100px_rgba(0,0,0,0.1)] border border-zinc-100"><img src={product.imageUrl} className="w-full h-full object-cover hover:scale-110 transition-transform duration-[3s]" alt="" /></div>
+        <div className="sticky top-32 aspect-[4/5.5] bg-zinc-50 rounded-[3rem] overflow-hidden shadow-2xl border border-zinc-100 group">
+          <img src={product.imageURL} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[5s]" alt="" referrerPolicy="no-referrer" />
+        </div>
         <div className="flex flex-col">
-          <p className="text-[#D4AF37] text-[11px] font-bold uppercase mb-8 tracking-[0.6em] border-l-4 border-[#D4AF37] pl-6 uppercase">{product.category}</p>
-          <h2 className="text-5xl md:text-6xl font-serif font-bold mb-8 italic tracking-tighter uppercase">{product.name}</h2>
-          <p className="text-5xl font-bold text-[#3a7d44] mb-16 tracking-tighter">{formatIDR(product.price)}</p>
+          <p className="text-[#D4AF37] text-[11px] font-bold uppercase mb-8 tracking-[0.8em] border-l-4 border-[#D4AF37] pl-6">{product.category}</p>
+          <h2 className="text-5xl md:text-7xl font-serif font-bold mb-8 uppercase tracking-tighter leading-tight">{product.name}</h2>
+          <p className="text-5xl font-bold text-black mb-16 tracking-tighter font-serif">{formatIDR(product.price)}</p>
           <div className="space-y-16">
             <div>
-               <p className="text-[11px] font-bold uppercase text-zinc-400 mb-8 tracking-widest border-b border-zinc-50 pb-4 uppercase">Available Sizes</p>
-               <div className="flex flex-wrap gap-4">{product.sizes?.map(s => <button key={s} onClick={() => setSize(s)} className={`px-14 py-4 rounded-2xl text-[10px] font-bold border-2 transition-all ${size === s ? 'bg-[#3a7d44] text-white border-[#3a7d44] shadow-xl scale-105' : 'border-zinc-100 text-zinc-400 hover:border-zinc-800 hover:text-black'}`}>{s}</button>)}</div>
+               <h4 className="text-[10px] font-bold uppercase tracking-[0.4em] mb-8 text-zinc-400 border-b pb-4">Select Your Fit</h4>
+               <div className="flex flex-wrap gap-4">
+                  {(product.sizes || []).map(s => (
+                    <button key={s} onClick={() => setSelectedSize(s)} className={`min-w-[70px] h-[70px] rounded-2xl flex items-center justify-center font-bold text-[11px] border-2 transition-all ${selectedSize === s ? 'bg-black text-[#D4AF37] border-black scale-110 shadow-xl' : 'border-zinc-100 text-zinc-400 hover:border-black'}`}>{s}</button>
+                  ))}
+               </div>
             </div>
-            <div className="flex gap-6">
-              <button onClick={onBuy} className="flex-[2] bg-zinc-950 text-white py-8 rounded-[2.5rem] text-[12px] font-bold uppercase tracking-[0.6em] shadow-2xl hover:bg-[#3a7d44] transition-all">{t.buyNow}</button>
-              <button onClick={() => { onAddCart(); alert("Added to Collection!"); }} className="flex-1 border-2 border-zinc-100 text-zinc-900 py-8 rounded-[2.5rem] text-[11px] font-bold uppercase tracking-[0.3em] hover:bg-zinc-50 transition-all">{t.cart}</button>
+            <div className="bg-white p-10 rounded-[3rem] border border-zinc-100 relative group shadow-sm hover:shadow-xl transition-all">
+              <h4 className="text-[11px] font-bold uppercase tracking-[0.4em] mb-6 flex items-center gap-4 text-black"><Wand2 size={18} className="text-[#D4AF37]" /> Boutique Expert AI Advice</h4>
+              {!aiAdvice && !loadingAi && <button onClick={getAiStyleAdvice} className="bg-black text-[#D4AF37] px-8 py-3 rounded-full text-[9px] font-bold uppercase tracking-widest hover:scale-105 transition-all">Generate Guidance</button>}
+              {loadingAi && <p className="text-[10px] animate-pulse text-zinc-400 font-bold uppercase tracking-widest">Curating Your Style...</p>}
+              {aiAdvice && <p className="text-[13px] leading-loose text-zinc-600 italic font-medium whitespace-pre-wrap">{aiAdvice}</p>}
             </div>
-            <div className="pt-20 border-t border-zinc-100 space-y-12 text-[13px] text-zinc-500 leading-loose uppercase tracking-[0.2em] font-medium">
-              <div><h4 className="font-bold text-black mb-6 tracking-[0.4em] flex items-center gap-4 border-b border-zinc-50 pb-3 uppercase"><Layers size={20} className="text-[#D4AF37]"/> {t.material} :</h4><p className="pl-9 whitespace-pre-wrap">{product.material || 'Premium Boutique Selection.'}</p></div>
-              <div><h4 className="font-bold text-black mb-6 tracking-[0.4em] flex items-center gap-4 border-b border-zinc-50 pb-3 uppercase"><Info size={20} className="text-[#D4AF37]"/> {t.specs} :</h4><p className="pl-9 whitespace-pre-wrap">{product.desc || 'Exclusive Design Identity.'}</p></div>
+            <div className="flex flex-col sm:flex-row gap-6">
+              <button onClick={() => { if(!selectedSize) return alert("Pilih ukuran dulu!"); onBuy(); }} className="flex-[2] bg-black text-[#D4AF37] py-8 rounded-[2.5rem] text-[12px] font-bold uppercase tracking-[0.6em] shadow-[0_20px_50px_rgba(0,0,0,0.2)] hover:bg-zinc-900 transition-all active:scale-95">Beli Sekarang</button>
+              <button onClick={() => { if(!selectedSize) return alert("Pilih ukuran dulu!"); onAddCart(); alert("Added to cart."); }} className="flex-1 border-2 border-zinc-100 text-zinc-900 py-8 rounded-[2.5rem] text-[11px] font-bold uppercase tracking-[0.3em] hover:bg-zinc-50 transition-all">Keranjang</button>
             </div>
           </div>
         </div>
@@ -441,58 +411,313 @@ function ProductDetailView({ product, onBack, onBuy, onAddCart, t }) {
   );
 }
 
-function AuthView({ type, onSwitch, onBack, t }) {
-  const [loading, setLoading] = useState(false);
+function CheckoutView({ product, rekening, onComplete, onBack }) {
+  const [step, setStep] = useState(1);
+  const [uploading, setUploading] = useState(false);
+  const [formData, setFormData] = useState({ 
+    invoice: `INV-DEVI-${Math.floor(100000 + Math.random() * 900000)}`,
+    buyerName: '', bankFrom: '', senderName: '', amount: product?.price || 0, transferTo: '', proofImage: '', status: 'pending'
+  });
+
+  const handleUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const storageRef = ref(storage, `artifacts/${appId}/public/data/proofs/${Date.now()}_${file.name}`);
+      const uploadResult = await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(uploadResult.ref);
+      setFormData(prev => ({ ...prev, proofImage: url }));
+    } catch { alert("Gagal upload."); }
+    finally { setUploading(false); }
+  };
+
+  const handleSubmit = async () => {
+    if (!formData.buyerName || !formData.proofImage) return alert("Lengkapi data dan bukti transfer!");
+    try {
+      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), { ...formData, createdAt: serverTimestamp(), productName: product.name });
+      setStep(3);
+    } catch (e) { console.error(e); alert("Gagal mengirim."); }
+  };
+
   return (
-    <div className="max-w-md mx-auto py-32 px-6 animate-in zoom-in duration-700 relative">
-      <button onClick={onBack} className="absolute top-20 left-6 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-black transition-all">
-        <ChevronLeft size={16}/> {t.back}
-      </button>
-      <div className="text-center mb-16">
-        <div className="w-24 h-24 bg-zinc-50 rounded-[2.5rem] flex items-center justify-center mx-auto mb-10 border border-zinc-100 shadow-inner"><User size={40} className="text-[#D4AF37]" /></div>
-        <h2 className="text-4xl font-serif font-bold italic mb-4 uppercase tracking-tighter">{type === 'login' ? t.memberLogin : t.joinLegacy}</h2>
-        <p className="text-[10px] text-zinc-400 uppercase tracking-[0.5em] font-bold uppercase">{t.securityCenter}</p>
-      </div>
-      <form onSubmit={async (e) => {
-        e.preventDefault(); setLoading(true);
-        const em = e.target.email.value; const pw = e.target.password.value;
-        try {
-          if (type === 'login') { await signInWithEmailAndPassword(auth, em, pw); onBack(); }
-          else { await createUserWithEmailAndPassword(auth, em, pw); alert("Registration Success!"); onSwitch(); }
-        } catch (err) { alert(err.message); } finally { setLoading(false); }
-      }} className="space-y-8">
-        <div className="relative"><Mail className="absolute left-7 top-6 text-zinc-300" size={20} /><input name="email" type="email" placeholder="example@gmail.com" className="w-full bg-zinc-50 border-none pl-20 pr-8 py-6 rounded-3xl outline-none text-sm font-bold shadow-inner" required /></div>
-        <div className="relative"><Key className="absolute left-7 top-6 text-zinc-300" size={20} /><input name="password" type="password" placeholder="Password" className="w-full bg-zinc-50 border-none pl-20 pr-8 py-6 rounded-3xl outline-none text-sm font-bold shadow-inner" required /></div>
-        <button type="submit" className="w-full bg-zinc-950 text-white py-6 rounded-[2.5rem] text-[11px] font-bold uppercase tracking-[0.6em] hover:bg-[#3a7d44] transition-all shadow-2xl">{loading ? '...' : type.toUpperCase()}</button>
-      </form>
-      <div className="mt-16 text-center">
-        <button onClick={onSwitch} className="text-zinc-400 text-[10px] uppercase font-bold tracking-[0.5em] hover:text-[#D4AF37] transition-all border-b border-transparent hover:border-[#D4AF37] pb-3 duration-500 uppercase">
-          {type === 'login' ? t.needAccount : t.haveAccount}
-        </button>
+    <div className="max-w-4xl mx-auto py-24 px-6 animate-in slide-in-from-bottom duration-1000">
+       <div className="bg-white rounded-[4rem] p-12 md:p-20 shadow-2xl border border-zinc-100 relative">
+          <button onClick={onBack} className="absolute top-12 right-12 p-3 hover:bg-zinc-50 rounded-full transition-all text-zinc-300 hover:text-black"><X size={24} /></button>
+          {step === 1 && (
+             <div className="animate-in fade-in">
+                <h3 className="text-4xl font-serif font-bold italic tracking-tighter uppercase mb-12 text-center">Payment Options</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+                   {rekening.map(rek => (
+                     <div key={rek.id} onClick={() => { setFormData({...formData, transferTo: `${rek.bankName} - ${rek.accountNumber}`}); setStep(2); }} className="p-8 border-2 border-zinc-50 rounded-[2.5rem] hover:border-[#D4AF37] hover:bg-zinc-50/50 cursor-pointer transition-all active:scale-95 group">
+                        <div className="h-8 mb-8 flex justify-between items-center">
+                           <img src={BANK_LOGOS[rek.bankName] || "https://placehold.co/100x40?text=Bank"} className="h-full object-contain grayscale group-hover:grayscale-0 transition-all" alt="" />
+                           <ArrowRight size={16} className="text-zinc-200 group-hover:text-black" />
+                        </div>
+                        <p className="text-xl font-mono font-bold tracking-tighter mb-2">{rek.accountNumber}</p>
+                        <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest italic">A.N {rek.accountHolder}</p>
+                     </div>
+                   ))}
+                </div>
+             </div>
+          )}
+          {step === 2 && (
+             <div className="space-y-12 animate-in slide-in-from-right duration-700">
+                <div className="bg-zinc-950 p-12 rounded-[3rem] text-white shadow-2xl relative overflow-hidden border border-[#D4AF37]/20">
+                   <div className="relative space-y-6 text-center">
+                      <p className="text-[10px] font-bold text-[#D4AF37] tracking-[0.4em] uppercase">OFFICIAL INVOICE: {formData.invoice}</p>
+                      <h4 className="text-5xl font-bold text-white tracking-tighter font-serif">{formatIDR(formData.amount)}</h4>
+                   </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                   <div className="space-y-6">
+                      <input placeholder="Nama Lengkap Pembayar" className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none shadow-inner text-sm font-bold uppercase" value={formData.buyerName} onChange={e => setFormData({...formData, buyerName: e.target.value})} />
+                      <input placeholder="Dari Bank Apa?" className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none shadow-inner text-sm font-bold uppercase" value={formData.bankFrom} onChange={e => setFormData({...formData, bankFrom: e.target.value})} />
+                   </div>
+                   <div className="space-y-3">
+                      <div onClick={() => document.getElementById('uPf').click()} className="aspect-square border-2 border-dashed border-zinc-100 rounded-[3rem] bg-zinc-50 flex flex-col items-center justify-center cursor-pointer overflow-hidden shadow-inner group">
+                         {formData.proofImage ? <img src={formData.proofImage} className="w-full h-full object-cover" alt="" /> : (
+                           <>
+                             {uploading ? <Loader2 className="animate-spin text-[#D4AF37]" size={32} /> : <Upload className="text-zinc-200" size={32} />}
+                             <p className="text-[9px] font-bold uppercase text-zinc-300 mt-4 tracking-widest">Unggah Bukti</p>
+                           </>
+                         )}
+                         <input type="file" id="uPf" className="hidden" accept="image/*" onChange={handleUpload} />
+                      </div>
+                   </div>
+                </div>
+                <button onClick={handleSubmit} disabled={uploading || !formData.proofImage} className="w-full bg-black text-[#D4AF37] py-8 rounded-[3rem] font-bold uppercase text-[12px] tracking-[0.5em] shadow-3xl hover:bg-zinc-900 transition-all disabled:opacity-50">Kirim Konfirmasi</button>
+             </div>
+          )}
+          {step === 3 && (
+            <div className="text-center py-20 animate-in zoom-in duration-1000">
+               <div className="w-32 h-32 bg-green-500 text-white rounded-full flex items-center justify-center mx-auto mb-10 shadow-2xl border-[8px] border-white"><CheckCircle size={64} /></div>
+               <h3 className="text-5xl font-serif font-bold italic tracking-tighter uppercase mb-6">Submitted</h3>
+               <p className="text-sm text-zinc-400 mb-16 leading-relaxed max-w-sm mx-auto uppercase tracking-widest font-medium">Boutique Expert kami akan memverifikasi transaksi Anda dalam kurun waktu 1x24 jam.</p>
+               <button onClick={onComplete} className="bg-black text-[#D4AF37] px-20 py-6 rounded-full text-[11px] font-bold uppercase tracking-[0.6em] shadow-3xl">Selesai</button>
+            </div>
+          )}
+       </div>
+    </div>
+  );
+}
+
+function AdminDashboard({ products, orders, rekening, adminCreds, appId, onLogout }) {
+  const [activeTab, setActiveTab] = useState('orders');
+  const [saving, setSaving] = useState(false);
+  const [instaUrl, setInstaUrl] = useState('');
+  const [formData, setFormData] = useState({ imageURL: '', name: '', price: '', category: 'Baju', description: '', sizes: [] });
+  const [rekData, setRekData] = useState({ bankName: 'BCA', accountNumber: '', accountHolder: '' });
+  const [newAdmin, setNewAdmin] = useState({ username: adminCreds.username, password: adminCreds.password });
+
+  const fetchInstaImage = () => {
+    if (!instaUrl.includes('instagram.com')) return alert("Link tidak valid!");
+    const cleanUrl = instaUrl.split('?')[0];
+    const proxyUrl = `https://images.weserv.nl/?url=${encodeURIComponent(cleanUrl.endsWith('/') ? cleanUrl : cleanUrl + '/') + "media/?size=l"}&w=800&output=jpg`;
+    setFormData({ ...formData, imageURL: proxyUrl });
+    alert("Gambar Instagram Berhasil Ditarik!");
+  };
+
+  const addProduct = async () => {
+    if (!formData.name || !formData.price || !formData.imageURL) return alert("Lengkapi data!");
+    setSaving(true);
+    try {
+      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), { ...formData, price: Number(formData.price), createdAt: serverTimestamp() });
+      setFormData({ imageURL: '', name: '', price: '', category: 'Baju', description: '', sizes: [] });
+      setInstaUrl('');
+      alert("Produk Berhasil Ditambahkan!");
+    } catch { alert("Gagal!"); } finally { setSaving(false); }
+  };
+
+  const updateAdminIdentity = async () => {
+    if (!newAdmin.username || !newAdmin.password) return alert("Data tidak boleh kosong!");
+    try {
+      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'admin_settings', 'main'), newAdmin);
+      alert("Identitas Admin Berhasil Diperbarui!");
+    } catch { alert("Gagal memperbarui admin."); }
+  };
+
+  return (
+    <div className="max-w-full mx-auto px-4 md:px-12 py-20 flex flex-col lg:flex-row gap-12 relative animate-in slide-in-from-bottom duration-1000">
+      <aside className="lg:w-80 space-y-6">
+        <div className="bg-zinc-950 p-10 rounded-[3rem] text-white shadow-2xl relative border border-white/5 overflow-hidden">
+           <h2 className="text-xl font-serif font-bold italic text-[#D4AF37] uppercase tracking-widest">Dashboard</h2>
+        </div>
+        <div className="bg-white border border-zinc-100 rounded-[2.5rem] p-6 space-y-2 shadow-sm">
+          {['orders', 'inventory', 'banking', 'identity'].map(tab => (
+            <button key={tab} onClick={() => setActiveTab(tab)} className={`w-full text-left px-8 py-5 rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === tab ? 'bg-zinc-950 text-white shadow-lg scale-105' : 'text-zinc-400 hover:bg-zinc-50'}`}>
+              {tab === 'identity' ? 'IDENTITAS ADMIN' : tab.toUpperCase()}
+            </button>
+          ))}
+          <button onClick={onLogout} className="w-full text-left px-8 py-5 rounded-2xl text-[10px] font-bold uppercase text-red-500 mt-10 hover:bg-red-50 transition-all">LOGOUT</button>
+        </div>
+      </aside>
+
+      <div className="flex-1 bg-white border border-zinc-100 rounded-[3.5rem] p-10 md:p-16 shadow-sm min-h-[85vh]">
+        {activeTab === 'inventory' && (
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-20">
+             <div className="space-y-12">
+                <h3 className="text-xs font-bold uppercase tracking-[0.4em] text-[#D4AF37] border-b pb-4">Instagram Image Collector</h3>
+                
+                <div className="aspect-[3/4] rounded-[3rem] bg-zinc-50 flex items-center justify-center overflow-hidden relative shadow-inner border border-zinc-100">
+                   {formData.imageURL ? <img src={formData.imageURL} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" /> : <Instagram size={64} className="opacity-10 text-black" />}
+                </div>
+
+                <div className="space-y-8">
+                   <div className="space-y-3">
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 ml-4">Instagram Post URL</label>
+                      <div className="flex gap-2">
+                        <input placeholder="https://www.instagram.com/p/..." className="flex-1 bg-zinc-50 p-7 rounded-[2rem] outline-none shadow-inner border-none text-xs" value={instaUrl} onChange={e => setInstaUrl(e.target.value)} />
+                        <button onClick={fetchInstaImage} className="px-8 bg-black text-white rounded-2xl text-[10px] font-bold uppercase transition-all hover:bg-[#3a7d44]">Fetch</button>
+                      </div>
+                   </div>
+                   <input placeholder="Nama Produk Premium" className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none shadow-inner text-sm font-bold uppercase tracking-widest" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                   <div className="grid grid-cols-2 gap-4">
+                     <input type="number" placeholder="Price (IDR)" className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none shadow-inner font-bold" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} />
+                     <select className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none font-bold text-[10px]" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
+                        {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                     </select>
+                   </div>
+                   <div>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-4 ml-4">Available Sizes</p>
+                      <div className="flex flex-wrap gap-2">
+                        {SIZE_OPTIONS.map(s => (
+                          <button key={s} onClick={() => setFormData({...formData, sizes: formData.sizes.includes(s) ? formData.sizes.filter(x=>x!==s) : [...formData.sizes, s]})} className={`px-4 py-2 rounded-xl text-[9px] font-bold border-2 transition-all ${formData.sizes.includes(s) ? 'bg-black text-[#D4AF37] border-black' : 'border-zinc-100 text-zinc-300'}`}>{s}</button>
+                        ))}
+                      </div>
+                   </div>
+                   <textarea placeholder="Materials & Quality Signature..." className="w-full bg-zinc-50 p-7 rounded-[2rem] h-40 outline-none shadow-inner text-sm border-none" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})}></textarea>
+                   <button onClick={addProduct} disabled={saving} className="w-full bg-black text-[#D4AF37] py-8 rounded-[2.5rem] font-bold uppercase tracking-[0.4em] text-[11px] shadow-3xl transition-all disabled:opacity-50">Publish Product</button>
+                </div>
+             </div>
+
+             <div className="space-y-6 max-h-[1000px] overflow-y-auto pr-4 no-scrollbar border-l border-zinc-50 pl-10">
+                <h3 className="text-xs font-bold uppercase tracking-[0.3em] text-zinc-300">Live Inventory ({products.length})</h3>
+                {products.map(p => (
+                  <div key={p.id} className="p-8 border border-zinc-100 rounded-[2.5rem] flex items-center justify-between hover:shadow-xl transition-all bg-white shadow-sm group">
+                     <div className="flex items-center gap-8"><img src={p.imageURL} className="w-16 h-16 rounded-2xl object-cover shadow-lg" alt="" referrerPolicy="no-referrer" /><div><h4 className="text-sm font-bold uppercase line-clamp-1">{p.name}</h4><p className="text-[10px] font-bold text-[#D4AF37] mt-1 tracking-widest">{formatIDR(p.price)}</p></div></div>
+                     <button onClick={async () => { if(window.confirm("Hapus?")) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', p.id)); }} className="p-4 bg-zinc-50 rounded-2xl text-red-300 hover:text-red-500 shadow-sm transition-all"><Trash2 size={20}/></button>
+                  </div>
+                ))}
+             </div>
+          </div>
+        )}
+
+        {activeTab === 'orders' && (
+           <div className="space-y-12">
+             <h3 className="text-4xl font-serif font-bold italic border-b border-zinc-50 pb-8 uppercase text-center text-black">Boutique Orders</h3>
+             <div className="grid grid-cols-1 gap-8">
+               {orders.map(o => (
+                 <div key={o.id} className="border border-zinc-100 p-10 rounded-[3.5rem] flex flex-col xl:flex-row justify-between gap-12 bg-white shadow-sm relative overflow-hidden">
+                   <div className={`absolute top-0 right-0 w-2 h-full ${o.status === 'pending' ? 'bg-yellow-500' : 'bg-green-500'}`}></div>
+                   <div className="flex gap-10">
+                     <div className="relative group cursor-zoom-in" onClick={() => window.open(o.proofImage, '_blank')}>
+                        <img src={o.proofImage} className="w-32 h-44 rounded-[2rem] object-cover shadow-2xl border-4 border-white transition-transform group-hover:scale-105" alt="Proof" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-[2rem] flex items-center justify-center text-white font-bold text-[10px] tracking-widest">PREVIEW</div>
+                     </div>
+                     <div className="space-y-4">
+                       <span className={`px-5 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-widest ${o.status === 'pending' ? 'bg-yellow-50 text-yellow-600' : 'bg-green-50 text-green-600'}`}>{o.status.toUpperCase()}</span>
+                       <h4 className="text-3xl font-bold uppercase text-zinc-900 tracking-tighter">{o.buyerName}</h4>
+                       <div className="grid grid-cols-2 gap-x-12 gap-y-2">
+                          <div><p className="text-[9px] text-zinc-400 uppercase font-bold tracking-widest">Invoice</p><p className="text-xs font-mono font-bold text-zinc-600">{o.invoice}</p></div>
+                          <div><p className="text-[9px] text-zinc-400 uppercase font-bold tracking-widest">Item</p><p className="text-xs font-bold text-black">{o.productName}</p></div>
+                          <div><p className="text-[9px] text-zinc-400 uppercase font-bold tracking-widest">Transfer To</p><p className="text-xs font-bold text-[#D4AF37]">{o.transferTo}</p></div>
+                          <div><p className="text-[9px] text-zinc-400 uppercase font-bold tracking-widest">Amount</p><p className="text-xs font-bold text-[#3a7d44]">{formatIDR(o.amount)}</p></div>
+                       </div>
+                     </div>
+                   </div>
+                   <div className="flex xl:flex-col items-center justify-center gap-4">
+                      {o.status === 'pending' && <button onClick={async () => { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', o.id), {status: 'confirmed'}); }} className="w-full px-12 py-5 bg-black text-[#D4AF37] rounded-3xl text-[10px] font-bold uppercase shadow-2xl hover:bg-green-600 hover:text-white transition-all">Confirm</button>}
+                      <button onClick={async () => { if(window.confirm("Hapus?")) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', o.id)); }} className="p-5 text-zinc-200 hover:text-red-500 transition-colors"><Trash2 size={24}/></button>
+                   </div>
+                 </div>
+               ))}
+             </div>
+           </div>
+        )}
+
+        {activeTab === 'banking' && (
+           <div className="grid grid-cols-1 xl:grid-cols-2 gap-20">
+              <div className="space-y-12">
+                 <h3 className="text-xs font-bold uppercase tracking-[0.4em] text-[#D4AF37] border-b pb-4">Official Bank Access</h3>
+                 <div className="space-y-8">
+                    <select className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none shadow-inner font-bold text-sm uppercase tracking-widest" value={rekData.bankName} onChange={e => setRekData({...rekData, bankName: e.target.value})}>
+                       {Object.keys(BANK_LOGOS).map(b => <option key={b} value={b}>{b}</option>)}
+                    </select>
+                    <input placeholder="Account Number" className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none shadow-inner text-sm font-bold tracking-widest" value={rekData.accountNumber} onChange={e => setRekData({...rekData, accountNumber: e.target.value})} />
+                    <input placeholder="Account Holder Name" className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none shadow-inner text-sm font-bold uppercase tracking-widest" value={rekData.accountHolder} onChange={e => setRekData({...rekData, accountHolder: e.target.value})} />
+                    <button onClick={async () => {
+                      if(!rekData.accountNumber || !rekData.accountHolder) return alert("Lengkapi data!");
+                      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'rekening'), rekData);
+                      setRekData({ bankName: 'BCA', accountNumber: '', accountHolder: '' });
+                      alert("Rekening Aktif!");
+                    }} className="w-full bg-black text-[#D4AF37] py-8 rounded-[3rem] font-bold uppercase text-[11px] shadow-3xl transition-all">Enable Banking</button>
+                 </div>
+              </div>
+              <div className="space-y-6 border-l border-zinc-50 pl-10">
+                 <h3 className="text-xs font-bold uppercase tracking-[0.3em] text-zinc-300">Live Bank Cards ({rekening.length})</h3>
+                 {rekening.map(rek => (
+                    <div key={rek.id} className="p-10 bg-zinc-50 rounded-[3rem] border border-zinc-100 flex justify-between items-center group shadow-sm">
+                       <div className="flex items-center gap-8">
+                          <img src={BANK_LOGOS[rek.bankName]} className="h-6 w-16 object-contain grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all" alt="" />
+                          <div><p className="text-2xl font-mono font-bold tracking-tighter">{rek.accountNumber}</p><p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest italic">A.N {rek.accountHolder}</p></div>
+                       </div>
+                       <button onClick={async () => { if(window.confirm("Hapus?")) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rekening', rek.id)); }} className="p-4 bg-white rounded-2xl text-red-200 hover:text-red-500 shadow-sm transition-all"><Trash2 size={18} /></button>
+                    </div>
+                 ))}
+              </div>
+           </div>
+        )}
+
+        {activeTab === 'identity' && (
+           <div className="max-w-2xl mx-auto space-y-12 animate-in zoom-in duration-700">
+              <div className="text-center">
+                 <div className="w-20 h-20 bg-zinc-950 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-2xl border border-[#D4AF37]/20"><UserCheck size={32} className="text-[#D4AF37]" /></div>
+                 <h3 className="text-3xl font-serif font-bold italic tracking-tighter uppercase mb-2 text-black">Identitas Admin</h3>
+                 <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.4em] mb-12">Security Credentials Management</p>
+              </div>
+              <div className="bg-zinc-50 p-12 rounded-[4rem] shadow-inner space-y-8">
+                 <div className="space-y-3">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 ml-6">Admin Username</label>
+                    <input className="w-full bg-white p-7 rounded-[2rem] outline-none shadow-sm text-sm font-bold uppercase tracking-[0.2em]" value={newAdmin.username} onChange={e => setNewAdmin({...newAdmin, username: e.target.value})} />
+                 </div>
+                 <div className="space-y-3">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 ml-6">Secure Password</label>
+                    <input className="w-full bg-white p-7 rounded-[2rem] outline-none shadow-sm text-sm font-bold tracking-[0.2em]" value={newAdmin.password} onChange={e => setNewAdmin({...newAdmin, password: e.target.value})} />
+                 </div>
+                 <button onClick={updateAdminIdentity} className="w-full bg-black text-[#D4AF37] py-8 rounded-[3rem] font-bold uppercase text-[11px] tracking-[0.4em] shadow-3xl hover:bg-zinc-900 transition-all">Update Credentials</button>
+              </div>
+           </div>
+        )}
       </div>
     </div>
   );
 }
 
-function CartView({ items, onRemove, onCheckout, t }) {
+function CartView({ items, onRemove, onCheckout }) {
   const total = items.reduce((sum, item) => sum + Number(item.price), 0);
   return (
-    <div className="max-w-4xl mx-auto py-24 px-6 animate-in slide-in-from-bottom duration-500">
-       <h2 className="text-4xl font-serif font-bold mb-10 italic uppercase border-b pb-6">Collection Cart</h2>
-       {items.length === 0 ? <div className="text-center py-20 text-zinc-300 uppercase font-bold tracking-widest">Empty Cart</div> : (
+    <div className="max-w-4xl mx-auto py-32 px-6 animate-in slide-in-from-bottom duration-500">
+       <h2 className="text-5xl font-serif font-bold italic tracking-tighter uppercase mb-16 text-center text-black">Your <span className="text-[#D4AF37]">Cart</span></h2>
+       {items.length === 0 ? (
+         <div className="text-center py-40 border-2 border-dashed border-zinc-100 rounded-[4rem]">
+            <ShoppingBag size={64} className="mx-auto text-zinc-100 mb-8" />
+            <p className="font-bold uppercase tracking-widest text-zinc-300">Keranjang Kosong</p>
+         </div>
+       ) : (
           <div className="space-y-8">
             {items.map((item, idx) => (
-              <div key={idx} className="flex items-center justify-between p-10 border border-zinc-100 rounded-[3rem] bg-white shadow-sm hover:shadow-xl transition-all">
+              <div key={idx} className="flex items-center justify-between p-10 border border-zinc-100 rounded-[3rem] bg-white shadow-sm hover:shadow-xl transition-all group">
                 <div className="flex items-center gap-10">
-                  <img src={item.imageUrl} className="w-24 h-24 rounded-[1.5rem] object-cover shadow-2xl border-4 border-white" />
-                  <div><h4 className="text-lg font-bold uppercase text-zinc-900">{item.name}</h4><p className="text-sm text-[#3a7d44] font-bold mt-2 font-mono">{formatIDR(item.price)}</p></div>
+                  <img src={item.imageURL} className="w-24 h-24 rounded-[1.5rem] object-cover shadow-2xl border-4 border-white transition-transform group-hover:scale-105" alt="" referrerPolicy="no-referrer" />
+                  <div><h4 className="font-bold uppercase text-lg tracking-tight mb-2 text-black">{item.name}</h4><p className="text-sm font-bold text-[#D4AF37] font-serif">{formatIDR(item.price)}</p></div>
                 </div>
-                <button onClick={() => onRemove(idx)} className="p-5 text-zinc-200 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all"><Trash2 size={24} /></button>
+                <button onClick={() => onRemove(idx)} className="p-5 text-zinc-200 hover:text-red-500 bg-zinc-50 rounded-full transition-all hover:bg-red-50 shadow-inner"><Trash2 size={24} /></button>
               </div>
             ))}
-            <div className="pt-16 border-t border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-10">
-               <div><p className="text-[11px] font-bold text-zinc-400 uppercase tracking-[0.5em] mb-2 uppercase">Subtotal</p><p className="text-4xl font-bold text-black tracking-tighter">{formatIDR(total)}</p></div>
-               <button onClick={onCheckout} className="px-20 py-6 bg-black text-white rounded-full text-[11px] font-bold uppercase tracking-[0.6em] hover:bg-[#3a7d44] transition-all shadow-3xl">{t.buyNow}</button>
+            <div className="flex flex-col md:flex-row justify-between items-center pt-16 border-t mt-16 border-zinc-100">
+               <div className="text-center md:text-left mb-8 md:mb-0"><p className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.4em] mb-2">Total Selection</p><p className="text-5xl font-bold tracking-tighter font-serif text-black">{formatIDR(total)}</p></div>
+               <button onClick={onCheckout} className="bg-black text-[#D4AF37] px-24 py-8 rounded-full font-bold shadow-3xl hover:scale-105 transition-all uppercase text-[12px] tracking-[0.4em]">Checkout Now</button>
             </div>
           </div>
        )}
@@ -500,447 +725,27 @@ function CartView({ items, onRemove, onCheckout, t }) {
   );
 }
 
-// --- ADMIN DASHBOARD (ULTRA WIDE) ---
-function AdminDashboard({ products, rekening, orders, adminUsers, appId, onLogout, t }) {
-  const [activeTab, setActiveTab] = useState('orders');
-  const [isEditing, setIsEditing] = useState(null);
-  const [showOrderProof, setShowOrderProof] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [previewImage, setPreviewImage] = useState('');
-  const [formData, setFormData] = useState({ imageUrl: '', name: '', price: '', category: 'Gamis Syari', material: '', desc: '', sizes: [] });
-
-  const resetForm = () => {
-    setFormData({ imageUrl: '', name: '', price: '', category: 'Gamis Syari', material: '', desc: '', sizes: [] });
-    setIsEditing(null);
-    setPreviewImage('');
-  };
-
-  useEffect(() => {
-    if (isEditing) {
-      const p = products.find(prod => prod.id === isEditing);
-      if (p) {
-        setFormData(p);
-        setPreviewImage(p.imageUrl);
-      }
-    }
-  }, [isEditing, products]);
-
-  // Fungsi muat naik gambar pantas
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setUploading(true);
-    try {
-      const compressed = await compressImage(file);
-      const storageRef = ref(storage, `artifacts/${appId}/public/data/products/${Date.now()}_prod`);
-      await uploadBytes(storageRef, compressed);
-      const url = await getDownloadURL(storageRef);
-      setFormData(prev => ({ ...prev, imageUrl: url }));
-      setPreviewImage(url);
-    } catch (err) {
-      console.error(err);
-      alert("Muat naik gagal.");
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const saveProduct = async (e) => {
-    e.preventDefault();
-    if (!formData.imageUrl) return alert("Sila muat naik gambar produk!");
-    
-    try {
-      const data = { ...formData, price: Number(formData.price) };
-      if (isEditing) {
-        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', isEditing), data);
-      } else {
-        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), { ...data, createdAt: serverTimestamp() });
-      }
-      resetForm();
-      alert("Berhasil disimpan!");
-    } catch {
-      alert("Simpan gagal!");
-    }
-  };
-
-  const deleteItem = async (coll, id) => {
-    if (confirm("Hapus data ini secara PERMANEN?")) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', coll, id));
-  };
-
-  return (
-    <div className="w-full max-w-full mx-auto px-4 md:px-12 py-20 flex flex-col lg:flex-row gap-12 animate-in slide-in-from-bottom duration-1000">
-      <aside className="lg:w-80 space-y-6 flex-shrink-0">
-        <div className="bg-zinc-950 p-14 rounded-[3.5rem] text-white shadow-2xl relative border border-white/5 overflow-hidden">
-           <div className="absolute -top-10 -right-10 w-40 h-40 bg-[#D4AF37]/20 rounded-full blur-3xl"></div>
-           <h2 className="text-2xl font-serif font-bold italic text-[#D4AF37] tracking-widest relative z-10 uppercase">{t.adminCenter}</h2>
-        </div>
-        <div className="bg-white border border-zinc-100 rounded-[3.5rem] p-6 space-y-3 shadow-sm">
-          {['orders', 'catalog', 'bank', 'admins'].map(tab => (
-            <button key={tab} onClick={() => { setActiveTab(tab); resetForm(); }} className={`w-full text-left px-12 py-5 rounded-3xl text-[11px] font-bold uppercase tracking-[0.3em] transition-all ${activeTab === tab ? 'bg-zinc-950 text-white shadow-2xl scale-105' : 'text-zinc-400 hover:bg-zinc-50'}`}>
-              {t[tab] || tab.toUpperCase()}
-            </button>
-          ))}
-          <button onClick={onLogout} className="w-full text-left px-12 py-5 rounded-3xl text-[11px] font-bold uppercase tracking-[0.3em] text-red-500 hover:bg-red-50 mt-16 transition-colors border border-red-50 uppercase font-bold">{t.logout}</button>
-        </div>
-      </aside>
-
-      <div className="flex-1 bg-white border border-zinc-100 rounded-[4rem] p-10 md:p-16 shadow-sm min-h-[85vh]">
-        {activeTab === 'orders' && (
-          <div className="space-y-12">
-            <h3 className="text-4xl font-serif font-bold italic border-b border-zinc-50 pb-8 uppercase">Order Archive</h3>
-            <div className="grid grid-cols-1 gap-8">
-              {orders.map(o => (
-                <div key={o.id} className="border border-zinc-100 p-10 rounded-[3.5rem] flex flex-col xl:flex-row justify-between gap-12 hover:shadow-xl transition-all bg-zinc-50/20 group">
-                  <div className="flex gap-10">
-                    <div className="w-32 h-44 rounded-[2.5rem] overflow-hidden shadow-2xl border-4 border-white cursor-zoom-in" onClick={() => setShowOrderProof(o.proofUrl)}>
-                      <img src={o.proofUrl} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[2s]" />
-                    </div>
-                    <div className="space-y-3">
-                      <span className={`px-4 py-1 rounded-full text-[7px] font-bold uppercase tracking-widest ${o.status === 'pending' ? 'bg-yellow-50 text-yellow-600' : 'bg-green-50 text-green-600'}`}>{o.status}</span>
-                      <h4 className="text-2xl font-bold uppercase text-zinc-900">{o.buyerName}</h4>
-                      <p className="text-[10px] text-zinc-400 pt-6 font-mono leading-relaxed uppercase pt-4">
-                         INV: {o.invoice} <br/> BANK: {o.targetRek?.bankName} <br/> ITEM: {o.productName}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end justify-between py-2">
-                    <p className="text-3xl font-bold font-serif text-[#3a7d44]">{formatIDR(o.amount || 0)}</p>
-                    <div className="flex gap-4">
-                      {o.status === 'pending' && <button onClick={async () => await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', o.id), {status: 'confirmed'})} className="px-14 py-5 bg-zinc-950 text-white rounded-[1.5rem] text-[10px] font-bold uppercase shadow-xl hover:bg-[#3a7d44] transition-all">{t.approve}</button>}
-                      <button onClick={() => deleteItem('orders', o.id)} className="p-5 text-zinc-300 hover:text-red-500 bg-white rounded-3xl border border-zinc-100 shadow-sm transition-all"><Trash2 size={24} /></button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'catalog' && (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-20">
-             <div className="space-y-10">
-                <h3 className="text-[12px] font-bold uppercase text-[#D4AF37] border-b pb-4 tracking-[0.2em]">EDITOR KATALOG</h3>
-                
-                {/* Upload Gambar Dari Galeri */}
-                <div 
-                  onClick={() => !uploading && document.getElementById('productImgInput').click()}
-                  className="relative aspect-[3/4] rounded-[2.5rem] border-2 border-dashed border-zinc-100 bg-zinc-50 flex flex-col items-center justify-center cursor-pointer hover:bg-zinc-100 transition-all overflow-hidden group shadow-inner"
-                >
-                  {previewImage ? (
-                    <img src={previewImage} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt="Preview" />
-                  ) : (
-                    <div className="text-center p-8">
-                       {uploading ? (
-                         <Loader2 className="mx-auto mb-4 text-[#D4AF37] animate-spin" size={48} />
-                       ) : (
-                         <ImageIcon className="mx-auto mb-4 text-zinc-200 group-hover:text-[#D4AF37] transition-colors" size={48} />
-                       )}
-                       <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">
-                         {uploading ? "MEMPROSES..." : "MUAT NAIK GAMBAR DARI GALERI"}
-                       </p>
-                    </div>
-                  )}
-                  <input type="file" id="productImgInput" className="hidden" accept="image/*" onChange={handleImageUpload} />
-                  {previewImage && !uploading && (
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                       <Zap className="text-white animate-pulse" size={32} />
-                    </div>
-                  )}
-                </div>
-
-                <form onSubmit={saveProduct} className="space-y-8">
-                  <input 
-                    placeholder="Nama Produk" 
-                    className="w-full bg-zinc-50 p-6 rounded-2xl outline-none text-sm font-bold uppercase tracking-widest shadow-inner border-none focus:ring-1 focus:ring-black" 
-                    value={formData.name}
-                    onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    required 
-                  />
-                  <div className="grid grid-cols-2 gap-4">
-                     <input 
-                      type="number" 
-                      placeholder="Harga (IDR)" 
-                      className="w-full bg-zinc-50 p-6 rounded-2xl outline-none font-bold text-sm shadow-inner border-none focus:ring-1 focus:ring-black" 
-                      value={formData.price}
-                      onChange={e => setFormData(prev => ({ ...prev, price: e.target.value }))}
-                      required 
-                    />
-                     <select 
-                      className="w-full bg-zinc-50 p-6 rounded-2xl outline-none font-bold text-xs uppercase shadow-inner border-none focus:ring-1 focus:ring-black"
-                      value={formData.category}
-                      onChange={e => setFormData(prev => ({ ...prev, category: e.target.value, sizes: [] }))}
-                    >
-                       {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                     </select>
-                  </div>
-
-                  <div className="space-y-3">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 ml-4">Saiz Tersedia</p>
-                    <div className="flex flex-wrap gap-2">
-                       {SIZE_OPTIONS[formData.category]?.map(s => (
-                         <button 
-                          key={s} 
-                          type="button" 
-                          onClick={() => setFormData(prev => ({ ...prev, sizes: prev.sizes.includes(s) ? prev.sizes.filter(x => x !== s) : [...prev.sizes, s] }))}
-                          className={`px-6 py-2 rounded-xl text-[9px] font-bold border-2 transition-all ${formData.sizes.includes(s) ? 'bg-zinc-950 text-white border-black scale-105' : 'border-zinc-50 text-zinc-300'}`}
-                         >
-                           {s}
-                         </button>
-                       ))}
-                    </div>
-                  </div>
-
-                  <textarea 
-                    placeholder="Detail Material..." 
-                    className="w-full bg-zinc-50 p-6 rounded-2xl outline-none h-24 text-sm font-medium shadow-inner border-none focus:ring-1 focus:ring-black"
-                    value={formData.material}
-                    onChange={e => setFormData(prev => ({ ...prev, material: e.target.value }))}
-                  ></textarea>
-                  <textarea 
-                    placeholder="Deskripsi Produk..." 
-                    className="w-full bg-zinc-50 p-6 rounded-2xl outline-none h-32 text-sm font-medium shadow-inner border-none focus:ring-1 focus:ring-black"
-                    value={formData.desc}
-                    onChange={e => setFormData(prev => ({ ...prev, desc: e.target.value }))}
-                  ></textarea>
-                  
-                  <button 
-                    type="submit" 
-                    disabled={uploading}
-                    className="w-full bg-zinc-950 text-white py-6 rounded-3xl text-[11px] font-bold uppercase tracking-widest shadow-2xl hover:bg-[#3a7d44] transition-all disabled:opacity-50"
-                  >
-                    {isEditing ? 'KEMASKINI PRODUK' : 'TERBITKAN PRODUK'}
-                  </button>
-                  {isEditing && (
-                    <button type="button" onClick={resetForm} className="w-full text-zinc-400 text-[10px] font-bold uppercase tracking-widest hover:text-black">Batal Edit</button>
-                  )}
-                </form>
-             </div>
-
-             <div className="space-y-6 max-h-[1200px] overflow-y-auto pr-4 no-scrollbar xl:border-l xl:border-zinc-50 xl:pl-16">
-                <h3 className="text-[12px] font-bold uppercase text-zinc-300 tracking-[0.2em] mb-8">Senarai Stok</h3>
-                {products.map(p => (
-                  <div key={p.id} className="p-8 border border-zinc-100 rounded-[3rem] flex items-center justify-between bg-white shadow-sm hover:shadow-2xl transition-all group">
-                     <div className="flex items-center gap-10">
-                        <img src={p.imageUrl} className="w-20 h-20 rounded-[1.5rem] object-cover shadow-xl border border-zinc-50 group-hover:scale-110 transition-transform" />
-                        <div>
-                          <h4 className="text-sm font-bold uppercase text-zinc-900">{p.name}</h4>
-                          <p className="text-[11px] font-serif text-[#D4AF37] mt-1 font-bold">{formatIDR(p.price)}</p>
-                        </div>
-                     </div>
-                     <div className="flex gap-3">
-                        <button onClick={() => { setIsEditing(p.id); window.scrollTo({top: 0, behavior: 'smooth'}); }} className="p-5 text-zinc-300 hover:text-black bg-zinc-50 rounded-[1.5rem] transition-all"><Edit2 size={24} /></button>
-                        <button onClick={() => deleteItem('products', p.id)} className="p-5 text-zinc-300 hover:text-red-500 bg-zinc-50 rounded-[1.5rem] transition-all"><Trash2 size={24} /></button>
-                     </div>
-                  </div>
-                ))}
-             </div>
-          </div>
-        )}
-
-        {activeTab === 'bank' && (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-20">
-             <form onSubmit={async (e) => {
-               e.preventDefault();
-               await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'rekening'), {
-                 bankName: e.target.bank.value, accountNumber: e.target.acc.value, accountHolder: e.target.name.value
-               }); e.target.reset();
-             }} className="space-y-12 bg-zinc-50/50 p-16 rounded-[4rem] shadow-inner">
-                <h3 className="text-[11px] font-bold uppercase text-zinc-400 tracking-widest border-b pb-4">ADD PAYMENT ACCOUNT</h3>
-                <select name="bank" className="w-full bg-white p-7 rounded-[2rem] outline-none font-bold text-[12px] shadow-sm uppercase tracking-widest">
-                  {Object.keys(PAYMENT_LOGOS).map(b => <option key={b} value={b}>{b}</option>)}
-                </select>
-                <input name="acc" placeholder="Account Number" className="w-full bg-white p-7 rounded-[2rem] outline-none text-sm font-bold shadow-sm tracking-[0.2em]" required />
-                <input name="name" placeholder="Account Holder Name" className="w-full bg-white p-7 rounded-[2rem] outline-none text-sm font-bold uppercase shadow-sm tracking-widest" required />
-                <button type="submit" className="w-full bg-zinc-950 text-white py-7 rounded-[3rem] text-[12px] font-bold uppercase tracking-widest shadow-3xl uppercase font-bold">ACTIVATE ACCOUNT</button>
-             </form>
-             <div className="space-y-6">
-                {rekening.map(rek => (
-                  <div key={rek.id} className="p-10 border border-zinc-100 rounded-[3.5rem] flex justify-between items-center bg-white shadow-sm hover:shadow-2xl transition-all duration-700 group">
-                     <div className="flex items-center gap-12"><div className="w-24 grayscale group-hover:grayscale-0 transition-all duration-1000"><img src={PAYMENT_LOGOS[rek.bankName]} className="max-h-full" /></div><div><p className="text-2xl font-mono font-bold tracking-tighter">{rek.accountNumber}</p><p className="text-[10px] uppercase font-bold text-zinc-400 mt-2 uppercase tracking-widest font-bold">A.N {rek.accountHolder}</p></div></div>
-                     <button onClick={() => deleteItem('rekening', rek.id)} className="p-5 text-zinc-200 hover:text-red-500 rounded-2xl border-2 border-zinc-50 shadow-sm transition-all"><Trash2 size={24} /></button>
-                  </div>
-                ))}
-             </div>
-          </div>
-        )}
-
-        {activeTab === 'admins' && (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-20">
-             <div className="space-y-12 bg-zinc-950 p-16 rounded-[4.5rem] text-white shadow-3xl border border-white/5 relative overflow-hidden group">
-               <div className="absolute -top-10 -right-10 w-64 h-64 bg-[#D4AF37]/10 rounded-full blur-[100px]"></div>
-               <h3 className="text-3xl font-serif font-bold italic text-[#D4AF37] uppercase tracking-widest relative z-10 uppercase">Admin Control</h3>
-               <form onSubmit={async (e) => {
-                 e.preventDefault();
-                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'admins'), {
-                   username: e.target.user.value.trim().toLowerCase(), password: e.target.pass.value.trim()
-                 }); e.target.reset(); alert("Admin Authorized!");
-               }} className="space-y-10 relative z-10">
-                 <input name="user" placeholder="Username" className="w-full bg-white/5 border border-white/10 p-7 rounded-[2.5rem] outline-none text-sm font-bold uppercase tracking-widest uppercase shadow-inner" required />
-                 <input name="pass" type="password" placeholder="Password" className="w-full bg-white/5 border border-white/10 p-7 rounded-[2.5rem] outline-none text-sm font-bold tracking-widest shadow-inner" required />
-                 <button type="submit" className="w-full bg-[#D4AF37] text-black py-7 rounded-[3rem] text-[12px] font-bold uppercase tracking-widest hover:bg-white transition-all shadow-xl uppercase font-bold">GRANT ACCESS</button>
-               </form>
-             </div>
-             <div className="space-y-6">
-                {adminUsers.map(adm => (
-                  <div key={adm.id} className="p-12 border border-zinc-100 rounded-[3.5rem] flex justify-between items-center bg-white shadow-sm hover:shadow-xl transition-all duration-700">
-                     <div className="flex items-center gap-10"><div className="w-20 h-20 bg-zinc-50 rounded-[2.5rem] flex items-center justify-center text-[#D4AF37] border border-zinc-100 shadow-inner"><User size={40} /></div><div><p className="text-2xl font-bold uppercase tracking-tighter text-zinc-900">{adm.username}</p><p className="text-[11px] text-zinc-300 font-mono mt-2 uppercase tracking-widest font-bold">SECURED IDENTITY</p></div></div>
-                     <button onClick={() => deleteItem('admins', adm.id)} className="p-6 text-zinc-200 hover:text-red-500 rounded-3xl border-2 border-zinc-50 shadow-sm transition-all"><Trash2 size={24} /></button>
-                  </div>
-                ))}
-             </div>
-          </div>
-        )}
-      </div>
-
-      {showOrderProof && (
-        <div className="fixed inset-0 z-[400] bg-black/98 flex items-center justify-center p-12 animate-in fade-in" onClick={() => setShowOrderProof(null)}>
-           <img src={showOrderProof} className="max-w-full max-h-full object-contain rounded-[4rem] shadow-[0_0_150px_rgba(212,175,55,0.4)] border-4 border-white/5" />
-           <button className="absolute top-12 right-12 text-white bg-white/10 p-7 rounded-full hover:bg-red-500 transition-all shadow-3xl"><X size={48} /></button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function PaymentConfirmationModal({ product, rekening, appId, t, onClose }) {
-  const [step, setStep] = useState(1);
-  const [uploading, setUploading] = useState(false);
-  const [formData, setFormData] = useState({ buyerName: '', invoice: `DEV-INV-${Math.floor(100000 + Math.random() * 900000)}`, time: new Date().toLocaleString(), targetRek: null, proofUrl: '', amount: product.price });
-
-  const handleProof = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setUploading(true);
-    try {
-      const compressed = await compressImage(file); 
-      const storageRef = ref(storage, `artifacts/${appId}/public/data/proofs/${Date.now()}_proof`);
-      await uploadBytes(storageRef, compressed);
-      const url = await getDownloadURL(storageRef);
-      setFormData({...formData, proofUrl: url});
-    } catch { alert("Gagal mengunggah gambar."); } finally { setUploading(false); }
-  };
-
-  const submit = async () => {
-    if (!formData.proofUrl) return alert("Mohon unggah bukti pembayaran!");
-    if (!formData.buyerName) return alert("Mohon masukkan nama pembeli!");
-    try {
-      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), { 
-        ...formData, productName: product.name, status: 'pending', createdAt: serverTimestamp() 
-      });
-      setStep(3);
-    } catch { alert("System Error."); }
-  };
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/98 backdrop-blur-3xl animate-in fade-in overflow-y-auto no-scrollbar">
-      <div className="bg-white w-full max-w-3xl rounded-[3rem] p-10 md:p-16 relative shadow-[0_0_150px_rgba(0,0,0,0.5)] my-auto border border-zinc-100 overflow-hidden">
-        <button onClick={onClose} className="absolute top-10 right-10 text-zinc-300 hover:text-black transition-all p-2"><X size={32} /></button>
-        {step === 1 && (
-          <div className="animate-in zoom-in duration-500 text-center">
-            <h3 className="text-4xl font-serif font-bold mb-6 text-[#3a7d44] italic uppercase tracking-tighter uppercase">{t.securedPayment}</h3>
-            <p className="text-[11px] uppercase tracking-[0.5em] text-zinc-400 mb-14 border-b border-zinc-50 pb-8 font-bold uppercase">{t.selectRek}</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {rekening.map(rek => (
-                <div key={rek.id} onClick={() => { setFormData({...formData, targetRek: rek}); setStep(2); }} className="p-10 border-2 border-zinc-50 rounded-[3rem] hover:border-[#3a7d44] hover:bg-[#3a7d44]/5 cursor-pointer transition-all flex flex-col items-center bg-zinc-50/10 shadow-sm active:scale-95 duration-500">
-                  <div className="h-10 mb-10 grayscale group-hover:grayscale-0 transition-all"><img src={PAYMENT_LOGOS[rek.bankName]} className="max-h-full" alt="" /></div>
-                  <p className="text-2xl font-mono font-bold text-zinc-900 tracking-widest">{rek.accountNumber}</p>
-                  <p className="text-[10px] uppercase font-bold text-zinc-400 mt-4 tracking-widest font-bold uppercase font-mono">a.n {rek.accountHolder.toUpperCase()}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-        {step === 2 && (
-          <div className="space-y-12 animate-in slide-in-from-right duration-500">
-            <h3 className="text-3xl font-serif font-bold italic uppercase border-b border-zinc-50 pb-8 tracking-tighter uppercase">Transaction Point</h3>
-            <div className="bg-zinc-950 p-12 rounded-[3rem] text-white shadow-2xl border border-[#D4AF37]/20 relative overflow-hidden">
-               <div className="absolute top-0 right-0 p-10 opacity-5 scale-[2.5] rotate-12"><Banknote size={150} /></div>
-               <div className="space-y-8 relative">
-                  <div className="flex justify-between items-center"><span className="text-[10px] font-bold text-[#D4AF37] tracking-[0.6em] uppercase">OFFICIAL INVOICE</span><span className="text-sm font-mono font-bold tracking-widest">{formData.invoice}</span></div>
-                  <div className="flex justify-between items-center border-t border-white/5 pt-8"><span className="text-[10px] font-bold text-[#D4AF37] tracking-[0.6em] uppercase">GRAND TOTAL</span><span className="text-4xl font-bold text-white tracking-tighter">{formatIDR(formData.amount)}</span></div>
-               </div>
-            </div>
-            <div className="space-y-8">
-              <input type="text" placeholder="Masukkan Nama Lengkap Pembeli" value={formData.buyerName} onChange={e => setFormData({...formData, buyerName: e.target.value})} className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none text-sm font-bold uppercase tracking-widest shadow-inner border-none focus:ring-1 focus:ring-black" required />
-              <div onClick={() => !uploading && document.getElementById('uPf').click()} className="border-2 border-dashed border-zinc-200 h-80 flex flex-col items-center justify-center rounded-[3rem] cursor-pointer hover:bg-zinc-50 relative overflow-hidden group shadow-inner transition-all duration-500">
-                {formData.proofUrl ? <img src={formData.proofUrl} className="w-full h-full object-cover" /> : (
-                  <div className="text-center px-6">
-                    <Zap className={`mx-auto mb-6 ${uploading ? 'animate-bounce text-[#D4AF37]' : 'text-zinc-200'}`} size={64} />
-                    <p className="text-[13px] uppercase font-bold text-zinc-400 tracking-[0.5em]">{uploading ? 'MEMPROSES HD...' : 'UPLOAD BUKTI TRANSFER (HD)'}</p>
-                  </div>
-                )}
-                <input type="file" id="uPf" className="hidden" accept="image/*" onChange={handleProof} />
-              </div>
-            </div>
-            <button onClick={submit} disabled={!formData.proofUrl || uploading} className="w-full bg-[#3a7d44] text-white py-8 rounded-[3.5rem] text-[13px] font-bold uppercase tracking-widest shadow-3xl hover:bg-black active:scale-95 transition-all duration-500 uppercase font-bold">Kirim Konfirmasi Sekarang</button>
-          </div>
-        )}
-        {step === 3 && (
-          <div className="text-center py-24 animate-in zoom-in duration-700">
-            <CheckCircle size={120} className="mx-auto text-green-500 mb-16 shadow-2xl rounded-full" />
-            <h3 className="text-5xl font-serif font-bold italic mb-8 uppercase tracking-tight">Payment Secured</h3>
-            <p className="text-zinc-400 text-[12px] uppercase font-bold tracking-widest mb-16 leading-relaxed">Pihak Devi Official akan segera memverifikasi transaksi Anda. Terima kasih.</p>
-            <button onClick={onClose} className="bg-black text-white px-32 py-6 rounded-full text-[12px] font-bold uppercase tracking-widest shadow-3xl hover:bg-[#D4AF37] transition-all duration-700 font-bold">Selesai</button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// --- ADMIN LOGIN MODAL (HP FIXED) ---
-function AdminLoginModal({ adminUsers, onSuccess, onClose, t }) {
+function AdminLogin({ creds, onLoginSuccess, onBack }) {
   const [u, setU] = useState('');
   const [p, setP] = useState('');
-  
-  const handle = (e) => { 
-    e.preventDefault(); 
-    const userLower = u.trim().toLowerCase();
-    const passTrim = p.trim();
-    const isMaster = (userLower === 'admin' && (passTrim === 'admin123' || passTrim === '123456'));
-    const isDynamic = adminUsers.some(a => a.username.trim().toLowerCase() === userLower && a.password.trim() === passTrim);
-    
-    if(isMaster || isDynamic) onSuccess(); 
-    else alert('Identitas tidak dikenali! Periksa huruf besar/kecil (admin123 / 123456)'); 
+  const handle = (e) => {
+    e.preventDefault();
+    if (u === creds.username && p === creds.password) onLoginSuccess();
+    else alert("Identitas Tidak Dikenali!");
   };
-
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/95 backdrop-blur-3xl animate-in zoom-in">
-      <div className="bg-white w-full max-w-md rounded-[4.5rem] p-12 md:p-20 relative shadow-3xl overflow-y-auto max-h-[90vh] border border-zinc-100">
-        <button onClick={onClose} className="absolute top-10 right-10 text-zinc-300 hover:text-black transition-all p-2"><X size={36} /></button>
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/98 backdrop-blur-3xl animate-in zoom-in duration-500">
+      <div className="bg-white w-full max-w-sm rounded-[4rem] p-16 relative shadow-3xl overflow-hidden border border-[#D4AF37]/30">
+        <button onClick={onBack} className="absolute top-12 right-12 text-zinc-300 hover:text-black transition-all"><X size={24} /></button>
         <div className="text-center mb-16">
-           <div className="w-24 h-24 bg-zinc-50 rounded-[2.5rem] flex items-center justify-center mx-auto mb-10 border border-zinc-100 shadow-xl"><Lock size={40} className="text-[#D4AF37]" /></div>
-           <h3 className="text-3xl md:text-4xl font-serif font-bold italic tracking-tighter uppercase text-zinc-900 leading-none">Security Gate</h3>
+          <div className="w-20 h-20 bg-zinc-50 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-inner border border-[#D4AF37]/10"><Lock size={32} className="text-[#D4AF37]" /></div>
+          <h3 className="text-2xl font-serif font-bold uppercase tracking-tight text-black">Security Portal</h3>
+          <p className="text-[9px] text-zinc-400 mt-2 uppercase font-bold tracking-widest">Admin Access Restricted</p>
         </div>
-        <form onSubmit={handle} className="space-y-8">
-          <div className="space-y-3">
-            <label className="text-[10px] uppercase font-bold tracking-widest text-zinc-400 ml-4">Authorized Identity</label>
-            <input 
-              type="text" 
-              placeholder="Username" 
-              value={u} 
-              onChange={e => setU(e.target.value)} 
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck="false"
-              className="w-full bg-zinc-50 border-none px-10 py-6 rounded-[2.5rem] outline-none text-xs font-bold uppercase tracking-widest shadow-inner focus:ring-1 focus:ring-black" 
-              required 
-            />
-          </div>
-          <div className="space-y-3">
-            <label className="text-[10px] uppercase font-bold tracking-widest text-zinc-400 ml-4">Encrypted Key</label>
-            <input 
-              type="password" 
-              placeholder="Password" 
-              value={p} 
-              onChange={e => setP(e.target.value)} 
-              autoCapitalize="none"
-              autoCorrect="off"
-              className="w-full bg-zinc-50 border-none px-10 py-6 rounded-[2.5rem] outline-none text-xs font-bold shadow-inner focus:ring-1 focus:ring-black" 
-              required 
-            />
-          </div>
-          <button type="submit" className="w-full bg-zinc-950 text-white py-6 mt-6 rounded-[3rem] text-[11px] font-bold uppercase tracking-[0.6em] hover:bg-[#3a7d44] shadow-3xl active:scale-95 transition-all font-bold">AUTHORIZE ACCESS</button>
+        <form onSubmit={handle} className="space-y-6">
+          <input placeholder="Username" value={u} onChange={(e) => setU(e.target.value)} className="w-full bg-zinc-50 p-8 rounded-[2rem] outline-none font-bold uppercase tracking-widest text-[10px] shadow-inner border-none focus:ring-1 focus:ring-black" />
+          <input type="password" placeholder="Pass-Key" value={p} onChange={(e) => setP(e.target.value)} className="w-full bg-zinc-50 p-8 rounded-[2rem] outline-none font-bold shadow-inner border-none focus:ring-1 focus:ring-black" />
+          <button type="submit" className="w-full bg-zinc-950 text-[#D4AF37] py-8 rounded-[2.5rem] font-bold uppercase text-[10px] tracking-[0.4em] shadow-2xl hover:bg-black transition-all active:scale-95">Authorize Access</button>
         </form>
       </div>
     </div>
