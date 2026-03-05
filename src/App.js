@@ -181,7 +181,7 @@ export default function App() {
       try {
         await signInAnonymously(auth);
       } catch (err) { 
-        console.error("Auth Fail");
+        console.error("Auth Fail", err);
       } finally {
         setLoading(false);
       }
@@ -208,7 +208,8 @@ export default function App() {
     
     const unsubA = onSnapshot(aRef, (s) => {
       if (!s.empty) {
-        setAdminCreds(s.docs[0].data());
+        const found = s.docs.find(d => d.id === 'main');
+        if (found) setAdminCreds(found.data());
       } else {
         const defaultCreds = { username: 'admin', password: 'admin123' };
         setAdminCreds(defaultCreds);
@@ -453,16 +454,20 @@ function CheckoutView({ product, rekening, onComplete, onBack }) {
       const uploadResult = await uploadBytes(storageRef, file);
       const url = await getDownloadURL(uploadResult.ref);
       setFormData(prev => ({ ...prev, proofImage: url }));
-    } catch { alert("Gagal upload."); }
+    } catch (err) { alert("Gagal upload bukti: " + err.message); }
     finally { setUploading(false); }
   };
 
   const handleSubmit = async () => {
     if (!formData.buyerName || !formData.proofImage) return alert("Lengkapi data dan bukti transfer!");
     try {
-      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), { ...formData, createdAt: serverTimestamp(), productName: product.name });
+      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), { 
+        ...formData, 
+        createdAt: serverTimestamp(), 
+        productName: product?.name || 'Unknown' 
+      });
       setStep(3);
-    } catch (e) { console.error(e); alert("Gagal mengirim."); }
+    } catch (e) { alert("Gagal mengirim pesanan: " + e.message); }
   };
 
   return (
@@ -533,7 +538,10 @@ function AdminDashboard({ products, orders, rekening, adminCreds, appId, onLogou
   const [instaUrl, setInstaUrl] = useState('');
   const [formData, setFormData] = useState({ imageURL: '', name: '', price: '', category: 'Baju', description: '', sizes: [] });
   const [rekData, setRekData] = useState({ bankName: 'BCA', accountNumber: '', accountHolder: '' });
-  const [newAdmin, setNewAdmin] = useState({ username: adminCreds?.username || 'admin', password: adminCreds?.password || 'admin123' });
+  const [newAdmin, setNewAdmin] = useState({ 
+    username: adminCreds?.username || 'admin', 
+    password: adminCreds?.password || 'admin123' 
+  });
 
   const fetchInstaImage = () => {
     if (!instaUrl.includes('instagram.com')) return alert("Link tidak valid!");
@@ -544,14 +552,33 @@ function AdminDashboard({ products, orders, rekening, adminCreds, appId, onLogou
   };
 
   const addProduct = async () => {
-    if (!formData.name || !formData.price || !formData.imageURL) return alert("Lengkapi data!");
+    // Validasi dasar
+    if (!formData.name || !formData.price || !formData.imageURL) {
+      return alert("Lengkapi data (Nama, Harga, dan Gambar wajib diisi)!");
+    }
+    
     setSaving(true);
     try {
-      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), { ...formData, price: Number(formData.price), createdAt: serverTimestamp() });
+      // Pastikan price adalah angka valid
+      const numericPrice = Number(formData.price);
+      if (isNaN(numericPrice)) throw new Error("Harga harus berupa angka!");
+
+      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), { 
+        ...formData, 
+        price: numericPrice, 
+        createdAt: serverTimestamp() 
+      });
+      
       setFormData({ imageURL: '', name: '', price: '', category: 'Baju', description: '', sizes: [] });
       setInstaUrl('');
       alert("Produk Berhasil Ditambahkan!");
-    } catch { alert("Gagal!"); } finally { setSaving(false); }
+    } catch (err) { 
+      // Memberikan pesan error yang lebih jelas di mobile
+      alert("Gagal menambahkan produk: " + err.message); 
+      console.error("Publish error:", err);
+    } finally { 
+      setSaving(false); 
+    }
   };
 
   const updateAdminIdentity = async () => {
@@ -559,7 +586,7 @@ function AdminDashboard({ products, orders, rekening, adminCreds, appId, onLogou
     try {
       await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'admin_settings', 'main'), newAdmin);
       alert("Identitas Admin Berhasil Diperbarui!");
-    } catch { alert("Gagal memperbarui admin."); }
+    } catch (err) { alert("Gagal memperbarui admin: " + err.message); }
   };
 
   return (
@@ -610,7 +637,9 @@ function AdminDashboard({ products, orders, rekening, adminCreds, appId, onLogou
                       </div>
                    </div>
                    <textarea placeholder="Materials & Quality Signature..." className="w-full bg-zinc-50 p-7 rounded-[2rem] h-40 outline-none shadow-inner text-sm border-none text-black resize-none" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})}></textarea>
-                   <button onClick={addProduct} disabled={saving} className="w-full bg-black text-[#D4AF37] py-8 rounded-[2.5rem] font-bold uppercase tracking-[0.4em] text-[11px] shadow-3xl transition-all disabled:opacity-50 border-none cursor-pointer">Publish Product</button>
+                   <button onClick={addProduct} disabled={saving} className="w-full bg-black text-[#D4AF37] py-8 rounded-[2.5rem] font-bold uppercase tracking-[0.4em] text-[11px] shadow-3xl transition-all disabled:opacity-50 border-none cursor-pointer">
+                      {saving ? "Publishing..." : "Publish Product"}
+                   </button>
                 </div>
              </div>
              <div className="space-y-6 max-h-[1000px] overflow-y-auto pr-4 no-scrollbar border-l border-zinc-50 pl-10">
@@ -757,8 +786,14 @@ function AdminLogin({ creds, onLoginSuccess, onBack }) {
     // Normalisasi input agar login dari HP lancar (auto-capitalization dimatikan)
     const inputUser = u.trim().toLowerCase();
     const inputPass = p.trim();
-    const validUser = (creds?.username || 'admin').trim().toLowerCase();
-    const validPass = (creds?.password || 'admin123').trim();
+
+    // Proteksi jika creds belum dimuat dari database
+    if (!creds) {
+      return alert("Sedang memverifikasi data keamanan, coba sesaat lagi.");
+    }
+
+    const validUser = (creds.username || 'admin').trim().toLowerCase();
+    const validPass = (creds.password || 'admin123').trim();
 
     if (inputUser === validUser && inputPass === validPass) {
       onLoginSuccess();
