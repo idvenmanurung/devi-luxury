@@ -88,13 +88,23 @@ import {
   UserCheck
 } from 'lucide-react';
 
-// --- CONFIGURATION FIREBASE ---
-const firebaseConfig = JSON.parse(__firebase_config);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'devi-official-premium-v6';
+// --- CONFIGURATION FIREBASE (FIXED: Hardcoded for Hosting stability) ---
+const firebaseConfig = {
+  apiKey: "AIzaSyA8ncdjMeCTu7JEbcP-4JCVEX_-cfq8xh8",
+  authDomain: "tabungan-a85ae.firebaseapp.com",
+  projectId: "tabungan-a85ae",
+  storageBucket: "tabungan-a85ae.firebasestorage.app",
+  messagingSenderId: "502871375543",
+  appId: "1:502871375543:web:5617b49ea6a25782ff5732",
+  measurementId: "G-NV2L9GZM6T"
+};
+
+// Pastikan App ID tetap unik tapi aman untuk production
+const appId = "devi-official-premium-production-v1";
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-// FIX: Menggunakan experimentalForceLongPolling untuk koneksi yang lebih stabil di lingkungan iframe
+// Gunakan Long Polling agar koneksi database tidak timeout di browser/hosting
 const db = initializeFirestore(app, { experimentalForceLongPolling: true });
 const storage = getStorage(app);
 
@@ -109,7 +119,7 @@ const callGemini = async (prompt, systemInstruction = "") => {
     };
     const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     const result = await response.json();
-    return result.candidates?.[0]?.content?.parts?.[0]?.text || "AI sedang offline.";
+    return result.candidates?.[0]?.content?.parts?.[0]?.text || "AI sedang tidak merespon.";
   } catch (err) { return "Gagal menghubungi AI."; }
 };
 
@@ -131,6 +141,26 @@ const BANK_LOGOS = {
   "GoPay": "https://upload.wikimedia.org/wikipedia/commons/8/86/Gopay_logo.svg"
 };
 
+const TRANSLATIONS = {
+  ID: {
+    shop: "Toko",
+    signIn: "Masuk",
+    search: "Cari Produk...",
+    heroTitle: "Keanggunan Abadi",
+    heroSub: "Koleksi Eksklusif 2024",
+    heroBtn: "Belanja Sekarang",
+    all: "Semua",
+    back: "Kembali",
+    buyNow: "Beli Sekarang",
+    cart: "Keranjang",
+    material: "Material",
+    specs: "Spesifikasi",
+    memberLogin: "Login Member",
+    joinLegacy: "Daftar",
+    adminCenter: "DASHBOARD ADMIN"
+  }
+};
+
 // --- MAIN APP ---
 export default function App() {
   const [view, setView] = useState('shop'); 
@@ -146,17 +176,15 @@ export default function App() {
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [loading, setLoading] = useState(true);
 
-  // RULE 3: Auth First - Memastikan proses sign-in selesai sebelum memulai query Firestore
+  const t = TRANSLATIONS.ID;
+
+  // Inisialisasi Auth yang aman untuk production
   useEffect(() => {
     const initAuth = async () => {
       try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
+        await signInAnonymously(auth);
       } catch (err) { 
-        console.error("Auth System Fail:", err);
+        console.error("Auth Fail");
       } finally {
         setLoading(false);
       }
@@ -166,9 +194,8 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // Sync Data Real-time & Admin Settings
+  // Sinkronisasi Data Real-time dari Firestore
   useEffect(() => {
-    // Guard: Jangan lakukan query apapun sebelum user terotentikasi
     if (!user) return;
 
     const pRef = collection(db, 'artifacts', appId, 'public', 'data', 'products');
@@ -176,8 +203,7 @@ export default function App() {
     const oRef = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
     const aRef = collection(db, 'artifacts', appId, 'public', 'data', 'admin_settings');
 
-    // Callback error untuk mencegah console spam dan silent failure
-    const errorFn = (err) => console.warn("Firestore access pending auth or restricted:", err.message);
+    const errorFn = (err) => console.warn("Firestore error:", err.message);
 
     const unsubP = onSnapshot(pRef, (s) => setProducts(s.docs.map(d => ({ id: d.id, ...d.data() }))), errorFn);
     const unsubR = onSnapshot(rRef, (s) => setRekening(s.docs.map(d => ({ id: d.id, ...d.data() }))), errorFn);
@@ -187,8 +213,6 @@ export default function App() {
       if (!s.empty) {
         setAdminCreds(s.docs[0].data());
       } else {
-        // Hanya inisialisasi jika benar-benar kosong, gunakan Doc ID spesifik
-        // Note: Operasi write ini mungkin gagal jika aturan keamanan belum memperbolehkan anonim menulis
         setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'admin_settings', 'main'), { 
           username: 'admin', 
           password: 'admin123' 
@@ -270,11 +294,11 @@ export default function App() {
             <ProductGrid products={filteredProducts} onView={(p) => { setSelectedProduct(p); setView('detail'); window.scrollTo(0,0); }} />
           </>
         )}
-        {view === 'detail' && selectedProduct && <ProductDetailView product={selectedProduct} onBack={() => setView('shop')} onBuy={() => setView('checkout')} onAddCart={() => { setCart([...cart, selectedProduct]); }} />}
+        {view === 'detail' && selectedProduct && <ProductDetailView product={selectedProduct} onBack={() => setView('shop')} onBuy={() => setView('checkout')} onAddCart={() => { setCart([...cart, selectedProduct]); }} t={t} />}
         {view === 'checkout' && <CheckoutView product={selectedProduct} rekening={rekening} onComplete={() => setView('shop')} onBack={() => setView('shop')} />}
         {view === 'cart' && <CartView items={cart} onRemove={(idx) => { const c = [...cart]; c.splice(idx,1); setCart(c); }} onCheckout={() => setView('checkout')} />}
         {view === 'login' && <AdminLogin creds={adminCreds} onLoginSuccess={() => { setIsAdminLoggedIn(true); setView('admin'); }} onBack={() => setView('shop')} />}
-        {view === 'admin' && isAdminLoggedIn && <AdminDashboard products={products} orders={orders} rekening={rekening} adminCreds={adminCreds} appId={appId} onLogout={() => { setIsAdminLoggedIn(false); setView('shop'); }} />}
+        {view === 'admin' && isAdminLoggedIn && <AdminDashboard products={products} orders={orders} rekening={rekening} adminCreds={adminCreds} appId={appId} onLogout={() => { setIsAdminLoggedIn(false); setView('shop'); }} t={t} />}
       </main>
 
       <footer className="bg-[#050505] text-white pt-24 pb-12 px-6 mt-40 border-t-2 border-[#D4AF37]">
@@ -293,15 +317,15 @@ export default function App() {
           <div>
             <h4 className="text-[10px] font-bold uppercase tracking-[0.4em] mb-10 text-zinc-300">Payment Methods</h4>
             <div className="grid grid-cols-3 gap-6 opacity-30">
-               {Object.values(BANK_LOGOS).slice(0, 6).map((l, i) => <img key={i} src={l} className="h-6 object-contain grayscale hover:grayscale-0 transition-all" alt="" />)}
+               {Object.values(BANK_LOGOS).slice(0, 6).map((l, i) => <img key={i} src={l} className="h-6 object-contain grayscale" alt="" />)}
             </div>
           </div>
           <div>
             <h4 className="text-[10px] font-bold uppercase tracking-[0.4em] mb-10 text-zinc-300">Hubungi Kami</h4>
             <div className="space-y-6 text-sm text-zinc-500 font-medium tracking-tight">
-               <div className="flex items-center gap-4 hover:text-white transition-colors cursor-pointer"><Phone size={14} /> +62 812-9988-7766</div>
-               <div className="flex items-center gap-4 hover:text-white transition-colors cursor-pointer"><Mail size={14} /> boutique@deviofficial.id</div>
-               <div className="flex items-start gap-4 hover:text-white transition-colors cursor-pointer"><MapPin size={14} className="mt-1" /> HQ: Jakarta Tower, ID</div>
+               <div className="flex items-center gap-4"><Phone size={14} /> +62 812-9988-7766</div>
+               <div className="flex items-center gap-4"><Mail size={14} /> boutique@deviofficial.id</div>
+               <div className="flex items-start gap-4"><MapPin size={14} className="mt-1" /> HQ: Jakarta Tower, ID</div>
             </div>
           </div>
         </div>
@@ -360,7 +384,7 @@ function ProductGrid({ products, onView }) {
   );
 }
 
-function ProductDetailView({ product, onBack, onBuy, onAddCart }) {
+function ProductDetailView({ product, onBack, onBuy, onAddCart, t }) {
   const [aiAdvice, setAiAdvice] = useState('');
   const [loadingAi, setLoadingAi] = useState(false);
   const [selectedSize, setSelectedSize] = useState('');
@@ -368,7 +392,7 @@ function ProductDetailView({ product, onBack, onBuy, onAddCart }) {
   const getAiStyleAdvice = async () => {
     setLoadingAi(true);
     try {
-      const res = await callGemini(`Mix & match mewah untuk ${product.name}. Jelaskan kenapa material ${product.category} ini istimewa.`, "AI Stylist Devi Official");
+      const res = await callGemini(`Mix & match mewah untuk ${product.name}.`, "AI Stylist Devi Official");
       setAiAdvice(String(res));
     } catch { setAiAdvice("AI sedang tidak tersedia."); }
     finally { setLoadingAi(false); }
@@ -376,7 +400,7 @@ function ProductDetailView({ product, onBack, onBuy, onAddCart }) {
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-20 animate-in slide-in-from-right duration-700">
-      <button onClick={onBack} className="flex items-center gap-3 text-zinc-400 mb-12 text-[10px] font-bold uppercase tracking-[0.4em] hover:text-black transition-all"><ChevronLeft size={20} /> Back to Catalog</button>
+      <button onClick={onBack} className="flex items-center gap-3 text-zinc-400 mb-12 text-[10px] font-bold uppercase tracking-[0.4em] hover:text-black transition-all"><ChevronLeft size={20} /> {t.back}</button>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-start">
         <div className="sticky top-32 aspect-[4/5.5] bg-zinc-50 rounded-[3rem] overflow-hidden shadow-2xl border border-zinc-100 group">
           <img src={product.imageURL} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[5s]" alt="" referrerPolicy="no-referrer" />
@@ -445,7 +469,7 @@ function CheckoutView({ product, rekening, onComplete, onBack }) {
        <div className="bg-white rounded-[4rem] p-12 md:p-20 shadow-2xl border border-zinc-100 relative">
           <button onClick={onBack} className="absolute top-12 right-12 p-3 hover:bg-zinc-50 rounded-full transition-all text-zinc-300 hover:text-black"><X size={24} /></button>
           {step === 1 && (
-             <div className="animate-in fade-in">
+             <div className="animate-in fade-in text-black">
                 <h3 className="text-4xl font-serif font-bold italic tracking-tighter uppercase mb-12 text-center">Payment Options</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
                    {rekening.map(rek => (
@@ -469,14 +493,14 @@ function CheckoutView({ product, rekening, onComplete, onBack }) {
                       <h4 className="text-5xl font-bold text-white tracking-tighter font-serif">{formatIDR(formData.amount)}</h4>
                    </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-black">
                    <div className="space-y-6">
-                      <input placeholder="Nama Lengkap Pembayar" className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none shadow-inner text-sm font-bold uppercase" value={formData.buyerName} onChange={e => setFormData({...formData, buyerName: e.target.value})} />
-                      <input placeholder="Dari Bank Apa?" className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none shadow-inner text-sm font-bold uppercase" value={formData.bankFrom} onChange={e => setFormData({...formData, bankFrom: e.target.value})} />
+                      <input placeholder="Nama Lengkap Pembayar" className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none shadow-inner text-sm font-bold uppercase border-none" value={formData.buyerName} onChange={e => setFormData({...formData, buyerName: e.target.value})} />
+                      <input placeholder="Dari Bank Apa?" className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none shadow-inner text-sm font-bold uppercase border-none" value={formData.bankFrom} onChange={e => setFormData({...formData, bankFrom: e.target.value})} />
                    </div>
                    <div className="space-y-3">
                       <div onClick={() => document.getElementById('uPf').click()} className="aspect-square border-2 border-dashed border-zinc-100 rounded-[3rem] bg-zinc-50 flex flex-col items-center justify-center cursor-pointer overflow-hidden shadow-inner group">
-                         {formData.proofImage ? <img src={formData.proofImage} className="w-full h-full object-cover" alt="" /> : (
+                         {formData.proofImage ? <img src={formData.proofImage} className="w-full h-full object-cover group-hover:scale-105 transition-transform" alt="" /> : (
                            <>
                              {uploading ? <Loader2 className="animate-spin text-[#D4AF37]" size={32} /> : <Upload className="text-zinc-200" size={32} />}
                              <p className="text-[9px] font-bold uppercase text-zinc-300 mt-4 tracking-widest">Unggah Bukti</p>
@@ -492,8 +516,8 @@ function CheckoutView({ product, rekening, onComplete, onBack }) {
           {step === 3 && (
             <div className="text-center py-20 animate-in zoom-in duration-1000">
                <div className="w-32 h-32 bg-green-500 text-white rounded-full flex items-center justify-center mx-auto mb-10 shadow-2xl border-[8px] border-white"><CheckCircle size={64} /></div>
-               <h3 className="text-5xl font-serif font-bold italic tracking-tighter uppercase mb-6">Submitted</h3>
-               <p className="text-sm text-zinc-400 mb-16 leading-relaxed max-w-sm mx-auto uppercase tracking-widest font-medium">Boutique Expert kami akan memverifikasi transaksi Anda dalam kurun waktu 1x24 jam.</p>
+               <h3 className="text-5xl font-serif font-bold italic tracking-tighter uppercase mb-6 text-black">Submitted</h3>
+               <p className="text-sm text-zinc-400 mb-16 leading-relaxed max-w-sm mx-auto uppercase tracking-widest font-medium">Boutique Expert kami akan memverifikasi transaksi Anda segera.</p>
                <button onClick={onComplete} className="bg-black text-[#D4AF37] px-20 py-6 rounded-full text-[11px] font-bold uppercase tracking-[0.6em] shadow-3xl">Selesai</button>
             </div>
           )}
@@ -502,7 +526,7 @@ function CheckoutView({ product, rekening, onComplete, onBack }) {
   );
 }
 
-function AdminDashboard({ products, orders, rekening, adminCreds, appId, onLogout }) {
+function AdminDashboard({ products, orders, rekening, adminCreds, appId, onLogout, t }) {
   const [activeTab, setActiveTab] = useState('orders');
   const [saving, setSaving] = useState(false);
   const [instaUrl, setInstaUrl] = useState('');
@@ -543,7 +567,7 @@ function AdminDashboard({ products, orders, rekening, adminCreds, appId, onLogou
         <div className="bg-zinc-950 p-10 rounded-[3rem] text-white shadow-2xl relative border border-white/5 overflow-hidden">
            <h2 className="text-xl font-serif font-bold italic text-[#D4AF37] uppercase tracking-widest">Dashboard</h2>
         </div>
-        <div className="bg-white border border-zinc-100 rounded-[2.5rem] p-6 space-y-2 shadow-sm">
+        <div className="bg-white border border-zinc-100 rounded-[2.5rem] p-6 space-y-2 shadow-sm text-black">
           {['orders', 'inventory', 'banking', 'identity'].map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)} className={`w-full text-left px-8 py-5 rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === tab ? 'bg-zinc-950 text-white shadow-lg scale-105' : 'text-zinc-400 hover:bg-zinc-50'}`}>
               {tab === 'identity' ? 'IDENTITAS ADMIN' : tab.toUpperCase()}
@@ -553,16 +577,14 @@ function AdminDashboard({ products, orders, rekening, adminCreds, appId, onLogou
         </div>
       </aside>
 
-      <div className="flex-1 bg-white border border-zinc-100 rounded-[3.5rem] p-10 md:p-16 shadow-sm min-h-[85vh]">
+      <div className="flex-1 bg-white border border-zinc-100 rounded-[3.5rem] p-10 md:p-16 shadow-sm min-h-[85vh] text-black">
         {activeTab === 'inventory' && (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-20">
              <div className="space-y-12">
                 <h3 className="text-xs font-bold uppercase tracking-[0.4em] text-[#D4AF37] border-b pb-4">Instagram Image Collector</h3>
-                
                 <div className="aspect-[3/4] rounded-[3rem] bg-zinc-50 flex items-center justify-center overflow-hidden relative shadow-inner border border-zinc-100">
                    {formData.imageURL ? <img src={formData.imageURL} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" /> : <Instagram size={64} className="opacity-10 text-black" />}
                 </div>
-
                 <div className="space-y-8">
                    <div className="space-y-3">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 ml-4">Instagram Post URL</label>
@@ -571,10 +593,10 @@ function AdminDashboard({ products, orders, rekening, adminCreds, appId, onLogou
                         <button onClick={fetchInstaImage} className="px-8 bg-black text-white rounded-2xl text-[10px] font-bold uppercase transition-all hover:bg-[#3a7d44]">Fetch</button>
                       </div>
                    </div>
-                   <input placeholder="Nama Produk Premium" className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none shadow-inner text-sm font-bold uppercase tracking-widest" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                   <input placeholder="Nama Produk Premium" className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none shadow-inner text-sm font-bold uppercase tracking-widest border-none" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                    <div className="grid grid-cols-2 gap-4">
-                     <input type="number" placeholder="Price (IDR)" className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none shadow-inner font-bold" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} />
-                     <select className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none font-bold text-[10px]" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
+                     <input type="number" placeholder="Price (IDR)" className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none shadow-inner font-bold border-none" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} />
+                     <select className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none font-bold text-[10px] border-none" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
                         {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                      </select>
                    </div>
@@ -590,13 +612,12 @@ function AdminDashboard({ products, orders, rekening, adminCreds, appId, onLogou
                    <button onClick={addProduct} disabled={saving} className="w-full bg-black text-[#D4AF37] py-8 rounded-[2.5rem] font-bold uppercase tracking-[0.4em] text-[11px] shadow-3xl transition-all disabled:opacity-50">Publish Product</button>
                 </div>
              </div>
-
              <div className="space-y-6 max-h-[1000px] overflow-y-auto pr-4 no-scrollbar border-l border-zinc-50 pl-10">
                 <h3 className="text-xs font-bold uppercase tracking-[0.3em] text-zinc-300">Live Inventory ({products.length})</h3>
                 {products.map(p => (
                   <div key={p.id} className="p-8 border border-zinc-100 rounded-[2.5rem] flex items-center justify-between hover:shadow-xl transition-all bg-white shadow-sm group">
                      <div className="flex items-center gap-8"><img src={p.imageURL} className="w-16 h-16 rounded-2xl object-cover shadow-lg" alt="" referrerPolicy="no-referrer" /><div><h4 className="text-sm font-bold uppercase line-clamp-1">{p.name}</h4><p className="text-[10px] font-bold text-[#D4AF37] mt-1 tracking-widest">{formatIDR(p.price)}</p></div></div>
-                     <button onClick={async () => { if(window.confirm("Hapus?")) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', p.id)); }} className="p-4 bg-zinc-50 rounded-2xl text-red-300 hover:text-red-500 shadow-sm transition-all"><Trash2 size={20}/></button>
+                     <button onClick={async () => { if(window.confirm("Hapus?")) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', p.id)); }} className="p-4 bg-zinc-50 rounded-2xl text-red-300 hover:text-red-500 shadow-sm transition-all border-none"><Trash2 size={20}/></button>
                   </div>
                 ))}
              </div>
@@ -608,7 +629,7 @@ function AdminDashboard({ products, orders, rekening, adminCreds, appId, onLogou
              <h3 className="text-4xl font-serif font-bold italic border-b border-zinc-50 pb-8 uppercase text-center text-black">Boutique Orders</h3>
              <div className="grid grid-cols-1 gap-8">
                {orders.map(o => (
-                 <div key={o.id} className="border border-zinc-100 p-10 rounded-[3.5rem] flex flex-col xl:flex-row justify-between gap-12 bg-white shadow-sm relative overflow-hidden">
+                 <div key={o.id} className="border border-zinc-100 p-10 rounded-[3.5rem] flex flex-col xl:flex-row justify-between gap-12 bg-white shadow-sm relative overflow-hidden text-black">
                    <div className={`absolute top-0 right-0 w-2 h-full ${o.status === 'pending' ? 'bg-yellow-500' : 'bg-green-500'}`}></div>
                    <div className="flex gap-10">
                      <div className="relative group cursor-zoom-in" onClick={() => window.open(o.proofImage, '_blank')}>
@@ -638,31 +659,31 @@ function AdminDashboard({ products, orders, rekening, adminCreds, appId, onLogou
 
         {activeTab === 'banking' && (
            <div className="grid grid-cols-1 xl:grid-cols-2 gap-20">
-              <div className="space-y-12">
+              <div className="space-y-12 text-black">
                  <h3 className="text-xs font-bold uppercase tracking-[0.4em] text-[#D4AF37] border-b pb-4">Official Bank Access</h3>
                  <div className="space-y-8">
-                    <select className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none shadow-inner font-bold text-sm uppercase tracking-widest" value={rekData.bankName} onChange={e => setRekData({...rekData, bankName: e.target.value})}>
+                    <select className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none shadow-inner font-bold text-sm uppercase tracking-widest border-none" value={rekData.bankName} onChange={e => setRekData({...rekData, bankName: e.target.value})}>
                        {Object.keys(BANK_LOGOS).map(b => <option key={b} value={b}>{b}</option>)}
                     </select>
-                    <input placeholder="Account Number" className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none shadow-inner text-sm font-bold tracking-widest" value={rekData.accountNumber} onChange={e => setRekData({...rekData, accountNumber: e.target.value})} />
-                    <input placeholder="Account Holder Name" className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none shadow-inner text-sm font-bold uppercase tracking-widest" value={rekData.accountHolder} onChange={e => setRekData({...rekData, accountHolder: e.target.value})} />
+                    <input placeholder="Account Number" className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none shadow-inner text-sm font-bold tracking-widest border-none" value={rekData.accountNumber} onChange={e => setRekData({...rekData, accountNumber: e.target.value})} />
+                    <input placeholder="Account Holder Name" className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none shadow-inner text-sm font-bold uppercase tracking-widest border-none" value={rekData.accountHolder} onChange={e => setRekData({...rekData, accountHolder: e.target.value})} />
                     <button onClick={async () => {
                       if(!rekData.accountNumber || !rekData.accountHolder) return alert("Lengkapi data!");
                       await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'rekening'), rekData);
                       setRekData({ bankName: 'BCA', accountNumber: '', accountHolder: '' });
                       alert("Rekening Aktif!");
-                    }} className="w-full bg-black text-[#D4AF37] py-8 rounded-[3rem] font-bold uppercase text-[11px] shadow-3xl transition-all">Enable Banking</button>
+                    }} className="w-full bg-black text-[#D4AF37] py-8 rounded-[3rem] font-bold uppercase text-[11px] shadow-3xl transition-all border-none">Enable Banking</button>
                  </div>
               </div>
-              <div className="space-y-6 border-l border-zinc-50 pl-10">
+              <div className="space-y-6 border-l border-zinc-50 pl-10 text-black">
                  <h3 className="text-xs font-bold uppercase tracking-[0.3em] text-zinc-300">Live Bank Cards ({rekening.length})</h3>
                  {rekening.map(rek => (
                     <div key={rek.id} className="p-10 bg-zinc-50 rounded-[3rem] border border-zinc-100 flex justify-between items-center group shadow-sm">
                        <div className="flex items-center gap-8">
                           <img src={BANK_LOGOS[rek.bankName]} className="h-6 w-16 object-contain grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all" alt="" />
-                          <div><p className="text-2xl font-mono font-bold tracking-tighter">{rek.accountNumber}</p><p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest italic">A.N {rek.accountHolder}</p></div>
+                          <div><p className="text-2xl font-mono font-bold tracking-tighter">{rek.accountNumber}</p><p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest italic border-none">A.N {rek.accountHolder}</p></div>
                        </div>
-                       <button onClick={async () => { if(window.confirm("Hapus?")) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rekening', rek.id)); }} className="p-4 bg-white rounded-2xl text-red-200 hover:text-red-500 shadow-sm transition-all"><Trash2 size={18} /></button>
+                       <button onClick={async () => { if(window.confirm("Hapus?")) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rekening', rek.id)); }} className="p-4 bg-white rounded-2xl text-red-200 hover:text-red-500 shadow-sm transition-all border-none"><Trash2 size={18} /></button>
                     </div>
                  ))}
               </div>
@@ -671,21 +692,21 @@ function AdminDashboard({ products, orders, rekening, adminCreds, appId, onLogou
 
         {activeTab === 'identity' && (
            <div className="max-w-2xl mx-auto space-y-12 animate-in zoom-in duration-700">
-              <div className="text-center">
+              <div className="text-center text-black">
                  <div className="w-20 h-20 bg-zinc-950 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-2xl border border-[#D4AF37]/20"><UserCheck size={32} className="text-[#D4AF37]" /></div>
                  <h3 className="text-3xl font-serif font-bold italic tracking-tighter uppercase mb-2 text-black">Identitas Admin</h3>
                  <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.4em] mb-12">Security Credentials Management</p>
               </div>
-              <div className="bg-zinc-50 p-12 rounded-[4rem] shadow-inner space-y-8">
+              <div className="bg-zinc-50 p-12 rounded-[4rem] shadow-inner space-y-8 text-black">
                  <div className="space-y-3">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 ml-6">Admin Username</label>
-                    <input className="w-full bg-white p-7 rounded-[2rem] outline-none shadow-sm text-sm font-bold uppercase tracking-[0.2em]" value={newAdmin.username} onChange={e => setNewAdmin({...newAdmin, username: e.target.value})} />
+                    <input className="w-full bg-white p-7 rounded-[2rem] outline-none shadow-sm text-sm font-bold uppercase tracking-[0.2em] border-none" value={newAdmin.username} onChange={e => setNewAdmin({...newAdmin, username: e.target.value})} />
                  </div>
                  <div className="space-y-3">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 ml-6">Secure Password</label>
-                    <input className="w-full bg-white p-7 rounded-[2rem] outline-none shadow-sm text-sm font-bold tracking-[0.2em]" value={newAdmin.password} onChange={e => setNewAdmin({...newAdmin, password: e.target.value})} />
+                    <input className="w-full bg-white p-7 rounded-[2rem] outline-none shadow-sm text-sm font-bold tracking-[0.2em] border-none" value={newAdmin.password} onChange={e => setNewAdmin({...newAdmin, password: e.target.value})} />
                  </div>
-                 <button onClick={updateAdminIdentity} className="w-full bg-black text-[#D4AF37] py-8 rounded-[3rem] font-bold uppercase text-[11px] tracking-[0.4em] shadow-3xl hover:bg-zinc-900 transition-all">Update Credentials</button>
+                 <button onClick={updateAdminIdentity} className="w-full bg-black text-[#D4AF37] py-8 rounded-[3rem] font-bold uppercase text-[11px] tracking-[0.4em] shadow-3xl hover:bg-zinc-900 transition-all border-none">Update Credentials</button>
               </div>
            </div>
         )}
@@ -705,19 +726,19 @@ function CartView({ items, onRemove, onCheckout }) {
             <p className="font-bold uppercase tracking-widest text-zinc-300">Keranjang Kosong</p>
          </div>
        ) : (
-          <div className="space-y-8">
+          <div className="space-y-8 text-black">
             {items.map((item, idx) => (
               <div key={idx} className="flex items-center justify-between p-10 border border-zinc-100 rounded-[3rem] bg-white shadow-sm hover:shadow-xl transition-all group">
                 <div className="flex items-center gap-10">
                   <img src={item.imageURL} className="w-24 h-24 rounded-[1.5rem] object-cover shadow-2xl border-4 border-white transition-transform group-hover:scale-105" alt="" referrerPolicy="no-referrer" />
                   <div><h4 className="font-bold uppercase text-lg tracking-tight mb-2 text-black">{item.name}</h4><p className="text-sm font-bold text-[#D4AF37] font-serif">{formatIDR(item.price)}</p></div>
                 </div>
-                <button onClick={() => onRemove(idx)} className="p-5 text-zinc-200 hover:text-red-500 bg-zinc-50 rounded-full transition-all hover:bg-red-50 shadow-inner"><Trash2 size={24} /></button>
+                <button onClick={() => onRemove(idx)} className="p-5 text-zinc-200 hover:text-red-500 bg-zinc-50 rounded-full transition-all hover:bg-red-50 shadow-inner border-none"><Trash2 size={24} /></button>
               </div>
             ))}
             <div className="flex flex-col md:flex-row justify-between items-center pt-16 border-t mt-16 border-zinc-100">
                <div className="text-center md:text-left mb-8 md:mb-0"><p className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.4em] mb-2">Total Selection</p><p className="text-5xl font-bold tracking-tighter font-serif text-black">{formatIDR(total)}</p></div>
-               <button onClick={onCheckout} className="bg-black text-[#D4AF37] px-24 py-8 rounded-full font-bold shadow-3xl hover:scale-105 transition-all uppercase text-[12px] tracking-[0.4em]">Checkout Now</button>
+               <button onClick={onCheckout} className="bg-black text-[#D4AF37] px-24 py-8 rounded-full font-bold shadow-3xl hover:scale-105 transition-all uppercase text-[12px] tracking-[0.4em] border-none">Checkout Now</button>
             </div>
           </div>
        )}
@@ -735,8 +756,8 @@ function AdminLogin({ creds, onLoginSuccess, onBack }) {
   };
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/98 backdrop-blur-3xl animate-in zoom-in duration-500">
-      <div className="bg-white w-full max-w-sm rounded-[4rem] p-16 relative shadow-3xl overflow-hidden border border-[#D4AF37]/30">
-        <button onClick={onBack} className="absolute top-12 right-12 text-zinc-300 hover:text-black transition-all"><X size={24} /></button>
+      <div className="bg-white w-full max-w-sm rounded-[4rem] p-16 relative shadow-3xl overflow-hidden border border-[#D4AF37]/30 text-black">
+        <button onClick={onBack} className="absolute top-12 right-12 text-zinc-300 hover:text-black transition-all border-none bg-transparent"><X size={24} /></button>
         <div className="text-center mb-16">
           <div className="w-20 h-20 bg-zinc-50 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-inner border border-[#D4AF37]/10"><Lock size={32} className="text-[#D4AF37]" /></div>
           <h3 className="text-2xl font-serif font-bold uppercase tracking-tight text-black">Security Portal</h3>
@@ -745,7 +766,7 @@ function AdminLogin({ creds, onLoginSuccess, onBack }) {
         <form onSubmit={handle} className="space-y-6">
           <input placeholder="Username" value={u} onChange={(e) => setU(e.target.value)} className="w-full bg-zinc-50 p-8 rounded-[2rem] outline-none font-bold uppercase tracking-widest text-[10px] shadow-inner border-none focus:ring-1 focus:ring-black" />
           <input type="password" placeholder="Pass-Key" value={p} onChange={(e) => setP(e.target.value)} className="w-full bg-zinc-50 p-8 rounded-[2rem] outline-none font-bold shadow-inner border-none focus:ring-1 focus:ring-black" />
-          <button type="submit" className="w-full bg-zinc-950 text-[#D4AF37] py-8 rounded-[2.5rem] font-bold uppercase text-[10px] tracking-[0.4em] shadow-2xl hover:bg-black transition-all active:scale-95">Authorize Access</button>
+          <button type="submit" className="w-full bg-zinc-950 text-[#D4AF37] py-8 rounded-[2.5rem] font-bold uppercase text-[10px] tracking-[0.4em] shadow-2xl hover:bg-black transition-all active:scale-95 border-none">Authorize Access</button>
         </form>
       </div>
     </div>
