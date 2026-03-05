@@ -19,10 +19,7 @@ import {
   query,
   serverTimestamp,
   initializeFirestore,
-  orderBy,
-  setDoc,
-  getDocs,
-  limit
+  setDoc
 } from 'firebase/firestore';
 import { 
   getStorage, 
@@ -99,14 +96,47 @@ const firebaseConfig = {
   measurementId: "G-NV2L9GZM6T"
 };
 
-// Pastikan App ID tetap unik tapi aman untuk production
+// Gunakan ID unik untuk aplikasi Anda
 const appId = "devi-official-premium-production-v1";
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-// Gunakan Long Polling agar koneksi database tidak timeout di browser/hosting
 const db = initializeFirestore(app, { experimentalForceLongPolling: true });
 const storage = getStorage(app);
+
+// --- TRANSLATIONS (DEFINED AT GLOBAL SCOPE) ---
+const TRANSLATIONS = {
+  ID: {
+    shop: "Toko",
+    signIn: "Masuk",
+    search: "Cari Produk...",
+    heroTitle: "Keanggunan Abadi",
+    heroSub: "Koleksi Eksklusif 2024",
+    heroBtn: "Belanja Sekarang",
+    all: "Semua",
+    back: "Kembali",
+    buyNow: "Beli Sekarang",
+    cart: "Keranjang",
+    material: "Material",
+    specs: "Spesifikasi",
+    memberLogin: "Login Member",
+    joinLegacy: "Daftar",
+    adminCenter: "DASHBOARD ADMIN"
+  }
+};
+
+const BANK_LOGOS = {
+  "BCA": "https://upload.wikimedia.org/wikipedia/commons/5/5c/Bank_Central_Asia.svg",
+  "BRI": "https://upload.wikimedia.org/wikipedia/commons/2/2e/BRI_Logo.svg",
+  "Mandiri": "https://upload.wikimedia.org/wikipedia/commons/a/ad/Bank_Mandiri_logo_2016.svg",
+  "CIMB Niaga": "https://upload.wikimedia.org/wikipedia/commons/5/5e/CIMB_Niaga_logo.svg",
+  "DANA": "https://upload.wikimedia.org/wikipedia/commons/7/72/Logo_dan_automotive.png",
+  "OVO": "https://upload.wikimedia.org/wikipedia/commons/e/eb/Logo_ovo_purple.svg",
+  "GoPay": "https://upload.wikimedia.org/wikipedia/commons/8/86/Gopay_logo.svg"
+};
+
+const CATEGORIES = ['Baju', 'Dress', 'Hijab', 'Abaya', 'Koko', 'Set Keluarga', 'Tas'];
+const SIZE_OPTIONS = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '38', '39', '40', 'All Size'];
 
 // --- GEMINI API INTEGRATION ---
 const callGemini = async (prompt, systemInstruction = "") => {
@@ -128,45 +158,12 @@ const formatIDR = (amount) => {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val);
 };
 
-const CATEGORIES = ['Baju', 'Dress', 'Hijab', 'Abaya', 'Koko', 'Set Keluarga', 'Tas'];
-const SIZE_OPTIONS = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '38', '39', '40', 'All Size'];
-
-const BANK_LOGOS = {
-  "BCA": "https://upload.wikimedia.org/wikipedia/commons/5/5c/Bank_Central_Asia.svg",
-  "BRI": "https://upload.wikimedia.org/wikipedia/commons/2/2e/BRI_Logo.svg",
-  "Mandiri": "https://upload.wikimedia.org/wikipedia/commons/a/ad/Bank_Mandiri_logo_2016.svg",
-  "CIMB Niaga": "https://upload.wikimedia.org/wikipedia/commons/5/5e/CIMB_Niaga_logo.svg",
-  "DANA": "https://upload.wikimedia.org/wikipedia/commons/7/72/Logo_dan_automotive.png",
-  "OVO": "https://upload.wikimedia.org/wikipedia/commons/e/eb/Logo_ovo_purple.svg",
-  "GoPay": "https://upload.wikimedia.org/wikipedia/commons/8/86/Gopay_logo.svg"
-};
-
-const TRANSLATIONS = {
-  ID: {
-    shop: "Toko",
-    signIn: "Masuk",
-    search: "Cari Produk...",
-    heroTitle: "Keanggunan Abadi",
-    heroSub: "Koleksi Eksklusif 2024",
-    heroBtn: "Belanja Sekarang",
-    all: "Semua",
-    back: "Kembali",
-    buyNow: "Beli Sekarang",
-    cart: "Keranjang",
-    material: "Material",
-    specs: "Spesifikasi",
-    memberLogin: "Login Member",
-    joinLegacy: "Daftar",
-    adminCenter: "DASHBOARD ADMIN"
-  }
-};
-
 // --- MAIN APP ---
 export default function App() {
   const [view, setView] = useState('shop'); 
   const [user, setUser] = useState(null);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
-  const [adminCreds, setAdminCreds] = useState({ username: 'admin', password: 'admin123' });
+  const [adminCreds, setAdminCreds] = useState(null); // Mulai dari null agar tahu status memuat
   const [cart, setCart] = useState([]);
   const [products, setProducts] = useState([]);
   const [rekening, setRekening] = useState([]);
@@ -178,7 +175,7 @@ export default function App() {
 
   const t = TRANSLATIONS.ID;
 
-  // Inisialisasi Auth yang aman untuk production
+  // Inisialisasi Auth
   useEffect(() => {
     const initAuth = async () => {
       try {
@@ -194,7 +191,7 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // Sinkronisasi Data Real-time dari Firestore
+  // Sinkronisasi Data
   useEffect(() => {
     if (!user) return;
 
@@ -213,10 +210,9 @@ export default function App() {
       if (!s.empty) {
         setAdminCreds(s.docs[0].data());
       } else {
-        setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'admin_settings', 'main'), { 
-          username: 'admin', 
-          password: 'admin123' 
-        }).catch(() => {});
+        const defaultCreds = { username: 'admin', password: 'admin123' };
+        setAdminCreds(defaultCreds);
+        setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'admin_settings', 'main'), defaultCreds).catch(() => {});
       }
     }, errorFn);
     
@@ -236,7 +232,7 @@ export default function App() {
     <div className="h-screen bg-black flex flex-col items-center justify-center gap-6">
       <div className="font-serif tracking-[0.6em] animate-pulse text-2xl text-[#D4AF37] italic">DEVI OFFICIAL</div>
       <div className="w-40 h-[1px] bg-[#D4AF37]/30 overflow-hidden relative">
-        <div className="absolute inset-0 bg-[#D4AF37] animate-progress-line"></div>
+        <div className="absolute inset-0 bg-[#D4AF37] animate-pulse"></div>
       </div>
     </div>
   );
@@ -302,25 +298,23 @@ export default function App() {
       </main>
 
       <footer className="bg-[#050505] text-white pt-24 pb-12 px-6 mt-40 border-t-2 border-[#D4AF37]">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-16 mb-24">
-          <div className="col-span-1 md:col-span-2">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-16 mb-24 text-black">
+          <div className="col-span-1 md:col-span-2 text-white">
             <h2 className="text-4xl font-serif font-bold italic tracking-[0.2em] text-[#D4AF37] mb-8 uppercase">DEVI OFFICIAL</h2>
             <p className="text-zinc-500 text-sm max-w-md leading-relaxed mb-10">Mendefinisikan ulang kemewahan busana muslim kontemporer. Estetika dan kemewahan dalam setiap helai material.</p>
-            <div className="flex gap-6">
-              {[Instagram, Facebook, Twitter].map((Icon, i) => (
-                <div key={i} className="p-3 bg-zinc-900 rounded-full hover:bg-[#D4AF37] hover:text-black transition-all cursor-pointer group">
-                  <Icon size={18} className="group-hover:scale-110 transition-transform" />
-                </div>
-              ))}
+            <div className="flex gap-6 text-white">
+               <Instagram size={20} className="hover:text-[#D4AF37] cursor-pointer" />
+               <Facebook size={20} className="hover:text-[#D4AF37] cursor-pointer" />
+               <Twitter size={20} className="hover:text-[#D4AF37] cursor-pointer" />
             </div>
           </div>
-          <div>
+          <div className="text-white">
             <h4 className="text-[10px] font-bold uppercase tracking-[0.4em] mb-10 text-zinc-300">Payment Methods</h4>
-            <div className="grid grid-cols-3 gap-6 opacity-30">
-               {Object.values(BANK_LOGOS).slice(0, 6).map((l, i) => <img key={i} src={l} className="h-6 object-contain grayscale" alt="" />)}
+            <div className="grid grid-cols-3 gap-6 opacity-30 grayscale">
+               {Object.values(BANK_LOGOS).slice(0, 6).map((l, i) => <img key={i} src={l} className="h-6 object-contain" alt="" />)}
             </div>
           </div>
-          <div>
+          <div className="text-white">
             <h4 className="text-[10px] font-bold uppercase tracking-[0.4em] mb-10 text-zinc-300">Hubungi Kami</h4>
             <div className="space-y-6 text-sm text-zinc-500 font-medium tracking-tight">
                <div className="flex items-center gap-4"><Phone size={14} /> +62 812-9988-7766</div>
@@ -361,9 +355,16 @@ function HeroSection({ onExplore }) {
 }
 
 function ProductGrid({ products, onView }) {
+  if (!products || products.length === 0) return (
+    <div className="py-40 text-center flex flex-col items-center gap-4">
+      <Loader2 className="animate-spin text-[#D4AF37]" size={40} />
+      <p className="text-zinc-300 font-bold tracking-widest uppercase text-sm">Menyusun Katalog...</p>
+    </div>
+  );
+  
   return (
     <section className="max-w-7xl mx-auto px-6 py-32">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 text-black">
         {products.map((p) => (
           <div key={p.id} className="group cursor-pointer bg-white border border-zinc-100 rounded-[2rem] p-3 hover:shadow-2xl transition-all duration-500" onClick={() => onView(p)}>
             <div className="relative aspect-[3/4.5] overflow-hidden rounded-[1.5rem] mb-8 bg-zinc-50 shadow-inner">
@@ -401,7 +402,7 @@ function ProductDetailView({ product, onBack, onBuy, onAddCart, t }) {
   return (
     <div className="max-w-7xl mx-auto px-6 py-20 animate-in slide-in-from-right duration-700">
       <button onClick={onBack} className="flex items-center gap-3 text-zinc-400 mb-12 text-[10px] font-bold uppercase tracking-[0.4em] hover:text-black transition-all"><ChevronLeft size={20} /> {t.back}</button>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-start text-black">
         <div className="sticky top-32 aspect-[4/5.5] bg-zinc-50 rounded-[3rem] overflow-hidden shadow-2xl border border-zinc-100 group">
           <img src={product.imageURL} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[5s]" alt="" referrerPolicy="no-referrer" />
         </div>
@@ -411,7 +412,7 @@ function ProductDetailView({ product, onBack, onBuy, onAddCart, t }) {
           <p className="text-5xl font-bold text-black mb-16 tracking-tighter font-serif">{formatIDR(product.price)}</p>
           <div className="space-y-16">
             <div>
-               <h4 className="text-[10px] font-bold uppercase tracking-[0.4em] mb-8 text-zinc-400 border-b pb-4">Select Your Fit</h4>
+               <h4 className="text-[10px] font-bold uppercase tracking-[0.4em] mb-8 text-zinc-400 border-b pb-4 text-black">Select Your Fit</h4>
                <div className="flex flex-wrap gap-4">
                   {(product.sizes || []).map(s => (
                     <button key={s} onClick={() => setSelectedSize(s)} className={`min-w-[70px] h-[70px] rounded-2xl flex items-center justify-center font-bold text-[11px] border-2 transition-all ${selectedSize === s ? 'bg-black text-[#D4AF37] border-black scale-110 shadow-xl' : 'border-zinc-100 text-zinc-400 hover:border-black'}`}>{s}</button>
@@ -466,12 +467,12 @@ function CheckoutView({ product, rekening, onComplete, onBack }) {
 
   return (
     <div className="max-w-4xl mx-auto py-24 px-6 animate-in slide-in-from-bottom duration-1000">
-       <div className="bg-white rounded-[4rem] p-12 md:p-20 shadow-2xl border border-zinc-100 relative">
-          <button onClick={onBack} className="absolute top-12 right-12 p-3 hover:bg-zinc-50 rounded-full transition-all text-zinc-300 hover:text-black"><X size={24} /></button>
+       <div className="bg-white rounded-[4rem] p-12 md:p-20 shadow-2xl border border-zinc-100 relative text-black">
+          <button onClick={onBack} className="absolute top-12 right-12 p-3 hover:bg-zinc-50 rounded-full transition-all"><X size={24} /></button>
           {step === 1 && (
-             <div className="animate-in fade-in text-black">
+             <div className="animate-in fade-in">
                 <h3 className="text-4xl font-serif font-bold italic tracking-tighter uppercase mb-12 text-center">Payment Options</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16 text-black">
                    {rekening.map(rek => (
                      <div key={rek.id} onClick={() => { setFormData({...formData, transferTo: `${rek.bankName} - ${rek.accountNumber}`}); setStep(2); }} className="p-8 border-2 border-zinc-50 rounded-[2.5rem] hover:border-[#D4AF37] hover:bg-zinc-50/50 cursor-pointer transition-all active:scale-95 group">
                         <div className="h-8 mb-8 flex justify-between items-center">
@@ -532,7 +533,7 @@ function AdminDashboard({ products, orders, rekening, adminCreds, appId, onLogou
   const [instaUrl, setInstaUrl] = useState('');
   const [formData, setFormData] = useState({ imageURL: '', name: '', price: '', category: 'Baju', description: '', sizes: [] });
   const [rekData, setRekData] = useState({ bankName: 'BCA', accountNumber: '', accountHolder: '' });
-  const [newAdmin, setNewAdmin] = useState({ username: adminCreds.username, password: adminCreds.password });
+  const [newAdmin, setNewAdmin] = useState({ username: adminCreds?.username || 'admin', password: adminCreds?.password || 'admin123' });
 
   const fetchInstaImage = () => {
     if (!instaUrl.includes('instagram.com')) return alert("Link tidak valid!");
@@ -562,7 +563,7 @@ function AdminDashboard({ products, orders, rekening, adminCreds, appId, onLogou
   };
 
   return (
-    <div className="max-w-full mx-auto px-4 md:px-12 py-20 flex flex-col lg:flex-row gap-12 relative animate-in slide-in-from-bottom duration-1000">
+    <div className="max-w-full mx-auto px-4 md:px-12 py-20 flex flex-col lg:flex-row gap-12 relative animate-in slide-in-from-bottom duration-1000 text-black">
       <aside className="lg:w-80 space-y-6">
         <div className="bg-zinc-950 p-10 rounded-[3rem] text-white shadow-2xl relative border border-white/5 overflow-hidden">
            <h2 className="text-xl font-serif font-bold italic text-[#D4AF37] uppercase tracking-widest">Dashboard</h2>
@@ -581,22 +582,22 @@ function AdminDashboard({ products, orders, rekening, adminCreds, appId, onLogou
         {activeTab === 'inventory' && (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-20">
              <div className="space-y-12">
-                <h3 className="text-xs font-bold uppercase tracking-[0.4em] text-[#D4AF37] border-b pb-4">Instagram Image Collector</h3>
+                <h3 className="text-xs font-bold uppercase tracking-[0.4em] text-[#D4AF37] border-b pb-4 text-black font-serif italic">Instagram Image Collector</h3>
                 <div className="aspect-[3/4] rounded-[3rem] bg-zinc-50 flex items-center justify-center overflow-hidden relative shadow-inner border border-zinc-100">
                    {formData.imageURL ? <img src={formData.imageURL} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" /> : <Instagram size={64} className="opacity-10 text-black" />}
                 </div>
                 <div className="space-y-8">
-                   <div className="space-y-3">
+                   <div className="space-y-3 text-black font-bold">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 ml-4">Instagram Post URL</label>
                       <div className="flex gap-2">
                         <input placeholder="https://www.instagram.com/p/..." className="flex-1 bg-zinc-50 p-7 rounded-[2rem] outline-none shadow-inner border-none text-xs" value={instaUrl} onChange={e => setInstaUrl(e.target.value)} />
                         <button onClick={fetchInstaImage} className="px-8 bg-black text-white rounded-2xl text-[10px] font-bold uppercase transition-all hover:bg-[#3a7d44]">Fetch</button>
                       </div>
                    </div>
-                   <input placeholder="Nama Produk Premium" className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none shadow-inner text-sm font-bold uppercase tracking-widest border-none" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                   <input placeholder="Nama Produk Premium" className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none shadow-inner text-sm font-bold uppercase tracking-widest border-none text-black" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                    <div className="grid grid-cols-2 gap-4">
-                     <input type="number" placeholder="Price (IDR)" className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none shadow-inner font-bold border-none" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} />
-                     <select className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none font-bold text-[10px] border-none" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
+                     <input type="number" placeholder="Price (IDR)" className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none shadow-inner font-bold border-none text-black" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} />
+                     <select className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none font-bold text-[10px] border-none text-black" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
                         {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                      </select>
                    </div>
@@ -608,11 +609,11 @@ function AdminDashboard({ products, orders, rekening, adminCreds, appId, onLogou
                         ))}
                       </div>
                    </div>
-                   <textarea placeholder="Materials & Quality Signature..." className="w-full bg-zinc-50 p-7 rounded-[2rem] h-40 outline-none shadow-inner text-sm border-none" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})}></textarea>
+                   <textarea placeholder="Materials & Quality Signature..." className="w-full bg-zinc-50 p-7 rounded-[2rem] h-40 outline-none shadow-inner text-sm border-none text-black" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})}></textarea>
                    <button onClick={addProduct} disabled={saving} className="w-full bg-black text-[#D4AF37] py-8 rounded-[2.5rem] font-bold uppercase tracking-[0.4em] text-[11px] shadow-3xl transition-all disabled:opacity-50">Publish Product</button>
                 </div>
              </div>
-             <div className="space-y-6 max-h-[1000px] overflow-y-auto pr-4 no-scrollbar border-l border-zinc-50 pl-10">
+             <div className="space-y-6 max-h-[1000px] overflow-y-auto pr-4 no-scrollbar border-l border-zinc-50 pl-10 text-black">
                 <h3 className="text-xs font-bold uppercase tracking-[0.3em] text-zinc-300">Live Inventory ({products.length})</h3>
                 {products.map(p => (
                   <div key={p.id} className="p-8 border border-zinc-100 rounded-[2.5rem] flex items-center justify-between hover:shadow-xl transition-all bg-white shadow-sm group">
@@ -648,7 +649,7 @@ function AdminDashboard({ products, orders, rekening, adminCreds, appId, onLogou
                      </div>
                    </div>
                    <div className="flex xl:flex-col items-center justify-center gap-4">
-                      {o.status === 'pending' && <button onClick={async () => { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', o.id), {status: 'confirmed'}); }} className="w-full px-12 py-5 bg-black text-[#D4AF37] rounded-3xl text-[10px] font-bold uppercase shadow-2xl hover:bg-green-600 hover:text-white transition-all">Confirm</button>}
+                      {o.status === 'pending' && <button onClick={async () => { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', o.id), {status: 'confirmed'}); }} className="w-full px-12 py-5 bg-black text-[#D4AF37] rounded-3xl text-[10px] font-bold uppercase shadow-2xl hover:bg-green-600 hover:text-white transition-all text-black">Confirm</button>}
                       <button onClick={async () => { if(window.confirm("Hapus?")) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', o.id)); }} className="p-5 text-zinc-200 hover:text-red-500 transition-colors"><Trash2 size={24}/></button>
                    </div>
                  </div>
@@ -661,7 +662,7 @@ function AdminDashboard({ products, orders, rekening, adminCreds, appId, onLogou
            <div className="grid grid-cols-1 xl:grid-cols-2 gap-20">
               <div className="space-y-12 text-black">
                  <h3 className="text-xs font-bold uppercase tracking-[0.4em] text-[#D4AF37] border-b pb-4">Official Bank Access</h3>
-                 <div className="space-y-8">
+                 <div className="space-y-8 text-black">
                     <select className="w-full bg-zinc-50 p-7 rounded-[2rem] outline-none shadow-inner font-bold text-sm uppercase tracking-widest border-none" value={rekData.bankName} onChange={e => setRekData({...rekData, bankName: e.target.value})}>
                        {Object.keys(BANK_LOGOS).map(b => <option key={b} value={b}>{b}</option>)}
                     </select>
@@ -694,7 +695,7 @@ function AdminDashboard({ products, orders, rekening, adminCreds, appId, onLogou
            <div className="max-w-2xl mx-auto space-y-12 animate-in zoom-in duration-700">
               <div className="text-center text-black">
                  <div className="w-20 h-20 bg-zinc-950 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-2xl border border-[#D4AF37]/20"><UserCheck size={32} className="text-[#D4AF37]" /></div>
-                 <h3 className="text-3xl font-serif font-bold italic tracking-tighter uppercase mb-2 text-black">Identitas Admin</h3>
+                 <h3 className="text-3xl font-serif font-bold italic tracking-tighter uppercase mb-2">Identitas Admin</h3>
                  <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.4em] mb-12">Security Credentials Management</p>
               </div>
               <div className="bg-zinc-50 p-12 rounded-[4rem] shadow-inner space-y-8 text-black">
@@ -736,9 +737,9 @@ function CartView({ items, onRemove, onCheckout }) {
                 <button onClick={() => onRemove(idx)} className="p-5 text-zinc-200 hover:text-red-500 bg-zinc-50 rounded-full transition-all hover:bg-red-50 shadow-inner border-none"><Trash2 size={24} /></button>
               </div>
             ))}
-            <div className="flex flex-col md:flex-row justify-between items-center pt-16 border-t mt-16 border-zinc-100">
-               <div className="text-center md:text-left mb-8 md:mb-0"><p className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.4em] mb-2">Total Selection</p><p className="text-5xl font-bold tracking-tighter font-serif text-black">{formatIDR(total)}</p></div>
-               <button onClick={onCheckout} className="bg-black text-[#D4AF37] px-24 py-8 rounded-full font-bold shadow-3xl hover:scale-105 transition-all uppercase text-[12px] tracking-[0.4em] border-none">Checkout Now</button>
+            <div className="flex flex-col md:flex-row justify-between items-center pt-16 border-t mt-16 border-zinc-100 text-black">
+               <div className="text-center md:text-left mb-8 md:mb-0"><p className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.4em] mb-2 text-black">Total Selection</p><p className="text-5xl font-bold tracking-tighter font-serif text-black">{formatIDR(total)}</p></div>
+               <button onClick={onCheckout} className="bg-black text-[#D4AF37] px-24 py-8 rounded-full font-bold shadow-3xl hover:scale-105 transition-all uppercase text-[12px] tracking-[0.4em] border-none text-black">Checkout Now</button>
             </div>
           </div>
        )}
@@ -758,15 +759,15 @@ function AdminLogin({ creds, onLoginSuccess, onBack }) {
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/98 backdrop-blur-3xl animate-in zoom-in duration-500">
       <div className="bg-white w-full max-w-sm rounded-[4rem] p-16 relative shadow-3xl overflow-hidden border border-[#D4AF37]/30 text-black">
         <button onClick={onBack} className="absolute top-12 right-12 text-zinc-300 hover:text-black transition-all border-none bg-transparent"><X size={24} /></button>
-        <div className="text-center mb-16">
+        <div className="text-center mb-16 text-black">
           <div className="w-20 h-20 bg-zinc-50 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-inner border border-[#D4AF37]/10"><Lock size={32} className="text-[#D4AF37]" /></div>
           <h3 className="text-2xl font-serif font-bold uppercase tracking-tight text-black">Security Portal</h3>
-          <p className="text-[9px] text-zinc-400 mt-2 uppercase font-bold tracking-widest">Admin Access Restricted</p>
+          <p className="text-[9px] text-zinc-400 mt-2 uppercase font-bold tracking-widest text-black">Admin Access Restricted</p>
         </div>
         <form onSubmit={handle} className="space-y-6">
           <input placeholder="Username" value={u} onChange={(e) => setU(e.target.value)} className="w-full bg-zinc-50 p-8 rounded-[2rem] outline-none font-bold uppercase tracking-widest text-[10px] shadow-inner border-none focus:ring-1 focus:ring-black" />
           <input type="password" placeholder="Pass-Key" value={p} onChange={(e) => setP(e.target.value)} className="w-full bg-zinc-50 p-8 rounded-[2rem] outline-none font-bold shadow-inner border-none focus:ring-1 focus:ring-black" />
-          <button type="submit" className="w-full bg-zinc-950 text-[#D4AF37] py-8 rounded-[2.5rem] font-bold uppercase text-[10px] tracking-[0.4em] shadow-2xl hover:bg-black transition-all active:scale-95 border-none">Authorize Access</button>
+          <button type="submit" className="w-full bg-zinc-950 text-[#D4AF37] py-8 rounded-[2.5rem] font-bold uppercase text-[10px] tracking-[0.4em] shadow-2xl hover:bg-black transition-all active:scale-95 border-none text-black">Authorize Access</button>
         </form>
       </div>
     </div>
