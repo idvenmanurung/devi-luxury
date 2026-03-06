@@ -19,6 +19,7 @@ import {
   serverTimestamp,
   initializeFirestore,
   setDoc,
+  getDoc,
   getDocs,
   limit,
   where,
@@ -128,7 +129,7 @@ import {
 /**
  * ==========================================================================================
  * --- DEVI OFFICIAL LUXURY BOUTIQUE ECOSYSTEM ---
- * VERSION: 12.5.0 (MOBILE OPTIMIZED - CLEAN UI)
+ * VERSION: 13.0.0 (ADMIN BANKING & DYNAMIC PRICING UPGRADE)
  * ==========================================================================================
  */
 
@@ -144,14 +145,29 @@ const firebaseConfig = {
 
 const appId = "devi-official-premium-production-v1";
 const CATEGORIES = ['Semua', 'Baju', 'Dress', 'Hijab', 'Abaya', 'Koko', 'Set Keluarga', 'Tas', 'Aksesoris'];
+const SIZE_OPTIONS = ['S', 'M', 'L', 'XL', 'XXL', 'All Size'];
+
 const BANK_LOGOS = {
-  "BCA": "https://upload.wikimedia.org/wikipedia/commons/5/5c/Bank_Central_Asia.svg",
-  "BRI": "https://upload.wikimedia.org/wikipedia/commons/2/2e/BRI_Logo.svg",
-  "Mandiri": "https://upload.wikimedia.org/wikipedia/commons/a/ad/Bank_Mandiri_logo_2016.svg",
+  "Bank Central Asia (BCA)": "https://upload.wikimedia.org/wikipedia/commons/5/5c/Bank_Central_Asia.svg",
+  "Bank Rakyat Indonesia (BRI)": "https://upload.wikimedia.org/wikipedia/commons/2/2e/BRI_Logo.svg",
+  "Bank Mandiri": "https://upload.wikimedia.org/wikipedia/commons/a/ad/Bank_Mandiri_logo_2016.svg",
+  "Bank Negara Indonesia (BNI)": "https://upload.wikimedia.org/wikipedia/id/5/55/BNI_logo.svg",
+  "Bank Syariah Indonesia (BSI)": "https://upload.wikimedia.org/wikipedia/commons/a/a0/Bank_Syariah_Indonesia_logo.svg",
   "CIMB Niaga": "https://upload.wikimedia.org/wikipedia/commons/5/5e/CIMB_Niaga_logo.svg",
-  "DANA": "https://upload.wikimedia.org/wikipedia/commons/7/72/Logo_dan_automotive.png",
+  "Bank Danamon": "https://upload.wikimedia.org/wikipedia/commons/e/ec/Danamon_logo.svg",
+  "PermataBank": "https://upload.wikimedia.org/wikipedia/commons/b/b5/PermataBank_logo.svg",
+  "Bank Mega": "https://upload.wikimedia.org/wikipedia/commons/a/af/Bank_Mega_logo.svg",
+  "OCBC NISP": "https://upload.wikimedia.org/wikipedia/commons/0/0d/Logo_OCBC.svg",
+  "GoPay": "https://upload.wikimedia.org/wikipedia/commons/8/86/Gopay_logo.svg",
   "OVO": "https://upload.wikimedia.org/wikipedia/commons/e/eb/Logo_ovo_purple.svg",
-  "GoPay": "https://upload.wikimedia.org/wikipedia/commons/8/86/Gopay_logo.svg"
+  "DANA": "https://upload.wikimedia.org/wikipedia/commons/7/72/Logo_dan_automotive.png",
+  "ShopeePay": "https://upload.wikimedia.org/wikipedia/commons/b/be/ShopeePay.svg",
+  "LinkAja": "https://upload.wikimedia.org/wikipedia/commons/8/85/LinkAja.svg",
+  "PayPal": "https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg",
+  "Sakuku": "https://upload.wikimedia.org/wikipedia/id/3/30/Sakuku_logo.png",
+  "Jenius": "https://upload.wikimedia.org/wikipedia/commons/3/37/Jenius-logo.png",
+  "AstraPay": "https://upload.wikimedia.org/wikipedia/id/0/02/Logo_AstraPay.png",
+  "DOKU": "https://upload.wikimedia.org/wikipedia/id/c/c8/Logo_DOKU.png"
 };
 
 const firebaseApp = initializeApp(firebaseConfig);
@@ -232,7 +248,6 @@ export default function App() {
   return (
     <div className="min-h-screen bg-white text-zinc-900 font-sans antialiased overflow-x-hidden selection:bg-[#D4AF37] selection:text-white">
       
-      {/* NOTIFICATION HUB */}
       <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[5000] flex flex-col gap-2 w-full max-w-xs px-4 pointer-events-none">
         {notifications.map(n => (
           <NotificationItem key={n.id} notification={n} />
@@ -338,6 +353,7 @@ export default function App() {
               appId={appId} 
               onLogout={() => { setIsAdminLoggedIn(false); setView('shop'); }} 
               notify={notify}
+              creds={adminCreds}
             />
           )}
         </main>
@@ -559,6 +575,7 @@ function ProductDetailView({ product, onBack, onBuy, onAddToCart, notify }) {
   const [currentPrice, setCurrentPrice] = useState(Number(product.price));
 
   useEffect(() => {
+    // Logic: Jika admin set harga khusus per size, gunakan itu. Jika tidak, gunakan harga default produk.
     if (selectedSize && product.sizePrices && product.sizePrices[selectedSize]) {
       setCurrentPrice(Number(product.sizePrices[selectedSize]));
     } else {
@@ -598,7 +615,7 @@ function ProductDetailView({ product, onBack, onBuy, onAddToCart, notify }) {
               <LayersIcon size={14} className="text-[#D4AF37]" /> Pilih Ukuran
             </h4>
             <div className="flex flex-wrap gap-2">
-               {(product.sizes || []).map(s => (
+               {(product.sizes || SIZE_OPTIONS).map(s => (
                  <button 
                    key={s}
                    onClick={() => setSelectedSize(s)} 
@@ -691,16 +708,13 @@ function CheckoutView({ product, rekening, onComplete, onBack, notify }) {
 
           {step === 2 && (
             <div className="p-6 space-y-6">
-               <div className="text-center"><h3 className="text-base font-serif italic uppercase">Pilih Bank</h3></div>
-               <div className="space-y-3">
+               <div className="text-center"><h3 className="text-base font-serif italic uppercase">Pilih Bank / E-Wallet</h3></div>
+               <div className="grid grid-cols-2 gap-3">
                   {rekening.map(rek => (
-                    <div key={rek.id} onClick={()=>{ setPayment({...payment, transferTo: `${rek.bankName} - ${rek.accountNumber} - ${rek.accountHolder}`}); setStep(3); }} className="p-4 border border-zinc-100 rounded-xl hover:border-[#D4AF37] cursor-pointer transition-all flex items-center justify-between bg-zinc-50/50">
-                       <div className="space-y-1">
-                          <img src={BANK_LOGOS[rek.bankName]} className="h-2.5 object-contain grayscale" alt=""/>
-                          <p className="text-sm font-mono tracking-tighter">{String(rek.accountNumber)}</p>
-                          <p className="text-[8px] text-zinc-400">A.N {String(rek.accountHolder)}</p>
-                       </div>
-                       <ChevronRight size={18} className="text-zinc-300"/>
+                    <div key={rek.id} onClick={()=>{ setPayment({...payment, transferTo: `${rek.bankName} - ${rek.accountNumber} - ${rek.accountHolder}`}); setStep(3); }} className="p-3 border border-zinc-100 rounded-xl hover:border-[#D4AF37] cursor-pointer transition-all flex flex-col items-center text-center bg-zinc-50/50">
+                       <img src={BANK_LOGOS[rek.bankName]} className="h-6 object-contain mb-2" alt=""/>
+                       <p className="text-[7px] text-zinc-400 uppercase leading-tight mb-1">{rek.bankName}</p>
+                       <p className="text-[10px] font-mono tracking-tighter">{String(rek.accountNumber)}</p>
                     </div>
                   ))}
                </div>
@@ -740,23 +754,43 @@ function CheckoutView({ product, rekening, onComplete, onBack, notify }) {
   );
 }
 
-function AdminDashboard({ products, orders, rekening, appId, onLogout, notify }) {
+function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, creds }) {
   const [tab, setTab] = useState('inventory');
   const [saving, setSaving] = useState(false);
   const [instaUrl, setInstaUrl] = useState('');
   const [formData, setFormData] = useState({ 
-    imageURL: '', name: '', price: '', category: 'Baju', description: '', sizes: [] 
+    imageURL: '', name: '', price: '', category: 'Baju', description: '', sizes: SIZE_OPTIONS, sizePrices: {} 
   });
+  const [newCreds, setNewCreds] = useState({ username: creds?.username || '', password: creds?.password || '' });
 
   const publishProduct = async () => {
-    if (!formData.name.trim() || !formData.price || !formData.imageURL) return notify("Lengkapi data Maison!", "error");
+    if (!formData.name.trim() || !formData.price || !formData.imageURL) return notify("Lengkapi data!", "error");
     setSaving(true);
     try {
       await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), { ...formData, price: Number(formData.price), createdAt: serverTimestamp() });
-      setFormData({ imageURL: '', name: '', price: '', category: 'Baju', description: '', sizes: [] });
+      setFormData({ imageURL: '', name: '', price: '', category: 'Baju', description: '', sizes: SIZE_OPTIONS, sizePrices: {} });
       setInstaUrl('');
-      notify("Berhasil dipublikasikan.", "success");
+      notify("Maha karya dipublikasikan.", "success");
     } catch (e) { notify(e.message, "error"); } finally { setSaving(false); }
+  };
+
+  const updateAdminAuth = async () => {
+    if (!newCreds.username || !newCreds.password) return notify("Harap isi Username & Password!", "error");
+    setSaving(true);
+    try {
+      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'admin_settings', 'main'), newCreds);
+      notify("Credential Admin berhasil diupdate.", "success");
+    } catch (e) { notify(e.message, "error"); } finally { setSaving(false); }
+  };
+
+  const [bankForm, setBankForm] = useState({ bankName: 'Bank Central Asia (BCA)', accountNumber: '', accountHolder: '' });
+  const addBank = async () => {
+    if (!bankForm.accountNumber || !bankForm.accountHolder) return notify("Lengkapi data bank!", "error");
+    try {
+      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'rekening'), bankForm);
+      setBankForm({ bankName: 'Bank Central Asia (BCA)', accountNumber: '', accountHolder: '' });
+      notify("Metode pembayaran ditambahkan.", "success");
+    } catch (e) { notify(e.message, "error"); }
   };
 
   return (
@@ -764,10 +798,10 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify })
       <aside className="md:w-56 space-y-3">
          <div className="bg-zinc-950 p-5 rounded-2xl text-white border border-white/5">
            <Crown className="text-[#D4AF37] mb-1.5" size={24} />
-           <h2 className="text-base font-serif italic">Admin Panel</h2>
+           <h2 className="text-base font-serif italic">Maison Master</h2>
          </div>
          <div className="bg-white p-3 rounded-xl border border-zinc-100 flex flex-col gap-1.5 shadow-sm">
-            {['inventory', 'orders'].map(t => (
+            {['inventory', 'orders', 'banking', 'settings'].map(t => (
               <button key={t} onClick={()=>setTab(t)} className={`text-left px-5 py-2.5 rounded-lg text-[9px] tracking-widest border-none cursor-pointer ${tab === t ? 'bg-black text-[#D4AF37]' : 'text-zinc-400 bg-transparent hover:bg-zinc-50'}`}>{t.toUpperCase()}</button>
             ))}
             <button onClick={onLogout} className="text-left px-5 py-2.5 rounded-lg text-[9px] text-red-500 border-none bg-transparent cursor-pointer hover:bg-red-50 tracking-widest mt-1">LOGOUT</button>
@@ -777,12 +811,12 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify })
       <div className="flex-1 bg-white p-4 md:p-10 rounded-2xl border border-zinc-100 min-h-[50vh] shadow-sm">
          {tab === 'inventory' && (
            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-3">
+              <div className="space-y-4">
                  <div className="aspect-[3/4] bg-zinc-50 rounded-xl border-2 border-dashed border-zinc-100 overflow-hidden relative flex items-center justify-center">
                     {formData.imageURL ? <img src={formData.imageURL} className="w-full h-full object-cover"/> : <Instagram size={32} className="text-zinc-200" />}
                  </div>
                  <div className="flex gap-2">
-                    <input className="flex-1 bg-zinc-50 p-3 rounded-lg border-none text-[9px] font-bold outline-none" placeholder="Link IG..." value={instaUrl} onChange={e=>setInstaUrl(e.target.value)}/>
+                    <input className="flex-1 bg-zinc-50 p-3 rounded-lg border-none text-[9px] font-bold outline-none shadow-inner" placeholder="Link IG..." value={instaUrl} onChange={e=>setInstaUrl(e.target.value)}/>
                     <button onClick={()=>{ 
                       const clean = instaUrl.split('?')[0]; 
                       setFormData({...formData, imageURL: `https://images.weserv.nl/?url=${encodeURIComponent(clean.endsWith('/') ? clean + 'media/?size=l' : clean + '/media/?size=l')}&w=800&output=jpg`});
@@ -791,8 +825,21 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify })
               </div>
               <div className="space-y-3">
                  <input className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] font-bold outline-none" placeholder="Nama Produk" value={formData.name} onChange={e=>setFormData({...formData, name:e.target.value})}/>
-                 <input type="number" className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] font-bold outline-none" placeholder="Harga" value={formData.price} onChange={e=>setFormData({...formData, price:e.target.value})}/>
-                 <textarea className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] italic h-24 outline-none resize-none" placeholder="Deskripsi..." value={formData.description} onChange={e=>setFormData({...formData, description:e.target.value})}/>
+                 <input type="number" className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] font-bold outline-none" placeholder="Harga Default" value={formData.price} onChange={e=>setFormData({...formData, price:e.target.value})}/>
+                 
+                 <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-100">
+                    <p className="text-[8px] mb-2">Harga Per Ukuran (Opsional)</p>
+                    <div className="grid grid-cols-2 gap-2">
+                       {SIZE_OPTIONS.map(sz => (
+                         <div key={sz} className="flex items-center gap-1">
+                            <span className="text-[9px] w-6">{sz}</span>
+                            <input type="number" className="flex-1 bg-white border border-zinc-200 p-1 text-[8px] rounded" placeholder="Harga..." onChange={(e)=>setFormData({...formData, sizePrices: {...formData.sizePrices, [sz]: e.target.value}})}/>
+                         </div>
+                       ))}
+                    </div>
+                 </div>
+
+                 <textarea className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] italic h-20 outline-none resize-none" placeholder="Deskripsi..." value={formData.description} onChange={e=>setFormData({...formData, description:e.target.value})}/>
                  <button onClick={publishProduct} disabled={saving} className="w-full bg-black text-[#D4AF37] py-3 rounded-full text-[9px] tracking-widest border-none cursor-pointer active:scale-95">
                     {saving ? "PRODUCING..." : "PUBLISH KOLEKSI"}
                  </button>
@@ -810,6 +857,7 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify })
                          <span className="text-[6px] font-bold px-1.5 py-0.5 rounded-full uppercase border bg-white">{String(o.status)}</span>
                          <h4 className="text-[9px] font-serif italic truncate max-w-[100px]">{String(o.shipping?.name)}</h4>
                          <p className="text-[9px] text-[#D4AF37] font-bold">{formatIDR(o.amount)}</p>
+                         <p className="text-[7px] text-zinc-400">Size: {o.productSize}</p>
                       </div>
                    </div>
                    <div className="flex gap-1.5">
@@ -818,6 +866,51 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify })
                    </div>
                 </div>
               ))}
+           </div>
+         )}
+
+         {tab === 'banking' && (
+           <div className="space-y-6">
+              <h3 className="text-sm font-serif">Setup Pembayaran</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div className="space-y-3 bg-zinc-50 p-4 rounded-xl border border-zinc-100">
+                    <p className="text-[10px]">Tambah Bank / E-Wallet</p>
+                    <select className="w-full p-2 text-[9px] rounded-lg border-zinc-200 outline-none" value={bankForm.bankName} onChange={e=>setBankForm({...bankForm, bankName: e.target.value})}>
+                       {Object.keys(BANK_LOGOS).map(name => <option key={name} value={name}>{name}</option>)}
+                    </select>
+                    <input className="w-full p-2 text-[9px] rounded-lg border-zinc-200" placeholder="Nomor Rekening / HP" value={bankForm.accountNumber} onChange={e=>setBankForm({...bankForm, accountNumber: e.target.value})}/>
+                    <input className="w-full p-2 text-[9px] rounded-lg border-zinc-200" placeholder="Nama Pemilik" value={bankForm.accountHolder} onChange={e=>setBankForm({...bankForm, accountHolder: e.target.value})}/>
+                    <button onClick={addBank} className="w-full bg-black text-[#D4AF37] py-2 rounded-lg text-[8px]">SIMPAN METODE</button>
+                 </div>
+                 <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto no-scrollbar">
+                    {rekening.map(rek => (
+                      <div key={rek.id} className="p-3 bg-white border border-zinc-100 rounded-xl relative group">
+                         <img src={BANK_LOGOS[rek.bankName]} className="h-4 object-contain mb-1" alt=""/>
+                         <p className="text-[7px] font-bold truncate">{rek.accountNumber}</p>
+                         <button onClick={async()=>await deleteDoc(doc(db,'artifacts',appId,'public','data','rekening',rek.id))} className="absolute top-1 right-1 p-1 text-red-400 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={10}/></button>
+                      </div>
+                    ))}
+                 </div>
+              </div>
+           </div>
+         )}
+
+         {tab === 'settings' && (
+           <div className="max-w-xs space-y-4">
+              <h3 className="text-sm font-serif">Credential Admin</h3>
+              <div className="space-y-3 p-4 bg-zinc-50 rounded-xl border border-zinc-100">
+                 <div className="space-y-1">
+                    <label className="text-[8px] text-zinc-400">Username Baru</label>
+                    <input className="w-full p-2 text-[9px] rounded-lg border-none shadow-inner outline-none" value={newCreds.username} onChange={e=>setNewCreds({...newCreds, username: e.target.value})}/>
+                 </div>
+                 <div className="space-y-1">
+                    <label className="text-[8px] text-zinc-400">Password Baru</label>
+                    <input className="w-full p-2 text-[9px] rounded-lg border-none shadow-inner outline-none" type="password" value={newCreds.password} onChange={e=>setNewCreds({...newCreds, password: e.target.value})}/>
+                 </div>
+                 <button onClick={updateAdminAuth} disabled={saving} className="w-full bg-black text-[#D4AF37] py-2 rounded-lg text-[8px] transition-all active:scale-95">
+                    {saving ? "SAVING..." : "UPDATE SECURITY"}
+                 </button>
+              </div>
            </div>
          )}
       </div>
@@ -912,8 +1005,8 @@ function AdminLogin({ creds, onLoginSuccess, onBack, notify }) {
 function CartView({ items, onRemove, onCheckout }) {
   const total = items.reduce((s, i) => s + Number(i.chosenPrice || i.price), 0);
   return (
-    <div className="max-w-2xl mx-auto py-8 md:py-24 px-4 font-bold uppercase">
-       <div className="text-center mb-8 space-y-1.5">
+    <div className="max-w-2xl mx-auto py-10 md:py-32 px-4 font-bold uppercase">
+       <div className="text-center mb-12 space-y-1.5">
           <h2 className="text-2xl font-serif font-bold italic tracking-tighter uppercase text-zinc-950 leading-none">Shopping <span className="text-[#D4AF37]">Bag</span></h2>
           <div className="w-10 h-[1.5px] bg-[#D4AF37] mx-auto opacity-40"></div>
        </div>
@@ -925,7 +1018,7 @@ function CartView({ items, onRemove, onCheckout }) {
        ) : (
          <div className="space-y-4">
             {items.map((item, idx) => (
-              <div key={idx} className="p-3 bg-white border border-zinc-100 rounded-xl flex items-center justify-between gap-3 shadow-sm relative overflow-hidden">
+              <div key={idx} className="p-3 bg-white border border-zinc-100 rounded-xl flex items-center justify-between gap-4 shadow-sm relative overflow-hidden">
                  <div className="flex items-center gap-3 flex-1">
                     <img src={item.imageURL} className="w-12 h-16 rounded-lg object-cover border border-zinc-50 shadow-sm"/>
                     <div className="space-y-0.5">
