@@ -75,18 +75,15 @@ import {
   Award,
   Crown,
   Menu,
-  MousePointer2,
-  Package,
-  ShieldCheck,
-  RefreshCw,
-  Gift,
-  Palette,
   Scissors,
-  Check as CheckIcon
+  Palette,
+  Gift,
+  RefreshCw,
+  MousePointer2
 } from 'lucide-react';
 
 /**
- * --- KONFIGURASI FIREBASE ---
+ * --- CONFIGURATION FIREBASE ---
  */
 const firebaseConfig = {
   apiKey: "AIzaSyA8ncdjMeCTu7JEbcP-4JCVEX_-cfq8xh8",
@@ -117,9 +114,8 @@ const callGemini = async (prompt, systemInstruction = "") => {
     };
     const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     const result = await response.json();
-    const output = result.candidates?.[0]?.content?.parts?.[0]?.text;
-    return typeof output === 'string' ? output : "Maaf, asisten gaya kami sedang tidak tersedia saat ini.";
-  } catch (err) { return "Koneksi asisten AI terputus."; }
+    return result.candidates?.[0]?.content?.parts?.[0]?.text || "AI sedang tidak merespon.";
+  } catch (err) { return "Koneksi AI terputus."; }
 };
 
 /**
@@ -238,8 +234,8 @@ export default function App() {
       {/* --- HEADER NAVIGATION --- */}
       <header className="sticky top-0 z-[100] bg-white/85 backdrop-blur-3xl border-b border-zinc-100 h-20 md:h-28 transition-all duration-700">
         <div className="max-w-7xl mx-auto px-6 md:px-12 h-full flex items-center justify-between">
-          <div className="flex-1 hidden lg:flex items-center gap-14 border-none bg-transparent outline-none">
-            <button onClick={() => { setView('shop'); setCategoryFilter('All'); }} className="text-[10px] font-bold uppercase tracking-[0.4em] hover:text-[#D4AF37] transition-all relative group bg-transparent border-none cursor-pointer outline-none">
+          <div className="flex-1 hidden lg:flex items-center gap-14">
+            <button onClick={() => { setView('shop'); setCategoryFilter('All'); }} className="text-[10px] font-bold uppercase tracking-[0.4em] hover:text-[#D4AF37] transition-all relative group bg-transparent border-none cursor-pointer">
               Collections
               <span className="absolute -bottom-2 left-0 w-0 h-[1.5px] bg-[#D4AF37] transition-all group-hover:w-full"></span>
             </button>
@@ -276,11 +272,11 @@ export default function App() {
                    <span className="text-[10px] font-bold uppercase text-zinc-500 tracking-[0.3em]">{isAdminLoggedIn ? "Maison Admin" : "Guest Member"}</span>
                 </div>
                 {isAdminLoggedIn ? (
-                  <button onClick={() => setView('admin')} className="p-4 bg-black text-white rounded-full hover:bg-[#D4AF37] hover:text-black transition-all shadow-2xl border-none cursor-pointer outline-none">
+                  <button onClick={() => setView('admin')} className="p-4 bg-black text-white rounded-full hover:bg-[#D4AF37] hover:text-black transition-all shadow-2xl border-none cursor-pointer">
                     <LayoutDashboard size={20} />
                   </button>
                 ) : (
-                  <button onClick={() => setView('login')} className="p-4 bg-zinc-50 rounded-full hover:bg-black hover:text-white transition-all border-none cursor-pointer group outline-none">
+                  <button onClick={() => setView('login')} className="p-4 bg-zinc-50 rounded-full hover:bg-black hover:text-white transition-all border-none cursor-pointer group">
                     <Key size={20} className="group-hover:rotate-12 transition-transform" />
                   </button>
                 )}
@@ -296,8 +292,8 @@ export default function App() {
             
             <div className="bg-white/90 backdrop-blur-xl border-b border-zinc-100 sticky top-20 md:top-28 z-40 overflow-x-auto no-scrollbar shadow-sm">
               <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-start md:justify-center gap-12 whitespace-nowrap">
-                <button onClick={() => setCategoryFilter('All')} className={`text-[11px] uppercase font-bold tracking-[0.5em] transition-all px-10 py-3.5 rounded-full border-none cursor-pointer outline-none ${categoryFilter === 'All' ? 'bg-black text-[#D4AF37] shadow-2xl scale-110' : 'text-zinc-300 hover:text-black bg-transparent'}`}>Semua</button>
-                {CATEGORIES.map(c => <button key={c} onClick={() => setCategoryFilter(c)} className={`text-[11px] uppercase font-bold tracking-[0.5em] transition-all px-10 py-3.5 rounded-full border-none cursor-pointer outline-none ${categoryFilter === c ? 'bg-black text-[#D4AF37] shadow-2xl scale-110' : 'text-zinc-300 hover:text-black bg-transparent'}`}>{c}</button>)}
+                <button onClick={() => setCategoryFilter('All')} className={`text-[11px] uppercase font-bold tracking-[0.5em] transition-all px-10 py-3.5 rounded-full border-none cursor-pointer ${categoryFilter === 'All' ? 'bg-black text-[#D4AF37] shadow-2xl scale-110' : 'text-zinc-300 hover:text-black bg-transparent'}`}>Semua</button>
+                {CATEGORIES.map(c => <button key={c} onClick={() => setCategoryFilter(c)} className={`text-[11px] uppercase font-bold tracking-[0.5em] transition-all px-10 py-3.5 rounded-full border-none cursor-pointer ${categoryFilter === c ? 'bg-black text-[#D4AF37] shadow-2xl scale-110' : 'text-zinc-300 hover:text-black bg-transparent'}`}>{c}</button>)}
               </div>
             </div>
 
@@ -369,7 +365,7 @@ function HeroSection({ onExplore }) {
         <p className="text-zinc-400 text-sm md:text-2xl max-w-3xl mx-auto font-medium tracking-widest leading-relaxed opacity-0 animate-[fade-in_1s_ease-out_forwards_delay-800ms]">
           Mengkurasi koleksi terbatas yang merayakan kemewahan dalam setiap helai material premium yang kami rancang khusus untuk Anda.
         </p>
-        <button onClick={onExplore} className="mt-14 px-28 py-9 bg-[#D4AF37] text-black text-[13px] font-bold uppercase tracking-[0.8em] rounded-full hover:scale-105 hover:bg-white transition-all shadow-[0_40px_80px_rgba(212,175,55,0.25)] border-none cursor-pointer active:scale-95 outline-none">
+        <button onClick={onExplore} className="mt-14 px-28 py-9 bg-[#D4AF37] text-black text-[13px] font-bold uppercase tracking-[0.8em] rounded-full hover:scale-105 hover:bg-white transition-all shadow-[0_40px_80px_rgba(212,175,55,0.25)] border-none cursor-pointer active:scale-95">
           Eksplorasi Koleksi
         </button>
       </div>
@@ -382,7 +378,7 @@ function HeroSection({ onExplore }) {
 }
 
 /**
- * --- COMPONENT: CRAFTSMANSHIP ---
+ * --- COMPONENT: CRAFTSMANSHIP (DEDICATED SECTION) ---
  */
 function CraftsmanshipSection() {
   return (
@@ -420,7 +416,7 @@ function FeaturedBanner() {
              <div className="w-16 h-16 bg-[#D4AF37]/10 rounded-2xl flex items-center justify-center text-[#D4AF37] mb-4"><Verified size={32} /></div>
              <h2 className="text-4xl md:text-6xl font-serif font-bold italic tracking-tighter leading-tight uppercase">Premium <br/> Member <span className="text-[#D4AF37]">Privilege</span></h2>
              <p className="text-zinc-500 font-medium leading-relaxed tracking-wide text-lg">Dapatkan akses eksklusif ke koleksi yang belum dirilis dan undangan pribadi ke peluncuran koleksi Devi Official selanjutnya.</p>
-             <button className="px-12 py-5 bg-white text-black text-[10px] font-bold uppercase tracking-widest rounded-full hover:bg-[#D4AF37] transition-all border-none cursor-pointer outline-none active:scale-95">Bergabung Sekarang</button>
+             <button className="px-12 py-5 bg-white text-black text-[10px] font-bold uppercase tracking-widest rounded-full hover:bg-[#D4AF37] transition-all border-none cursor-pointer active:scale-95">Bergabung Sekarang</button>
           </div>
           <div className="relative z-10 w-full md:w-80 aspect-[3/4] rounded-[3rem] overflow-hidden shadow-2xl border border-white/10 group">
              <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1020&auto=format&fit=crop" className="w-full h-full object-cover transition-transform duration-[5s] group-hover:scale-110" alt="Promo" />
@@ -518,9 +514,10 @@ function ProductDetailView({ product, onBack, onBuy }) {
         Kembali ke Katalog
       </button>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-32 items-start">
-        <div className="sticky top-32 space-y-10">
-          <div className="aspect-[4/6] bg-zinc-50 rounded-[5rem] overflow-hidden shadow-2xl border border-zinc-100 relative group">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 md:gap-32 items-start relative">
+        {/* Gambar Produk - Sticky only on desktop */}
+        <div className="lg:sticky lg:top-32 space-y-10 order-1">
+          <div className="aspect-[4/6] bg-zinc-50 rounded-[4rem] md:rounded-[5rem] overflow-hidden shadow-2xl border border-zinc-100 relative group">
             <img src={product.imageURL} className="w-full h-full object-cover transition-transform duration-[10s] group-hover:scale-105" alt={product.name} />
             <div className="absolute top-12 right-12 bg-white/95 p-6 rounded-[2rem] shadow-2xl backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity translate-y-10 group-hover:translate-y-0 transition-transform duration-700">
                <Heart size={28} className="text-red-400 animate-pulse" />
@@ -528,7 +525,8 @@ function ProductDetailView({ product, onBack, onBuy }) {
           </div>
         </div>
 
-        <div className="flex flex-col space-y-20">
+        {/* Info detail (Fixed layout agar tidak tertutup di mobile) */}
+        <div className="flex flex-col space-y-16 order-2">
           <div className="space-y-10">
             <div className="flex items-center gap-8">
                <p className="text-[#D4AF37] text-[13px] font-bold uppercase tracking-[1.2em] border-l-[6px] border-[#D4AF37] pl-10 leading-none">
@@ -538,23 +536,24 @@ function ProductDetailView({ product, onBack, onBuy }) {
                  {[...Array(5)].map((_,i) => <Star key={i} size={14} className="fill-[#D4AF37] text-[#D4AF37]" />)}
                </div>
             </div>
-            <h2 className="text-6xl md:text-[6.5rem] font-serif font-bold mb-10 uppercase tracking-tighter leading-[0.8] text-zinc-900 drop-shadow-sm">{String(product.name)}</h2>
+            <h2 className="text-5xl md:text-[6.5rem] font-serif font-bold mb-10 uppercase tracking-tighter leading-[0.8] text-zinc-900 drop-shadow-sm">{String(product.name)}</h2>
             <div className="flex items-baseline gap-8">
                <p className="text-6xl md:text-7xl font-bold text-black tracking-tighter font-serif italic transition-all duration-700">{formatIDR(currentPrice)}</p>
                <span className="text-zinc-200 line-through text-2xl font-medium tracking-tight opacity-40">{formatIDR(currentPrice * 1.3)}</span>
             </div>
           </div>
 
-          <div className="space-y-12 bg-zinc-50/70 p-14 rounded-[5rem] border border-zinc-100 relative overflow-hidden group">
+          {/* TAB DESKRIPSI (Materials & Description) */}
+          <div className="space-y-12 bg-zinc-50/70 p-10 md:p-14 rounded-[3rem] md:rounded-[5rem] border border-zinc-100 relative overflow-hidden group">
              <div className="absolute top-0 right-0 w-60 h-60 bg-white rounded-full blur-[100px] -mr-32 -mt-32 opacity-60 transition-all group-hover:scale-110"></div>
              
-             <div className="flex gap-16 border-b border-zinc-100 relative z-10">
-                <button onClick={() => setActiveTab('description')} className={`pb-6 text-[12px] font-bold uppercase tracking-[0.4em] transition-all relative border-none bg-transparent cursor-pointer outline-none ${activeTab === 'description' ? 'text-black' : 'text-zinc-300'}`}>
-                   Material & Description
+             <div className="flex gap-10 md:gap-16 border-b border-zinc-100 relative z-10 overflow-x-auto no-scrollbar">
+                <button onClick={() => setActiveTab('description')} className={`pb-6 text-[12px] font-bold uppercase tracking-[0.4em] transition-all relative border-none bg-transparent cursor-pointer whitespace-nowrap outline-none ${activeTab === 'description' ? 'text-black' : 'text-zinc-300'}`}>
+                   Materials & Quality
                    {activeTab === 'description' && <span className="absolute bottom-0 left-0 w-full h-[2.5px] bg-[#D4AF37] animate-in zoom-in duration-500"></span>}
                 </button>
-                <button onClick={() => setActiveTab('shipping')} className={`pb-6 text-[12px] font-bold uppercase tracking-[0.4em] transition-all relative border-none bg-transparent cursor-pointer outline-none ${activeTab === 'shipping' ? 'text-black' : 'text-zinc-300'}`}>
-                   Delivery Concierge
+                <button onClick={() => setActiveTab('shipping')} className={`pb-6 text-[12px] font-bold uppercase tracking-[0.4em] transition-all relative border-none bg-transparent cursor-pointer whitespace-nowrap outline-none ${activeTab === 'shipping' ? 'text-black' : 'text-zinc-300'}`}>
+                   Concierge Delivery
                    {activeTab === 'shipping' && <span className="absolute bottom-0 left-0 w-full h-[2.5px] bg-[#D4AF37] animate-in zoom-in duration-500"></span>}
                 </button>
              </div>
@@ -566,8 +565,9 @@ function ProductDetailView({ product, onBack, onBuy }) {
                        <div className="p-3 bg-[#D4AF37]/10 rounded-2xl shadow-inner"><Crown size={24} /></div>
                        <span className="text-[12px] font-bold uppercase tracking-[0.5em]">Luxury Craftsmanship</span>
                     </div>
-                    <p className="text-zinc-600 leading-[2] text-[17px] whitespace-pre-wrap font-medium italic border-l-[3px] border-[#D4AF37]/20 pl-10 shadow-sm py-4 bg-white/30 rounded-r-3xl">
-                       {String(product.description || "Kemewahan sejati dalam setiap detail. Kami menggunakan standar pengerjaan butik tertinggi untuk memastikan setiap helai pakaian ini memberikan kepercayaan diri dan keanggunan yang tidak tertandingi bagi pemakainya.")}
+                    {/* DESKRIPSI PRODUK (MUNCUL CANTIK DI SINI) */}
+                    <p className="text-zinc-600 leading-[2.2] text-[16px] whitespace-pre-wrap font-medium italic border-l-[3px] border-[#D4AF37]/20 pl-8 shadow-sm py-6 bg-white/30 rounded-r-3xl">
+                       {String(product.description || "Kemewahan sejati dalam setiap detail. Kami menggunakan standar pengerjaan butik tertinggi untuk memastikan keanggunan maksimal bagi pemakainya.")}
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10 pt-8 border-t border-zinc-100">
                        <div className="flex items-center gap-5 text-[12px] font-bold text-black"><div className="w-6 h-6 bg-zinc-100 rounded-full flex items-center justify-center"><Check size={14} className="text-[#D4AF37]" /></div> High-End Textiles</div>
@@ -578,14 +578,15 @@ function ProductDetailView({ product, onBack, onBuy }) {
                   </div>
                 ) : (
                   <div className="space-y-8 text-zinc-500 text-[12px] font-bold leading-relaxed uppercase tracking-[0.4em]">
-                     <div className="flex justify-between items-center bg-white p-7 rounded-3xl border border-zinc-50 shadow-sm transition-all hover:translate-x-2"><span>Jakarta Metropolitan</span> <span className="text-black">1-2 Business Days</span></div>
-                     <div className="flex justify-between items-center bg-white p-7 rounded-3xl border border-zinc-50 shadow-sm transition-all hover:translate-x-2"><span>Java Island</span> <span className="text-black">3-4 Business Days</span></div>
-                     <div className="flex justify-between items-center bg-white p-7 rounded-3xl border border-zinc-50 shadow-sm transition-all hover:translate-x-2"><span>Across Indonesia</span> <span className="text-black">5-7 Business Days</span></div>
+                     <div className="flex justify-between items-center bg-white p-7 rounded-3xl border border-zinc-50 shadow-sm"><span>Jakarta Metropolitan</span> <span className="text-black">1-2 Business Days</span></div>
+                     <div className="flex justify-between items-center bg-white p-7 rounded-3xl border border-zinc-50 shadow-sm"><span>Java Island</span> <span className="text-black">3-4 Business Days</span></div>
+                     <div className="flex justify-between items-center bg-white p-7 rounded-3xl border border-zinc-50 shadow-sm"><span>Across Indonesia</span> <span className="text-black">5-7 Business Days</span></div>
                   </div>
                 )}
              </div>
           </div>
 
+          {/* SIZE SELECTION & BUY BUTTON */}
           <div className="space-y-16">
             <div>
                <div className="flex justify-between items-center mb-10">
@@ -596,12 +597,12 @@ function ProductDetailView({ product, onBack, onBuy }) {
                     Size Concierge <Info size={14} />
                   </span>
                </div>
-               <div className="flex flex-wrap gap-6">
+               <div className="flex flex-wrap gap-5">
                   {(product.sizes || []).map(s => (
-                    <div key={s} className="flex flex-col items-center gap-5 group/size">
+                    <div key={s} className="flex flex-col items-center gap-4 group/size">
                       <button 
                         onClick={() => setSelectedSize(s)} 
-                        className={`min-w-[90px] h-[90px] rounded-[2.5rem] flex items-center justify-center font-bold text-[16px] border-2 transition-all duration-500 cursor-pointer outline-none ${selectedSize === s ? 'bg-black text-[#D4AF37] border-black scale-110 shadow-[0_30px_60px_rgba(0,0,0,0.25)]' : 'border-zinc-100 text-zinc-300 hover:border-zinc-400 bg-transparent'}`}
+                        className={`min-w-[85px] h-[85px] rounded-[2.5rem] flex items-center justify-center font-bold text-[16px] border-2 transition-all duration-500 cursor-pointer outline-none ${selectedSize === s ? 'bg-black text-[#D4AF37] border-black scale-110 shadow-[0_30px_60px_rgba(0,0,0,0.25)]' : 'border-zinc-100 text-zinc-300 hover:border-zinc-400 bg-transparent'}`}
                       >
                         {String(s)}
                       </button>
@@ -618,46 +619,17 @@ function ProductDetailView({ product, onBack, onBuy }) {
             <div className="flex flex-col gap-10 pt-10">
               <button 
                 onClick={() => { if(!selectedSize) return alert("Harap pilih ukuran mewah Anda sebelum melanjutkan."); onBuy(selectedSize, currentPrice); }} 
-                className="group w-full bg-black text-[#D4AF37] py-11 rounded-[4rem] text-[15px] font-bold uppercase tracking-[0.8em] shadow-[0_50px_100px_rgba(0,0,0,0.2)] hover:bg-zinc-900 transition-all active:scale-95 border-none cursor-pointer flex items-center justify-center gap-8 relative overflow-hidden outline-none"
+                className="group w-full bg-black text-[#D4AF37] py-11 rounded-[4rem] text-[15px] font-bold uppercase tracking-[0.8em] shadow-[0_50px_100px_rgba(0,0,0,0.2)] hover:bg-zinc-900 transition-all active:scale-95 border-none cursor-pointer flex items-center justify-center gap-8 outline-none"
               >
-                <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 Lanjutkan Pembayaran <ArrowRight size={26} className="group-hover:translate-x-3 transition-transform duration-500" />
               </button>
               
-              <div className="flex justify-center gap-16 border-t border-zinc-100 pt-12">
-                 <div className="flex flex-col items-center gap-4 group cursor-default text-black"><div className="p-4 bg-zinc-50 rounded-2xl text-zinc-400 group-hover:text-[#D4AF37] transition-all"><Truck size={24} /></div><span className="text-[10px] font-bold uppercase tracking-widest text-zinc-300">Global Concierge</span></div>
-                 <div className="flex flex-col items-center gap-4 group cursor-default text-black"><div className="p-4 bg-zinc-50 rounded-2xl text-zinc-400 group-hover:text-[#D4AF37] transition-all"><Verified size={24} /></div><span className="text-[10px] font-bold uppercase tracking-widest text-zinc-300">Authentic Seal</span></div>
-                 <div className="flex flex-col items-center gap-4 group cursor-default text-black"><div className="p-4 bg-zinc-50 rounded-2xl text-zinc-400 group-hover:text-[#D4AF37] transition-all"><MousePointer2 size={24} /></div><span className="text-[10px] font-bold uppercase tracking-widest text-zinc-300">Personal Care</span></div>
+              <div className="flex justify-center gap-10 md:gap-16 border-t border-zinc-100 pt-12">
+                 <div className="flex flex-col items-center gap-4 text-black"><div className="p-4 bg-zinc-50 rounded-2xl text-zinc-400"><Truck size={24} /></div><span className="text-[10px] font-bold uppercase tracking-widest text-zinc-300">Concierge</span></div>
+                 <div className="flex flex-col items-center gap-4 text-black"><div className="p-4 bg-zinc-50 rounded-2xl text-zinc-400"><Verified size={24} /></div><span className="text-[10px] font-bold uppercase tracking-widest text-zinc-300">Authentic</span></div>
+                 <div className="flex flex-col items-center gap-4 text-black"><div className="p-4 bg-zinc-50 rounded-2xl text-zinc-400"><ShieldCheck size={24} /></div><span className="text-[10px] font-bold uppercase tracking-widest text-zinc-300">Protected</span></div>
               </div>
             </div>
-          </div>
-
-          <div className="bg-[#0A0A0A] p-16 rounded-[5rem] text-white relative overflow-hidden shadow-2xl group border border-white/5 mt-10">
-             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#D4AF37]/50 to-transparent"></div>
-             <div className="relative z-10 space-y-12">
-                <div className="flex items-center gap-6 border-b border-white/5 pb-10">
-                  <div className="w-16 h-16 bg-[#D4AF37]/10 rounded-[2rem] flex items-center justify-center text-[#D4AF37] shadow-inner"><Sparkles size={32} /></div>
-                  <div>
-                    <h4 className="text-[14px] font-bold uppercase tracking-[0.6em]">Devi AI Assistant</h4>
-                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-2 font-bold">Luxury Wardrobe Analysis</p>
-                  </div>
-                </div>
-                {aiAdvice ? (
-                  <p className="text-[17px] italic leading-[2.2] text-zinc-300 animate-in fade-in slide-in-from-left duration-1000 whitespace-pre-wrap border-l border-[#D4AF37]/30 pl-8">"{aiAdvice}"</p>
-                ) : (
-                  <div className="space-y-10">
-                    <p className="text-zinc-400 text-base font-medium leading-relaxed tracking-wider italic">Gunakan intelijen buatan butik kami untuk menganalisis dan merancang tampilan yang paling memukau khusus untuk Anda.</p>
-                    <button 
-                      onClick={handleAIStylist} 
-                      disabled={loadingAi}
-                      className="px-16 py-5 bg-[#D4AF37] text-black text-[12px] font-bold uppercase tracking-[0.4em] rounded-full hover:bg-white transition-all disabled:opacity-50 border-none cursor-pointer flex items-center gap-4 outline-none active:scale-95"
-                    >
-                      {loadingAi ? <Loader2 size={20} className="animate-spin" /> : <Wand2 size={20} />}
-                      {loadingAi ? "Analyzing Masterpiece..." : "Rancang Gaya Saya"}
-                    </button>
-                  </div>
-                )}
-             </div>
           </div>
         </div>
       </div>
@@ -666,12 +638,12 @@ function ProductDetailView({ product, onBack, onBuy }) {
 }
 
 /**
- * --- COMPONENT: CHECKOUT VIEW ---
+ * --- COMPONENT: CHECKOUT VIEW (DIPERBAIKI PERSIS FOTO) ---
  */
 function CheckoutView({ product, rekening, onComplete, onBack }) {
   const [step, setStep] = useState(1);
   const [uploading, setUploading] = useState(false);
-  const [shipping, setShipping] = useState({ email: '', name: '', city: '', address: '', postalCode: '', phone: '' });
+  const [shipping, setShipping] = useState({ email: '', name: '', city: '', address: '', postalCode: '', phone: '', subscribe: true, dropship: false });
   const [payment, setPayment] = useState({ 
     invoice: `INV-DEVI-${Math.floor(Date.now() / 1000).toString().slice(-6)}`,
     paymentTime: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
@@ -688,8 +660,8 @@ function CheckoutView({ product, rekening, onComplete, onBack }) {
       const uploadResult = await uploadBytes(storageRef, file);
       const url = await getDownloadURL(uploadResult.ref);
       setPayment(prev => ({ ...prev, proofImage: url }));
-      alert("Bukti Transfer Berhasil Diverifikasi Sistem.");
-    } catch (err) { alert("Kesalahan Unggah: " + err.message); }
+      alert("Bukti Transfer Terverifikasi.");
+    } catch (err) { alert("Unggah Gagal: " + err.message); }
     finally { setUploading(false); }
   };
 
@@ -698,170 +670,172 @@ function CheckoutView({ product, rekening, onComplete, onBack }) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     doc.setFillColor(15, 15, 15); doc.rect(0, 0, 210, 50, 'F');
-    doc.setTextColor(212, 175, 55); doc.setFont("helvetica", "bold"); doc.setFontSize(30); doc.text("DEVI OFFICIAL", 105, 30, { align: 'center' });
-    doc.setTextColor(50, 50, 50); doc.setFontSize(10); doc.text("BOUTIQUE SALES RECEIPT", 105, 65, { align: 'center' });
-    doc.setDrawColor(212, 175, 55); doc.line(25, 72, 185, 72);
-    const info = [["Invoice Reference", payment.invoice], ["Date of Purchase", payment.paymentTime], ["Client Name", shipping.name], ["Item Collection", product.name], ["Size Selection", product.chosenSize], ["Payment Total", formatIDR(payment.amount)]];
-    let y = 90; info.forEach(r => { doc.setFont("helvetica", "bold"); doc.text(r[0] + ":", 35, y); doc.setFont("helvetica", "normal"); doc.text(String(r[1]), 100, y); y += 12; });
-    doc.save(`Receipt_DEVI_${payment.invoice}.pdf`);
+    doc.setTextColor(212, 175, 55); doc.setFont("helvetica", "bold"); doc.setFontSize(26); doc.text("DEVI OFFICIAL", 105, 32, { align: 'center' });
+    doc.setTextColor(50, 50, 50); doc.setFontSize(10); doc.text("BOUTIQUE SALES RECEIPT", 105, 68, { align: 'center' });
+    doc.setDrawColor(212, 175, 55); doc.line(30, 75, 180, 75);
+    const info = [["Invoice Reference", payment.invoice], ["Purchase Date", payment.paymentTime], ["Recipient Client", shipping.name], ["Item Collection", product.name], ["Size Selection", product.chosenSize], ["Payment Total", formatIDR(payment.amount)]];
+    let y = 95; info.forEach(r => { doc.setFont("helvetica", "bold"); doc.text(r[0] + ":", 35, y); doc.setFont("helvetica", "normal"); doc.text(String(r[1]), 105, y); y += 12; });
+    doc.save(`DEVI_LUXURY_${payment.invoice}.pdf`);
   };
 
   const submitOrder = async () => {
-    if (!payment.senderName || !payment.originBank || !shipping.name) return alert("Silakan lengkapi data identitas pembayar Anda.");
+    if (!payment.senderName || !payment.originBank || !shipping.name) return alert("Silakan lengkapi formulir konfirmasi.");
     try {
       await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), { 
-        ...payment, 
-        shipping, 
-        productName: String(product.name), 
-        productSize: String(product.chosenSize), 
-        createdAt: serverTimestamp() 
+        ...payment, shipping, productName: String(product.name), productSize: String(product.chosenSize), createdAt: serverTimestamp() 
       });
       setStep(4);
-    } catch (e) { alert("Network Busy: " + e.message); }
+    } catch (e) { alert("Network Error: " + e.message); }
   };
 
   return (
-    <div className="max-w-3xl mx-auto py-16 px-6 text-black animate-in fade-in duration-700">
-       <div className="bg-white rounded-[5rem] shadow-[0_80px_160px_rgba(0,0,0,0.06)] border border-zinc-100 overflow-hidden relative">
+    <div className="max-w-xl mx-auto py-12 px-4 text-black animate-in fade-in duration-700">
+       <div className="bg-white rounded-[2.5rem] shadow-2xl border border-zinc-100 overflow-hidden relative">
+          
+          {/* STEP 1: INFORMASI PEMBELI & ALAMAT (PERSIS FOTO) */}
           {step === 1 && (
-            <div className="p-12 md:p-20 space-y-14 text-black">
-               <div className="flex items-center gap-4 text-[11px] text-zinc-300 font-bold uppercase tracking-[0.4em] mb-4">
-                  <span className="text-black">Informasi</span> <ChevronRight size={14}/> <span>Pembayaran</span> <ChevronRight size={14}/> <span>Finalisasi</span>
+            <div className="p-8 md:p-10 space-y-8">
+               <div className="flex items-center gap-3 text-[11px] text-zinc-300 font-bold uppercase tracking-widest mb-4">
+                  <span className="text-black">Informasi Pembeli</span> <ChevronRight size={10}/> <span>Metode Pengiriman</span> <ChevronRight size={10}/> <span>Metode Pembayaran</span>
                </div>
-               <div className="space-y-10">
-                  <h3 className="text-4xl font-serif font-bold italic tracking-tighter uppercase">Informasi Pengiriman</h3>
-                  <div className="space-y-8">
-                    <div className="group border-b-2 border-zinc-100 focus-within:border-[#D4AF37] transition-all pb-4">
-                      <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest ml-1">Boutique Member E-mail</label>
-                      <input className="w-full py-4 text-base font-bold border-none outline-none bg-transparent text-black" placeholder="client@deviofficial.id" value={shipping.email} onChange={e=>setShipping({...shipping, email:e.target.value})}/>
+
+               <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-[13px] font-bold text-zinc-700">Email</label>
+                    <input className="w-full border border-zinc-200 p-4 rounded-xl text-sm focus:border-blue-400 outline-none" placeholder="email@contoh.com" value={shipping.email} onChange={e=>setShipping({...shipping, email:e.target.value})}/>
+                    <div className="flex items-center gap-3 mt-2">
+                       <input type="checkbox" className="w-4 h-4" checked={shipping.subscribe} onChange={()=>setShipping({...shipping, subscribe: !shipping.subscribe})}/>
+                       <span className="text-[11px] text-zinc-500 font-medium">Berlangganan ke newsletter</span>
                     </div>
-                    <div className="group border-b-2 border-zinc-100 focus-within:border-[#D4AF37] transition-all pb-4">
-                      <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest ml-1">Nama Lengkap Penerima</label>
-                      <input className="w-full py-4 text-base font-bold border-none outline-none bg-transparent text-black" placeholder="Sherly Adelia" value={shipping.name} onChange={e=>setShipping({...shipping, name:e.target.value})}/>
+                  </div>
+
+                  <h3 className="text-xl font-bold pt-4">Alamat Pengiriman</h3>
+                  <div className="space-y-4">
+                    <input className="w-full border border-zinc-200 p-4 rounded-xl text-sm outline-none focus:border-blue-400" placeholder="Nama" value={shipping.name} onChange={e=>setShipping({...shipping, name:e.target.value})}/>
+                    <input className="w-full border border-zinc-200 p-4 rounded-xl text-sm outline-none focus:border-blue-400" placeholder="Kota/Kabupaten" value={shipping.city} onChange={e=>setShipping({...shipping, city:e.target.value})}/>
+                    <textarea className="w-full border border-zinc-200 p-4 rounded-xl text-sm h-28 outline-none focus:border-blue-400" placeholder="Alamat" value={shipping.address} onChange={e=>setShipping({...shipping, address:e.target.value})}/>
+                    <div className="grid grid-cols-2 gap-4">
+                       <input className="border border-zinc-200 p-4 rounded-xl text-sm outline-none focus:border-blue-400" placeholder="Kode Pos" value={shipping.postalCode} onChange={e=>setShipping({...shipping, postalCode:e.target.value})}/>
+                       <input className="border border-zinc-200 p-4 rounded-xl text-sm outline-none focus:border-blue-400" placeholder="Telepon" value={shipping.phone} onChange={e=>setShipping({...shipping, phone:e.target.value})}/>
                     </div>
-                    <div className="group border-b-2 border-zinc-100 focus-within:border-[#D4AF37] transition-all pb-4">
-                      <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest ml-1">Kota atau Kabupaten</label>
-                      <input className="w-full py-4 text-base font-bold border-none outline-none bg-transparent text-black" placeholder="Jakarta Pusat" value={shipping.city} onChange={e=>setShipping({...shipping, city:e.target.value})}/>
-                    </div>
-                    <div className="group border-b-2 border-zinc-100 focus-within:border-[#D4AF37] transition-all pb-4">
-                      <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest ml-1">Alamat Domisili Lengkap</label>
-                      <textarea className="w-full py-4 text-base font-bold border-none outline-none bg-transparent h-24 resize-none text-black" placeholder="Jl. Kemang Raya, Jakarta Tower..." value={shipping.address} onChange={e=>setShipping({...shipping, address:e.target.value})}/>
-                    </div>
-                    <div className="grid grid-cols-2 gap-12">
-                       <div className="group border-b-2 border-zinc-100 focus-within:border-[#D4AF37] transition-all pb-4">
-                          <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest ml-1">Nomor WhatsApp</label>
-                          <input className="w-full py-4 text-base font-bold border-none outline-none bg-transparent text-black" placeholder="0812..." value={shipping.phone} onChange={e=>setShipping({...shipping, phone:e.target.value})}/>
-                       </div>
-                       <div className="group border-b-2 border-zinc-100 focus-within:border-[#D4AF37] transition-all pb-4">
-                          <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest ml-1">Kode Pos</label>
-                          <input className="w-full py-4 text-base font-bold border-none outline-none bg-transparent text-black" placeholder="10110" value={shipping.postalCode} onChange={e=>setShipping({...shipping, postalCode:e.target.value})}/>
-                       </div>
+                    <div className="flex items-center gap-3">
+                       <input type="checkbox" className="w-4 h-4" checked={shipping.dropship} onChange={()=>setShipping({...shipping, dropship: !shipping.dropship})}/>
+                       <span className="text-[11px] text-zinc-500 font-medium">Kirim sebagai dropshipper</span>
                     </div>
                   </div>
                </div>
-               <button onClick={()=>setStep(2)} className="w-full bg-[#3b82f6] text-white py-8 rounded-[3rem] font-bold text-[13px] uppercase tracking-[0.6em] shadow-[0_30px_60px_rgba(59,130,246,0.3)] hover:bg-blue-700 transition-all border-none cursor-pointer active:scale-95">Lanjutkan ke Pembayaran</button>
-               <div className="pt-14 border-t border-zinc-50 flex items-center gap-8">
-                  <img src={product.imageURL} className="w-24 h-32 rounded-[2.5rem] object-cover border border-zinc-100 shadow-xl" alt=""/>
-                  <div className="space-y-2"><h4 className="text-sm font-serif font-bold uppercase tracking-widest">{String(product.name)}</h4><p className="text-[11px] text-zinc-400 uppercase font-bold tracking-widest">Size: {String(product.chosenSize)} • {formatIDR(product.chosenPrice || product.price)}</p></div>
+
+               <button onClick={()=>setStep(2)} className="w-full bg-[#3b82f6] text-white py-6 rounded-xl font-bold text-sm shadow-xl hover:bg-blue-600 transition-all border-none cursor-pointer">Lanjutkan</button>
+
+               {/* PRODUCT SUMMARY (PERSIS FOTO) */}
+               <div className="pt-10 border-t border-zinc-100 space-y-6">
+                  <div className="flex items-center gap-5">
+                     <div className="relative">
+                        <img src={product.imageURL} className="w-16 h-20 rounded-xl object-cover border border-zinc-50 shadow-sm" alt=""/>
+                        <span className="absolute -top-3 -right-3 bg-zinc-400 text-white text-[10px] w-6 h-6 flex items-center justify-center rounded-full font-bold">1</span>
+                     </div>
+                     <div className="flex-1">
+                        <h4 className="text-xs font-bold text-zinc-800">{String(product.name)}</h4>
+                        <p className="text-[10px] text-zinc-400 font-bold uppercase mt-1">Size: {String(product.chosenSize)}</p>
+                     </div>
+                     <p className="text-xs font-bold">{formatIDR(product.chosenPrice || product.price)}</p>
+                  </div>
+                  <div className="flex justify-between items-center text-xl font-bold border-t border-zinc-50 pt-6">
+                     <span className="text-zinc-400 text-sm">Total</span> 
+                     <span className="text-black font-bold">Rp {Number(product.chosenPrice || product.price).toLocaleString('id-ID')}</span>
+                  </div>
                </div>
             </div>
           )}
 
+          {/* STEP 2: METODE PEMBAYARAN */}
           {step === 2 && (
-            <div className="p-16 md:p-24 space-y-16 text-black">
-               <div className="text-center space-y-4"><h3 className="text-4xl font-serif font-bold italic uppercase tracking-tighter">Secure Payment</h3><p className="text-[10px] text-zinc-400 font-bold uppercase tracking-[0.8em]">Pilih Rekening Tujuan Transfer</p></div>
-               <div className="grid grid-cols-1 gap-6">
+            <div className="p-10 space-y-12">
+               <div className="text-center space-y-2"><h3 className="text-2xl font-serif font-bold italic uppercase">Payment Method</h3><p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">Pilih rekening tujuan</p></div>
+               <div className="grid grid-cols-1 gap-5">
                   {rekening.map(rek => (
-                    <div key={rek.id} onClick={()=>{ setPayment({...payment, transferTo: `${rek.bankName} - ${rek.accountNumber} - ${rek.accountHolder}`}); setStep(3); }} className="p-10 border-2 border-zinc-50 rounded-[3rem] hover:border-[#D4AF37] hover:bg-zinc-50/50 cursor-pointer transition-all active:scale-95 group flex items-center justify-between shadow-sm">
-                       <div className="flex flex-col gap-5">
-                          <img src={BANK_LOGOS[rek.bankName]} className="h-6 object-contain w-24 text-left grayscale group-hover:grayscale-0 transition-all duration-700" alt=""/>
-                          <div className="space-y-1"><p className="text-2xl font-mono font-bold tracking-tighter text-black">{String(rek.accountNumber)}</p><p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest italic">A.N {String(rek.accountHolder)}</p></div>
+                    <div key={rek.id} onClick={()=>{ setPayment({...payment, transferTo: `${rek.bankName} - ${rek.accountNumber} - ${rek.accountHolder}`}); setStep(3); }} className="p-8 border-2 border-zinc-50 rounded-2xl hover:border-[#D4AF37] hover:bg-zinc-50/50 cursor-pointer transition-all active:scale-95 group flex items-center justify-between shadow-sm">
+                       <div className="flex flex-col gap-4">
+                          <img src={BANK_LOGOS[rek.bankName]} className="h-5 object-contain w-20 text-left grayscale group-hover:grayscale-0 transition-all duration-700" alt=""/>
+                          <div className="space-y-1"><p className="text-xl font-mono font-bold tracking-tighter text-black">{String(rek.accountNumber)}</p><p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest italic">A.N {String(rek.accountHolder)}</p></div>
                        </div>
-                       <div className="w-16 h-16 rounded-full bg-zinc-50 flex items-center justify-center group-hover:bg-[#D4AF37] group-hover:shadow-2xl transition-all duration-500">
-                         <ArrowRight size={28} className="text-zinc-300 group-hover:text-black transition-all"/>
-                       </div>
+                       <ArrowRight size={22} className="text-zinc-200 group-hover:text-black transition-all"/>
                     </div>
                   ))}
                </div>
-               <button onClick={()=>setStep(1)} className="w-full py-6 text-[11px] font-bold uppercase text-zinc-300 hover:text-black transition-all bg-transparent border-none cursor-pointer tracking-[0.5em]">Kembali ke Informasi Alamat</button>
+               <button onClick={()=>setStep(1)} className="w-full py-4 text-[10px] font-bold uppercase text-zinc-300 hover:text-black transition-all bg-transparent border-none cursor-pointer">Kembali ke Alamat</button>
             </div>
           )}
 
+          {/* STEP 3: KONFIRMASI PEMBAYARAN (PERSIS FOTO) */}
           {step === 3 && (
-            <div className="p-12 md:p-20 space-y-14 text-black">
-               <div className="text-center space-y-4"><h3 className="text-4xl font-serif font-bold italic uppercase tracking-tighter">Confirmation</h3><p className="text-[10px] text-[#D4AF37] uppercase tracking-[0.8em] font-bold">Lengkapi rincian transfer Anda</p></div>
-               <div className="space-y-10">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10 text-black">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest ml-2">Invoice</label>
-                      <div className="p-6 bg-zinc-50 rounded-[1.5rem] text-sm font-bold border border-zinc-100 text-zinc-400 italic">{String(payment.invoice)}</div>
-                    </div>
-                    <div className="space-y-2 text-black">
-                      <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest ml-2">Waktu Pembayaran</label>
-                      <div className="p-6 bg-zinc-50 rounded-[1.5rem] text-sm font-bold border border-zinc-100 text-black shadow-inner">{String(payment.paymentTime)}</div>
-                    </div>
+            <div className="p-8 md:p-10 space-y-10">
+               <h3 className="text-xl font-bold text-center border-b pb-4">Konfirmasi Pembayaran</h3>
+               <div className="space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-zinc-400 ml-1">Nomor Invoice</label>
+                    <input className="w-full bg-zinc-50 p-4 rounded-xl text-sm font-bold border-none outline-none text-zinc-500" value={payment.invoice} readOnly/>
                   </div>
-
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-zinc-400 ml-1">Waktu Pembayaran</label>
+                    <input className="w-full bg-zinc-50 p-4 rounded-xl text-sm font-bold border-none outline-none text-black" value={payment.paymentTime} readOnly/>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-zinc-400 ml-1">Ditransfer Ke</label>
+                    <div className="w-full bg-zinc-100 p-4 rounded-xl text-[10px] font-bold text-zinc-500 uppercase">{payment.transferTo}</div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-zinc-400 ml-1">Bank Asal</label>
+                    <input className="w-full border border-zinc-200 p-4 rounded-xl text-sm font-bold outline-none focus:border-blue-400" placeholder="BCA / BRI / Mandiri" value={payment.originBank} onChange={e=>setPayment({...payment, originBank:e.target.value})}/>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-zinc-400 ml-1">Nama Pemilik Rekening</label>
+                    <input className="w-full border border-zinc-200 p-4 rounded-xl text-sm font-bold outline-none focus:border-blue-400" placeholder="Nama di Struk" value={payment.senderName} onChange={e=>setPayment({...payment, senderName:e.target.value})}/>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-zinc-400 ml-1">Jumlah</label>
+                    <div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-sm">Rp</span><input className="w-full bg-zinc-50 p-4 pl-12 rounded-xl text-base font-bold border-none text-black" value={payment.amount} readOnly/></div>
+                  </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest ml-2">Ditransfer ke Rekening Butik</label>
-                    <div className="p-6 bg-zinc-900 rounded-[2rem] text-[11px] font-bold text-[#D4AF37] tracking-[0.2em] uppercase shadow-2xl border border-[#D4AF37]/20">{String(payment.transferTo)}</div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                    <div className="group border-b-2 border-zinc-100 focus-within:border-[#D4AF37] transition-all pb-4">
-                      <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Bank Asal Anda</label>
-                      <input className="w-full py-4 text-sm font-bold border-none outline-none bg-transparent text-black" placeholder="BCA / BRI / Mandiri" value={payment.originBank} onChange={e=>setPayment({...payment, originBank:e.target.value})}/>
-                    </div>
-                    <div className="group border-b-2 border-zinc-100 focus-within:border-[#D4AF37] transition-all pb-4">
-                      <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Atas Nama Pengirim</label>
-                      <input className="w-full py-4 text-sm font-bold border-none outline-none bg-transparent text-black" placeholder="Sherly Adelia" value={payment.senderName} onChange={e=>setPayment({...payment, senderName:e.target.value})}/>
-                    </div>
-                  </div>
-
-                  <div className="p-12 bg-black rounded-[4rem] text-center border-2 border-[#D4AF37]/40 shadow-[0_40px_80px_rgba(0,0,0,0.3)] relative overflow-hidden">
-                     <div className="absolute top-0 right-0 w-32 h-32 bg-[#D4AF37]/10 rounded-full blur-[60px] -mr-16 -mt-16"></div>
-                     <p className="text-[11px] font-bold text-[#D4AF37] uppercase tracking-[1em] mb-6">Investment Amount</p>
-                     <p className="text-5xl md:text-6xl font-serif font-bold italic text-white tracking-tighter">{formatIDR(payment.amount)}</p>
-                  </div>
-
-                  <div className="space-y-6">
-                    <label className="text-[10px] font-bold uppercase tracking-[1em] text-zinc-300 text-center block">Bukti Transfer Digital</label>
-                    <div onClick={()=>document.getElementById('uPf').click()} className="w-full aspect-[2/1] border-2 border-dashed border-[#D4AF37]/30 rounded-[3rem] bg-zinc-50 flex items-center justify-center cursor-pointer overflow-hidden group shadow-inner relative transition-all hover:bg-zinc-100">
-                       {payment.proofImage ? <img src={payment.proofImage} className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-1000"/> : (
-                         <div className="text-center space-y-5">
-                            {uploading ? <Loader2 className="animate-spin text-[#D4AF37] mx-auto" size={48} /> : <Upload className="text-zinc-200 mx-auto" size={56} />}
-                            <p className="text-[11px] font-bold text-zinc-300 uppercase tracking-[0.5em] leading-relaxed">Klik untuk Unggah Foto / Screenshot Struk</p>
+                    <label className="text-[11px] font-bold text-zinc-400 ml-1">Bukti Transfer (Opsional)</label>
+                    <div onClick={()=>document.getElementById('uPf').click()} className="w-full aspect-video border-2 border-dashed border-zinc-200 rounded-2xl bg-zinc-50 flex items-center justify-center cursor-pointer overflow-hidden group shadow-inner relative transition-all hover:bg-zinc-100">
+                       {payment.proofImage ? <img src={payment.proofImage} className="w-full h-full object-cover"/> : (
+                         <div className="text-center space-y-2">
+                            {uploading ? <Loader2 className="animate-spin text-blue-500 mx-auto" size={32} /> : <Upload className="text-zinc-300 mx-auto" size={32} />}
+                            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Upload Gambar</p>
                          </div>
                        )}
                        <input type="file" id="uPf" className="hidden" accept="image/*" onChange={handleUpload}/>
                     </div>
                   </div>
                </div>
-               <button onClick={submitOrder} disabled={uploading} className="w-full bg-black text-[#D4AF37] py-9 rounded-[4rem] font-bold text-[13px] uppercase tracking-[0.8em] shadow-[0_50px_100px_rgba(0,0,0,0.3)] border-none cursor-pointer hover:bg-[#3b82f6] hover:text-white transition-all duration-700">Konfirmasi Final</button>
+               <button onClick={submitOrder} disabled={uploading} className="w-full bg-[#3b82f6] text-white py-6 rounded-xl font-bold text-sm shadow-xl hover:bg-blue-700 transition-all border-none cursor-pointer disabled:opacity-50">Konfirmasi</button>
+               
+               {/* Bank Info small below */}
+               <div className="pt-8 border-t border-zinc-100 space-y-4">
+                  {rekening.map(rek => (
+                    <div key={rek.id} className="flex items-center gap-4 text-zinc-500">
+                       <img src={BANK_LOGOS[rek.bankName]} className="h-4 object-contain grayscale opacity-50 w-12" alt=""/>
+                       <div className="text-[9px] font-bold uppercase tracking-tight">
+                          {rek.bankName} <br/> {rek.accountNumber} <br/> {rek.accountHolder}
+                       </div>
+                    </div>
+                  ))}
+               </div>
             </div>
           )}
 
+          {/* STEP 4: SUCCESS VIEW */}
           {step === 4 && (
-            <div className="p-24 text-center space-y-16 animate-in zoom-in duration-1000 text-black">
-               <div className="relative w-40 h-40 mx-auto">
-                 <div className="absolute inset-0 bg-green-100 rounded-full animate-ping opacity-20"></div>
-                 <div className="relative w-40 h-40 bg-green-500 text-white rounded-full flex items-center justify-center shadow-2xl border-[15px] border-white transition-transform hover:scale-110 duration-700">
-                    <CheckIcon size={80}/>
-                 </div>
+            <div className="p-16 text-center space-y-10 animate-in zoom-in duration-1000">
+               <div className="w-24 h-24 bg-green-500 text-white rounded-full flex items-center justify-center mx-auto shadow-2xl border-[10px] border-white"><Check size={48}/></div>
+               <div className="space-y-4 text-black font-bold uppercase">
+                  <h3 className="text-3xl font-serif">Order Securely Sent</h3>
+                  <p className="text-[10px] text-zinc-400 tracking-[0.5em]">Pesanan Anda sedang diproses admin.</p>
                </div>
-               <div className="space-y-6">
-                  <h3 className="text-5xl font-serif font-bold uppercase tracking-tighter text-zinc-900">Succesfully Submitted</h3>
-                  <p className="text-base text-zinc-400 font-medium tracking-widest leading-relaxed max-w-sm mx-auto uppercase italic">
-                    Konfirmasi Anda telah kami amankan. Butik akan memverifikasi dalam waktu singkat.
-                  </p>
-               </div>
-               <div className="flex flex-col gap-6 pt-10">
-                  <button onClick={downloadReceipt} className="flex items-center justify-center gap-5 bg-white border-2 border-zinc-100 p-7 rounded-[3rem] text-[11px] font-bold uppercase tracking-[0.5em] hover:bg-zinc-50 transition-all cursor-pointer shadow-sm group border-none outline-none">
-                    <Download size={22} className="group-hover:translate-y-1 transition-transform" /> Unduh Struk Penjualan
-                  </button>
-                  <button onClick={onComplete} className="bg-black text-[#D4AF37] p-7 rounded-[3rem] text-[11px] font-bold uppercase tracking-[0.5em] shadow-2xl border-none cursor-pointer hover:bg-zinc-800 transition-all active:scale-95 outline-none">
-                    Kembali ke Beranda Koleksi
-                  </button>
+               <div className="flex flex-col gap-4 pt-10">
+                  <button onClick={downloadReceipt} className="flex items-center justify-center gap-4 bg-white border-2 border-zinc-100 p-6 rounded-2xl text-[11px] font-bold uppercase tracking-widest hover:bg-zinc-50 transition-all cursor-pointer"><Download size={18}/> Unduh Struk Digital</button>
+                  <button onClick={onComplete} className="bg-black text-[#D4AF37] p-6 rounded-2xl text-[11px] font-bold uppercase tracking-widest shadow-2xl border-none cursor-pointer">Kembali Beranda</button>
                </div>
             </div>
           )}
@@ -871,7 +845,7 @@ function CheckoutView({ product, rekening, onComplete, onBack }) {
 }
 
 /**
- * --- COMPONENT: ADMIN DASHBOARD ---
+ * --- COMPONENT: ADMIN DASHBOARD (PERBAIKAN PUBLISH) ---
  */
 function AdminDashboard({ products, orders, rekening, appId, onLogout }) {
   const [tab, setTab] = useState('inventory');
@@ -890,7 +864,7 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout }) {
 
   const publishProduct = async () => {
     if (!formData.name.trim() || !formData.price || !formData.imageURL || !formData.description.trim()) {
-      return alert("Harap isi Nama, Harga, Gambar Instagram, dan Material/Deskripsi!");
+      return alert("Harap isi Nama, Harga Dasar, Gambar IG, dan Material/Deskripsi produk!");
     }
     setSaving(true);
     try {
@@ -903,83 +877,71 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout }) {
       setFormData({ imageURL: '', name: '', price: '', category: 'Baju', description: '', sizes: [], sizePrices: {} });
       setInstaUrl('');
       alert("PRODUK EKSKLUSIF BERHASIL DIPUBLIKASIKAN.");
-    } catch (e) { alert("Gagal Mempublikasikan Produk: " + e.message); } 
+    } catch (e) { alert("Gagal Publikasi: " + e.message); } 
     finally { setSaving(false); }
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-24 flex flex-col lg:flex-row gap-20 text-black">
+    <div className="max-w-7xl mx-auto px-6 py-20 flex flex-col lg:flex-row gap-16 text-black">
       <aside className="lg:w-80 space-y-10">
-         <div className="bg-zinc-950 p-14 rounded-[5rem] text-white shadow-2xl relative border border-white/5 overflow-hidden group">
-           <div className="absolute top-0 right-0 w-32 h-32 bg-[#D4AF37]/20 rounded-full blur-3xl -mr-16 -mt-16 transition-all group-hover:scale-125 duration-1000"></div>
-           <Settings className="text-[#D4AF37] mb-8 animate-[spin_10s_linear_infinite]" size={48} />
+         <div className="bg-zinc-950 p-12 rounded-[4rem] text-white shadow-2xl relative border border-white/5 overflow-hidden">
+           <div className="absolute top-0 right-0 w-32 h-32 bg-[#D4AF37]/20 rounded-full blur-3xl -mr-16 -mt-16"></div>
+           <Settings className="text-[#D4AF37] mb-8 animate-[spin_12s_linear_infinite]" size={48} />
            <p className="text-[10px] font-bold uppercase tracking-[0.8em] text-zinc-500 mb-2">Boutique</p>
            <h2 className="text-3xl font-serif italic tracking-widest font-bold">Control Panel</h2>
          </div>
-         <div className="bg-white p-8 rounded-[4rem] border border-zinc-100 flex flex-col gap-4 shadow-sm">
+         <div className="bg-white p-6 rounded-[3rem] border border-zinc-100 flex flex-col gap-3 shadow-sm">
             {['inventory', 'orders', 'banking'].map(t => (
-              <button key={t} onClick={()=>setTab(t)} className={`text-left px-10 py-6 rounded-3xl text-[12px] font-bold uppercase tracking-[0.5em] transition-all border-none cursor-pointer outline-none ${tab === t ? 'bg-black text-[#D4AF37] shadow-2xl translate-x-3' : 'text-zinc-300 hover:bg-zinc-50 bg-transparent'}`}>{String(t).toUpperCase()}</button>
+              <button key={t} onClick={()=>setTab(t)} className={`text-left px-10 py-5 rounded-2xl text-[12px] font-bold uppercase tracking-[0.5em] transition-all border-none cursor-pointer ${tab === t ? 'bg-black text-[#D4AF37] shadow-xl' : 'text-zinc-300 hover:bg-zinc-50 bg-transparent'}`}>{String(t).toUpperCase()}</button>
             ))}
-            <div className="h-[1px] bg-zinc-50 my-4 mx-4"></div>
-            <button onClick={onLogout} className="text-left px-10 py-6 rounded-3xl text-[12px] font-bold uppercase text-red-500 border-none bg-transparent cursor-pointer hover:bg-red-50 tracking-[0.5em] outline-none">Exit Dashboard</button>
+            <button onClick={onLogout} className="text-left px-10 py-5 rounded-2xl text-[12px] font-bold uppercase text-red-500 border-none bg-transparent cursor-pointer hover:bg-red-50 mt-12 tracking-[0.5em]">Logout Portal</button>
          </div>
       </aside>
 
-      <div className="flex-1 bg-white p-12 md:p-24 rounded-[6rem] border border-zinc-100 min-h-[90vh] shadow-sm relative overflow-hidden">
+      <div className="flex-1 bg-white p-10 md:p-20 rounded-[4.5rem] border border-zinc-100 min-h-[90vh] shadow-sm relative overflow-hidden">
          {tab === 'inventory' && (
-           <div className="grid grid-cols-1 xl:grid-cols-2 gap-28 relative z-10 text-black">
-              <div className="space-y-14">
-                 <div className="flex items-center gap-6"><Crown className="text-[#D4AF37]" size={28} /><h3 className="text-[13px] font-bold uppercase tracking-[0.8em] text-zinc-300 italic">Publish Masterpiece</h3></div>
+           <div className="grid grid-cols-1 xl:grid-cols-2 gap-20">
+              <div className="space-y-12">
+                 <h3 className="text-xs font-bold uppercase tracking-[0.5em] text-[#D4AF37] border-b border-zinc-50 pb-6 italic">Publish New Masterpiece</h3>
                  
-                 <div className="aspect-[3/4.5] bg-zinc-50 rounded-[4.5rem] border-2 border-dashed border-zinc-100 overflow-hidden relative shadow-inner group cursor-crosshair">
+                 <div className="aspect-[3/4.5] bg-zinc-50 rounded-[4.5rem] border-2 border-dashed border-zinc-100 overflow-hidden relative shadow-inner group">
                     {formData.imageURL ? (
                       <img src={formData.imageURL} className="w-full h-full object-cover transition-transform duration-[15s] group-hover:scale-110"/>
                     ) : (
                       <div className="absolute inset-0 flex flex-col items-center justify-center opacity-10">
-                        <Instagram size={100} />
-                        <p className="text-[12px] font-bold uppercase tracking-[1em] mt-8 text-black">Waiting for Link</p>
+                        <Instagram size={80} />
+                        <p className="text-[12px] font-bold uppercase tracking-[1em] mt-6 text-black">Awaiting Visual</p>
                       </div>
                     )}
                  </div>
 
                  <div className="space-y-10 text-black font-bold">
                     <div className="flex gap-5">
-                      <input className="flex-1 bg-zinc-50 p-7 rounded-[2rem] border-none text-[11px] font-bold uppercase outline-none shadow-inner text-black placeholder:text-zinc-200" placeholder="Instagram URL Address..." value={instaUrl} onChange={e=>setInstaUrl(e.target.value)}/>
+                      <input className="flex-1 bg-zinc-50 p-7 rounded-[2rem] border-none text-[11px] font-bold uppercase outline-none shadow-inner text-black placeholder:text-zinc-200" placeholder="Instagram URL..." value={instaUrl} onChange={e=>setInstaUrl(e.target.value)}/>
                       <button onClick={()=>{ 
                         const clean = instaUrl.split('?')[0]; 
-                        setFormData({...formData, imageURL: `https://images.weserv.nl/?url=${encodeURIComponent(clean.endsWith('/') ? clean + 'media/?size=l' : clean + '/media/?size=l')}&w=1200&output=jpg`});
+                        setFormData({...formData, imageURL: `https://images.weserv.nl/?url=${encodeURIComponent(clean.endsWith('/') ? clean + 'media/?size=l' : clean + '/media/?size=l')}&w=1000&output=jpg`});
                         alert("Visual Masterpiece Berhasil Ditarik."); 
-                      }} className="bg-black text-[#D4AF37] px-12 rounded-[2rem] text-[11px] font-bold uppercase tracking-widest border-none cursor-pointer outline-none active:scale-95">Fetch</button>
+                      }} className="bg-black text-[#D4AF37] px-12 rounded-[2rem] text-[11px] font-bold uppercase tracking-widest border-none cursor-pointer outline-none">Fetch</button>
                     </div>
                     
                     <input className="w-full bg-zinc-50 p-7 rounded-[2rem] border-none text-base font-bold uppercase text-black shadow-inner outline-none" placeholder="Masterpiece Name" value={formData.name} onChange={e=>setFormData({...formData, name:e.target.value})}/>
                     
                     <div className="grid grid-cols-2 gap-8">
                        <input type="number" className="w-full bg-zinc-50 p-7 rounded-[2rem] border-none text-base font-bold text-black shadow-inner outline-none" placeholder="Base Price (IDR)" value={formData.price} onChange={e=>setFormData({...formData, price:e.target.value})}/>
-                       <select className="w-full bg-zinc-50 p-7 rounded-[2rem] border-none text-[12px] font-bold uppercase text-black shadow-inner outline-none cursor-pointer bg-transparent" value={formData.category} onChange={e=>setFormData({...formData, category:e.target.value})}>
-                          {CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
+                       <select className="w-full bg-zinc-50 p-7 rounded-[2rem] border-none text-[12px] font-bold uppercase text-black shadow-inner outline-none cursor-pointer bg-transparent appearance-none" value={formData.category} onChange={e=>setFormData({...formData, category:e.target.value})}>
+                          {CATEGORIES.map(c=><option key={c} value={c}>{String(c)}</option>)}
                        </select>
                     </div>
 
-                    <div className="space-y-10 p-14 bg-zinc-50 rounded-[4rem] shadow-inner border border-zinc-100">
+                    <div className="space-y-10 p-12 bg-zinc-50 rounded-[4rem] shadow-inner border border-zinc-100">
                        <p className="text-[11px] font-bold text-zinc-400 uppercase tracking-[0.5em] border-b border-zinc-200 pb-6 text-center">Specific Size Pricing</p>
                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
                           {SIZE_OPTIONS.map(s => (
                             <div key={s} className="space-y-3">
-                               <button 
-                                onClick={()=>handleSizeToggle(s)} 
-                                className={`w-full py-5 rounded-2xl text-[11px] font-bold uppercase transition-all duration-500 border-none outline-none ${formData.sizes.includes(s) ? 'bg-black text-[#D4AF37] shadow-2xl scale-105' : 'bg-white text-zinc-200 border border-zinc-100'}`}
-                               >
-                                 {s}
-                               </button>
+                               <button onClick={()=>handleSizeToggle(s)} className={`w-full py-4 rounded-xl text-[10px] font-bold uppercase transition-all duration-500 border-none outline-none ${formData.sizes.includes(s) ? 'bg-black text-[#D4AF37] shadow-2xl scale-105' : 'bg-white text-zinc-200 border border-zinc-100'}`}>{s}</button>
                                {formData.sizes.includes(s) && (
-                                 <input 
-                                  type="number" 
-                                  className="w-full bg-white border-2 border-zinc-100 p-4 rounded-2xl text-[10px] font-bold focus:border-[#D4AF37] outline-none shadow-sm" 
-                                  placeholder="Price IDR" 
-                                  value={formData.sizePrices[s] || ''} 
-                                  onChange={e=>setFormData({...formData, sizePrices: {...formData.sizePrices, [s]: Number(e.target.value)}})}
-                                 />
+                                 <input type="number" className="w-full bg-white border-2 border-zinc-100 p-4 rounded-2xl text-[11px] font-bold focus:border-[#D4AF37] outline-none shadow-sm" placeholder="Price IDR" value={formData.sizePrices[s] || ''} onChange={e=>setFormData({...formData, sizePrices: {...formData.sizePrices, [s]: Number(e.target.value)}})}/>
                                )}
                             </div>
                           ))}
@@ -987,11 +949,11 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout }) {
                     </div>
 
                     <div className="space-y-4">
-                       <label className="text-[11px] font-bold uppercase text-zinc-400 ml-6 tracking-[0.5em]">Materials & Description (Will show on web)</label>
-                       <textarea className="w-full bg-zinc-50 p-12 rounded-[4rem] border-none text-base font-medium leading-relaxed italic text-black shadow-inner h-64 outline-none resize-none" placeholder="Explain the elegance, materials, and artisan quality of this piece..." value={formData.description} onChange={e=>setFormData({...formData, description:e.target.value})}/>
+                       <label className="text-[11px] font-bold uppercase text-zinc-400 ml-6 tracking-[0.5em]">Materials & Description (Cantik)</label>
+                       <textarea className="w-full bg-zinc-50 p-12 rounded-[4rem] border-none text-base font-medium leading-relaxed italic text-black shadow-inner h-64 outline-none resize-none" placeholder="Jelaskan kualitas material, motif, dan keanggunan produk ini di sini..." value={formData.description} onChange={e=>setFormData({...formData, description:e.target.value})}/>
                     </div>
                     
-                    <button onClick={publishProduct} disabled={saving} className="w-full bg-black text-[#D4AF37] py-10 rounded-[4rem] font-bold uppercase text-[14px] tracking-[1em] shadow-[0_50px_100px_rgba(0,0,0,0.25)] disabled:opacity-50 border-none cursor-pointer hover:bg-zinc-900 transition-all active:scale-95 flex items-center justify-center gap-8 relative group overflow-hidden outline-none">
+                    <button onClick={publishProduct} disabled={saving} className="w-full bg-black text-[#D4AF37] py-10 rounded-[4rem] font-bold uppercase text-[13px] tracking-[1em] shadow-[0_40px_80px_rgba(0,0,0,0.25)] disabled:opacity-50 border-none cursor-pointer hover:bg-zinc-900 transition-all active:scale-95 flex items-center justify-center gap-8 relative group overflow-hidden outline-none">
                        <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                        {saving ? <Loader2 className="animate-spin" size={32} /> : <Zap size={28} />}
                        {saving ? "Publishing Masterpiece..." : "Release to Boutique"}
@@ -1048,7 +1010,7 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout }) {
                                <span className="tracking-[0.4em]">INSPECT PROOF</span>
                             </div>
                          </div>
-                         <div className="space-y-8 flex-1">
+                         <div className="space-y-8 flex-1 text-black font-bold">
                             <div className="flex items-center gap-6">
                                <span className={`text-[10px] font-bold px-8 py-3 rounded-full shadow-lg tracking-widest ${o.status === 'pending' ? 'bg-yellow-50 text-yellow-600' : 'bg-green-50 text-green-600'}`}>
                                   {String(o.status).toUpperCase()}
@@ -1059,7 +1021,7 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout }) {
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-12 text-[11px] font-bold uppercase tracking-[0.4em] text-zinc-400">
                                <div className="space-y-2"><span>Selection</span> <p className="text-black text-sm tracking-tighter">{String(o.productName)} ({String(o.productSize)})</p></div>
                                <div className="space-y-2"><span>Total</span> <p className="text-[#3a7d44] text-sm tracking-tighter">{formatIDR(o.amount)}</p></div>
-                               <div className="space-y-2"><span>Origin</span> <p className="text-[#D4AF37] text-sm tracking-tighter">{String(o.originBank)}</p></div>
+                               <div className="space-y-2"><span>Origin Bank</span> <p className="text-[#D4AF37] text-sm tracking-tighter uppercase">{String(o.originBank)}</p></div>
                             </div>
                          </div>
                       </div>
@@ -1082,35 +1044,6 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout }) {
                       </div>
                    </div>
                  ))}
-              </div>
-           </div>
-         )}
-
-         {tab === 'banking' && (
-           <div className="space-y-20 animate-in fade-in duration-1000 text-black">
-              <div className="text-center space-y-4"><h3 className="text-4xl font-serif font-bold italic uppercase tracking-tighter">Finance Hub</h3><p className="text-[10px] text-[#D4AF37] uppercase tracking-[1em] font-bold">Secure Banking Management</p></div>
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-24">
-                 <div className="space-y-12">
-                    <h3 className="text-[12px] font-bold uppercase tracking-[0.8em] text-zinc-300 italic">Add Merchant Account</h3>
-                    <div className="space-y-10">
-                       <select className="w-full bg-zinc-50 p-8 rounded-[2.5rem] border-none text-xs font-bold uppercase shadow-inner outline-none cursor-pointer appearance-none text-black">
-                          {Object.keys(BANK_LOGOS).map(b => <option key={b} value={b}>{String(b)}</option>)}
-                       </select>
-                       <input className="w-full bg-zinc-50 p-8 rounded-[2.5rem] border-none text-base font-bold shadow-inner outline-none text-black" placeholder="Account Number"/>
-                       <input className="w-full bg-zinc-50 p-8 rounded-[2.5rem] border-none text-base font-bold shadow-inner outline-none text-black" placeholder="Account Holder Name"/>
-                       <button className="w-full bg-black text-[#D4AF37] py-10 rounded-[3.5rem] font-bold uppercase text-[12px] tracking-[0.5em] shadow-2xl border-none cursor-pointer outline-none active:scale-95">Link Private Vault</button>
-                    </div>
-                 </div>
-                 <div className="space-y-12 max-h-[800px] overflow-y-auto no-scrollbar border-l border-zinc-100 pl-16">
-                    <h3 className="text-[12px] font-bold uppercase tracking-[0.8em] text-zinc-200 mb-8 italic">Authorized Accounts ({rekening.length})</h3>
-                    {rekening.map(rek => (
-                       <div key={rek.id} className="p-12 bg-white border border-zinc-100 rounded-[4rem] flex flex-col gap-8 shadow-sm group hover:shadow-2xl transition-all duration-700">
-                          <img src={BANK_LOGOS[rek.bankName]} className="h-6 object-contain w-24 grayscale group-hover:grayscale-0 transition-all duration-700" alt=""/>
-                          <div className="space-y-2"><p className="text-3xl font-mono font-bold tracking-tighter text-black">{String(rek.accountNumber)}</p><p className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest italic">Vault: {String(rek.accountHolder)}</p></div>
-                          <button onClick={async()=>{ if(window.confirm("Remove this payment gateway?")) await deleteDoc(doc(db,'artifacts',appId,'public','data','rekening',rek.id)); }} className="w-full py-4 text-red-300 hover:text-red-500 font-bold uppercase text-[10px] tracking-widest border-none bg-transparent cursor-pointer transition-all outline-none">Delete Gateway</button>
-                       </div>
-                    ))}
-                 </div>
               </div>
            </div>
          )}
@@ -1280,7 +1213,7 @@ function Footer({ setView }) {
       <div className="max-w-7xl mx-auto mt-40 pt-16 border-t border-zinc-900 flex flex-col md:flex-row justify-between items-center gap-14">
          <div className="text-zinc-800 text-[10px] uppercase tracking-[1em] font-bold">© 2024 DEVI_OFFICIAL LUXURY GROUP. INTERNATIONAL TRADEMARK.</div>
          <button onClick={() => setView('login')} className="flex items-center gap-4 text-zinc-700 text-[11px] font-bold tracking-[0.5em] hover:text-[#D4AF37] transition-all border border-zinc-900 px-12 py-5 rounded-full hover:border-[#D4AF37]/40 bg-transparent cursor-pointer uppercase shadow-inner group outline-none active:scale-95">
-            <ShieldAlert size={18} className="group-hover:animate-bounce" /> Authorised Entry
+            <ShieldAlert size={18} className="group-hover:animate-bounce" /> SECURE LOGIN
          </button>
       </div>
     </footer>
