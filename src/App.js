@@ -129,7 +129,7 @@ import {
 /**
  * ==========================================================================================
  * --- DEVI OFFICIAL LUXURY BOUTIQUE ECOSYSTEM ---
- * VERSION: 14.0.0 (MULTI-IMAGE GALLERY & ADMIN UPGRADE)
+ * VERSION: 14.5.0 (GALLERY FIX & STABLE ADMIN IMAGES)
  * ==========================================================================================
  */
 
@@ -248,6 +248,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-white text-zinc-900 font-sans antialiased overflow-x-hidden selection:bg-[#D4AF37] selection:text-white">
       
+      {/* NOTIFICATION HUB */}
       <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[5000] flex flex-col gap-2 w-full max-w-xs px-4 pointer-events-none">
         {notifications.map(n => (
           <NotificationItem key={n.id} notification={n} />
@@ -590,8 +591,14 @@ function ProductDetailView({ product, onBack, onBuy, onAddToCart, notify }) {
     }
   }, [selectedSize, product]);
 
-  const nextImg = () => setActiveImg((prev) => (prev + 1) % images.length);
-  const prevImg = () => setActiveImg((prev) => (prev - 1 + images.length) % images.length);
+  const nextImg = (e) => {
+    e?.stopPropagation();
+    setActiveImg((prev) => (prev + 1) % images.length);
+  };
+  const prevImg = (e) => {
+    e?.stopPropagation();
+    setActiveImg((prev) => (prev - 1 + images.length) % images.length);
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-4 md:py-12 animate-in fade-in duration-500">
@@ -602,17 +609,23 @@ function ProductDetailView({ product, onBack, onBuy, onAddToCart, notify }) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-16 items-start">
         {/* Gallery Section */}
         <div className="relative w-full aspect-[4/5] bg-zinc-50 rounded-xl overflow-hidden shadow-lg border border-zinc-100 group">
-          <img src={images[activeImg]} className="w-full h-full object-cover transition-all duration-500" alt={product.name} />
+          {/* Key property forces re-render so image actually changes visual state */}
+          <img 
+            key={images[activeImg]} 
+            src={images[activeImg]} 
+            className="w-full h-full object-cover transition-opacity duration-300" 
+            alt={product.name} 
+          />
           
           {images.length > 1 && (
             <>
-              <button onClick={prevImg} className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center shadow-md md:opacity-0 group-hover:opacity-100 transition-opacity">
-                <ChevronLeft size={20} />
+              <button onClick={prevImg} className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center shadow-md z-10">
+                <ChevronLeft size={20} className="text-black" />
               </button>
-              <button onClick={nextImg} className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center shadow-md md:opacity-0 group-hover:opacity-100 transition-opacity">
-                <ChevronRight size={20} />
+              <button onClick={nextImg} className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center shadow-md z-10">
+                <ChevronRight size={20} className="text-black" />
               </button>
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
                 {images.map((_, idx) => (
                   <div key={idx} className={`w-1.5 h-1.5 rounded-full transition-all ${activeImg === idx ? 'bg-[#D4AF37] w-4' : 'bg-white/50'}`}></div>
                 ))}
@@ -786,22 +799,33 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
   const [saving, setSaving] = useState(false);
   const [instaUrls, setInstaUrls] = useState(['', '', '', '', '']);
   const [formData, setFormData] = useState({ 
-    imageURLs: [], name: '', price: '', category: 'Baju', description: '', sizes: SIZE_OPTIONS, sizePrices: {} 
+    imageURLs: ['', '', '', '', ''], 
+    name: '', 
+    price: '', 
+    category: 'Baju', 
+    description: '', 
+    sizes: SIZE_OPTIONS, 
+    sizePrices: {} 
   });
   const [newCreds, setNewCreds] = useState({ username: creds?.username || '', password: creds?.password || '' });
 
   const publishProduct = async () => {
-    if (!formData.name.trim() || !formData.price || formData.imageURLs.length === 0) {
-      return notify("Harap isi nama, harga, dan minimal 1 link IG!", "error");
+    // Filter array imageURLs agar tidak menyimpan string kosong
+    const validImages = formData.imageURLs.filter(url => url && url.trim() !== '');
+    
+    if (!formData.name.trim() || !formData.price || validImages.length === 0) {
+      return notify("Harap isi nama, harga, dan minimal 1 foto utama!", "error");
     }
     setSaving(true);
     try {
       await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), { 
         ...formData, 
+        imageURLs: validImages, // Simpan hanya yang ada isinya
         price: Number(formData.price), 
         createdAt: serverTimestamp() 
       });
-      setFormData({ imageURLs: [], name: '', price: '', category: 'Baju', description: '', sizes: SIZE_OPTIONS, sizePrices: {} });
+      // Reset state
+      setFormData({ imageURLs: ['', '', '', '', ''], name: '', price: '', category: 'Baju', description: '', sizes: SIZE_OPTIONS, sizePrices: {} });
       setInstaUrls(['', '', '', '', '']);
       notify("Maha karya dipublikasikan.", "success");
     } catch (e) { notify(e.message, "error"); } finally { setSaving(false); }
@@ -856,7 +880,7 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                  <div className="aspect-[3/4] bg-zinc-50 rounded-xl border-2 border-dashed border-zinc-100 overflow-hidden relative flex flex-col items-center justify-center gap-2">
-                    {formData.imageURLs.length > 0 ? (
+                    {formData.imageURLs[0] ? (
                       <img src={formData.imageURLs[0]} className="w-full h-full object-cover"/>
                     ) : (
                       <Instagram size={32} className="text-zinc-200" />
@@ -865,7 +889,7 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
                  </div>
                  
                  <div className="space-y-2">
-                    <p className="text-[9px] text-zinc-500">Instagram Links (Maks 5 - Foto 1 Wajib)</p>
+                    <p className="text-[9px] text-zinc-500 font-bold">Instagram Links (Slot 1 Wajib)</p>
                     {instaUrls.map((url, idx) => (
                       <div key={idx} className="flex gap-1.5">
                          <input className="flex-1 bg-zinc-50 p-2 rounded-lg border-none text-[8px] font-bold outline-none shadow-inner" placeholder={`Link IG ${idx + 1}...`} value={url} onChange={e => {
@@ -876,6 +900,7 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
                          <button onClick={() => handleFetchImage(instaUrls[idx], idx)} className="bg-black text-[#D4AF37] px-2.5 rounded-lg text-[7px] border-none cursor-pointer">FETCH</button>
                       </div>
                     ))}
+                    <p className="text-[7px] text-zinc-400 italic italic">Klik FETCH di setiap baris untuk mengambil gambar.</p>
                  </div>
               </div>
               
@@ -884,7 +909,7 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
                  <input type="number" className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] font-bold outline-none" placeholder="Harga Default" value={formData.price} onChange={e=>setFormData({...formData, price:e.target.value})}/>
                  
                  <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-100">
-                    <p className="text-[8px] mb-2">Harga Per Ukuran (Opsional)</p>
+                    <p className="text-[8px] mb-2 font-bold">Harga Per Ukuran (Opsional)</p>
                     <div className="grid grid-cols-2 gap-2">
                        {SIZE_OPTIONS.map(sz => (
                          <div key={sz} className="flex items-center gap-1">
@@ -940,9 +965,9 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
                  </div>
                  <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto no-scrollbar">
                     {rekening.map(rek => (
-                      <div key={rek.id} className="p-3 bg-white border border-zinc-100 rounded-xl relative group">
+                      <div key={rek.id} className="p-3 bg-white border border-zinc-100 rounded-xl relative group text-center flex flex-col items-center">
                          <img src={BANK_LOGOS[rek.bankName]} className="h-4 object-contain mb-1" alt=""/>
-                         <p className="text-[7px] font-bold truncate">{rek.accountNumber}</p>
+                         <p className="text-[7px] font-bold truncate w-full">{rek.accountNumber}</p>
                          <button onClick={async()=>await deleteDoc(doc(db,'artifacts',appId,'public','data','rekening',rek.id))} className="absolute top-1 right-1 p-1 text-red-400 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={10}/></button>
                       </div>
                     ))}
@@ -1062,7 +1087,7 @@ function CartView({ items, onRemove, onCheckout }) {
   const total = items.reduce((s, i) => s + Number(i.chosenPrice || i.price), 0);
   return (
     <div className="max-w-2xl mx-auto py-10 md:py-32 px-4 font-bold uppercase">
-       <div className="text-center mb-12 space-y-1.5">
+       <div className="text-center mb-8 space-y-1.5">
           <h2 className="text-2xl font-serif font-bold italic tracking-tighter uppercase text-zinc-950 leading-none">Shopping <span className="text-[#D4AF37]">Bag</span></h2>
           <div className="w-10 h-[1.5px] bg-[#D4AF37] mx-auto opacity-40"></div>
        </div>
