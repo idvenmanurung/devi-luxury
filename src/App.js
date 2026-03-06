@@ -129,7 +129,7 @@ import {
 /**
  * ==========================================================================================
  * --- DEVI OFFICIAL LUXURY BOUTIQUE ECOSYSTEM ---
- * VERSION: 15.5.0 (ADMIN ORDER DETAILS & GALLERY STABILITY)
+ * VERSION: 16.5.0 (CATEGORY ARROWS & ADMIN ORDER DETAILS FIX)
  * ==========================================================================================
  */
 
@@ -144,8 +144,14 @@ const firebaseConfig = {
 };
 
 const appId = "devi-official-premium-production-v1";
-const CATEGORIES = ['Semua', 'Baju', 'Dress', 'Hijab', 'Abaya', 'Koko', 'Set Keluarga', 'Tas', 'Aksesoris'];
-const SIZE_OPTIONS = ['S', 'M', 'L', 'XL', 'XXL', 'All Size'];
+
+const CATEGORIES = [
+  'Semua', 'Baju', 'Dress', 'Hijab', 'Abaya', 'Koko', 
+  'Tunik', 'Kaftan', 'Mukena', 'Inner', 'Set Keluarga', 
+  'Tas', 'Aksesoris'
+];
+
+const SIZE_OPTIONS = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'All Size'];
 
 const BANK_LOGOS = {
   "Bank Central Asia (BCA)": "https://upload.wikimedia.org/wikipedia/commons/5/5c/Bank_Central_Asia.svg",
@@ -199,6 +205,9 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState([]);
 
+  // Ref untuk category slider
+  const catScrollRef = useRef(null);
+
   const notify = (message, type = 'info') => {
     const id = Date.now();
     setNotifications(prev => [...prev, { id, message: String(message), type }]);
@@ -234,6 +243,13 @@ export default function App() {
     return () => { unsubP(); unsubR(); unsubO(); unsubA(); };
   }, [user]);
 
+  const scrollCat = (dir) => {
+    if (catScrollRef.current) {
+      const scrollAmt = 150;
+      catScrollRef.current.scrollBy({ left: dir === 'left' ? -scrollAmt : scrollAmt, behavior: 'smooth' });
+    }
+  };
+
   const filteredProducts = useMemo(() => {
     return products.filter(p => {
       const name = String(p.name || '').toLowerCase();
@@ -248,7 +264,6 @@ export default function App() {
   return (
     <div className="min-h-screen bg-white text-zinc-900 font-sans antialiased overflow-x-hidden selection:bg-[#D4AF37] selection:text-white">
       
-      {/* NOTIFICATION HUB */}
       <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[5000] flex flex-col gap-2 w-full max-w-xs px-4 pointer-events-none">
         {notifications.map(n => (
           <NotificationItem key={n.id} notification={n} />
@@ -271,17 +286,41 @@ export default function App() {
               <HeroSection onExplore={() => document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' })} />
               <CraftsmanshipSection />
               
-              <div id="catalog" className="bg-white/95 backdrop-blur-xl border-b border-zinc-100 sticky top-14 md:top-20 z-40 overflow-x-auto no-scrollbar shadow-sm">
-                <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-start md:justify-center gap-2 whitespace-nowrap">
-                  {CATEGORIES.map(c => (
-                    <button 
-                      key={c} 
-                      onClick={() => setCategoryFilter(c)} 
-                      className={`text-[10px] uppercase font-bold tracking-widest transition-all px-4 py-2 rounded-full border-none cursor-pointer outline-none ${categoryFilter === c ? 'bg-black text-[#D4AF37]' : 'text-zinc-400 bg-zinc-50 hover:bg-zinc-100'}`}
-                    >
-                      {c}
-                    </button>
-                  ))}
+              {/* Category Navigation with Arrows */}
+              <div id="catalog" className="bg-white/95 backdrop-blur-xl border-b border-zinc-100 sticky top-14 md:top-20 z-40 shadow-sm relative group">
+                <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center relative">
+                  
+                  {/* Left Arrow */}
+                  <button 
+                    onClick={() => scrollCat('left')}
+                    className="absolute left-1 z-10 p-1.5 bg-white/80 rounded-full shadow-md border border-zinc-100 opacity-0 group-hover:opacity-100 transition-opacity active:scale-90"
+                  >
+                    <ChevronLeft size={14} className="text-zinc-600" />
+                  </button>
+
+                  <div 
+                    ref={catScrollRef}
+                    className="flex items-center justify-start md:justify-center gap-3 whitespace-nowrap overflow-x-auto no-scrollbar w-full px-6"
+                  >
+                    {CATEGORIES.map(c => (
+                      <button 
+                        key={c} 
+                        onClick={() => setCategoryFilter(c)} 
+                        className={`text-[10px] uppercase font-bold tracking-widest transition-all px-4 py-2 rounded-full border-none cursor-pointer outline-none flex-shrink-0 ${categoryFilter === c ? 'bg-black text-[#D4AF37] shadow-lg' : 'text-zinc-400 bg-zinc-50 hover:bg-zinc-100'}`}
+                      >
+                        {c}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Right Arrow */}
+                  <button 
+                    onClick={() => scrollCat('right')}
+                    className="absolute right-1 z-10 p-1.5 bg-white/80 rounded-full shadow-md border border-zinc-100 opacity-0 group-hover:opacity-100 transition-opacity active:scale-90"
+                  >
+                    <ChevronRight size={14} className="text-zinc-600" />
+                  </button>
+
                 </div>
               </div>
 
@@ -843,6 +882,14 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
     } catch (e) { notify(e.message, "error"); }
   };
 
+  const handleDeleteOrder = async (id) => {
+    if (!window.confirm("Hapus Data Pesanan?")) return;
+    try {
+      await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', id));
+      notify("Pesanan Dihapus.", "success");
+    } catch (e) { notify(e.message, "error"); }
+  };
+
   const handleFetchImage = (url, index) => {
     if (!url) return;
     const clean = url.split('?')[0]; 
@@ -875,46 +922,61 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col md:flex-row gap-6 font-bold uppercase text-black relative">
       
-      {/* Order Detail Modal */}
+      {/* Detail Pesanan (Informasi Konsumen) */}
       {selectedOrder && (
-        <div className="fixed inset-0 z-[6000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-           <div className="bg-white w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in duration-300">
+        <div className="fixed inset-0 z-[6000] bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
+           <div className="bg-white w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in duration-300">
               <div className="p-4 bg-zinc-900 text-[#D4AF37] flex justify-between items-center">
-                 <h3 className="text-xs font-serif tracking-widest">Detail Pesanan</h3>
-                 <button onClick={()=>setSelectedOrder(null)} className="p-1 bg-white/10 rounded-full hover:bg-white/20 transition-all cursor-pointer"><X size={20}/></button>
+                 <h3 className="text-[10px] font-serif tracking-[0.2em]">INFORMASI KONSUMEN</h3>
+                 <button onClick={()=>setSelectedOrder(null)} className="p-1.5 bg-white/10 rounded-full hover:bg-white/20 transition-all cursor-pointer"><X size={20}/></button>
               </div>
-              <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto no-scrollbar">
-                 <div className="grid grid-cols-2 gap-4">
+              <div className="p-6 space-y-6 max-h-[85vh] overflow-y-auto no-scrollbar">
+                 <div className="grid grid-cols-2 gap-4 border-b border-zinc-100 pb-4">
                     <div className="space-y-1">
-                       <p className="text-[8px] text-zinc-400">Pembeli</p>
+                       <p className="text-[8px] text-zinc-400">NAMA LENGKAP</p>
                        <p className="text-[11px] font-bold">{selectedOrder.shipping?.name}</p>
                     </div>
                     <div className="space-y-1">
-                       <p className="text-[8px] text-zinc-400">Nomor HP</p>
+                       <p className="text-[8px] text-zinc-400">NOMOR HP</p>
                        <p className="text-[11px] font-bold">{selectedOrder.shipping?.phone}</p>
                     </div>
                  </div>
-                 <div className="space-y-1">
-                    <p className="text-[8px] text-zinc-400">Alamat Lengkap</p>
-                    <p className="text-[10px] font-medium leading-relaxed bg-zinc-50 p-3 rounded-lg border border-zinc-100">{selectedOrder.shipping?.address}</p>
+                 
+                 <div className="space-y-1 border-b border-zinc-100 pb-4">
+                    <p className="text-[8px] text-zinc-400">ALAMAT PENGIRIMAN</p>
+                    <p className="text-[10px] font-medium leading-relaxed bg-zinc-50 p-3 rounded-xl">{selectedOrder.shipping?.address}</p>
                  </div>
-                 <div className="grid grid-cols-2 gap-4">
+
+                 <div className="grid grid-cols-2 gap-4 border-b border-zinc-100 pb-4">
                     <div className="space-y-1">
-                       <p className="text-[8px] text-zinc-400">Produk</p>
-                       <p className="text-[10px] font-bold">{selectedOrder.productName}</p>
-                       <p className="text-[9px] text-[#D4AF37]">Size: {selectedOrder.productSize}</p>
+                       <p className="text-[8px] text-zinc-400">PESANAN</p>
+                       <p className="text-[11px] font-bold">{selectedOrder.productName}</p>
+                       <span className="text-[9px] px-2 py-0.5 bg-zinc-100 rounded-full">SIZE: {selectedOrder.productSize}</span>
                     </div>
                     <div className="space-y-1 text-right">
-                       <p className="text-[8px] text-zinc-400">Total Pembayaran</p>
-                       <p className="text-sm font-bold">{formatIDR(selectedOrder.amount)}</p>
+                       <p className="text-[8px] text-zinc-400">TOTAL TRANSFER</p>
+                       <p className="text-sm font-bold text-black">{formatIDR(selectedOrder.amount)}</p>
+                       <p className="text-[7px] text-zinc-400">{selectedOrder.transferTo}</p>
                     </div>
                  </div>
+
                  <div className="space-y-2">
-                    <p className="text-[8px] text-zinc-400">Bukti Transfer (Klik Gambar)</p>
-                    <div className="border border-zinc-100 rounded-xl overflow-hidden shadow-sm">
-                       <img src={selectedOrder.proofImage} className="w-full object-contain max-h-[300px] cursor-pointer" onClick={()=>window.open(selectedOrder.proofImage, '_blank')}/>
+                    <p className="text-[8px] text-zinc-400 font-bold">BUKTI TRANSFER DIGITAL</p>
+                    <div className="border border-zinc-100 rounded-2xl overflow-hidden bg-zinc-50 flex items-center justify-center p-2">
+                       {selectedOrder.proofImage ? (
+                         <img 
+                           src={selectedOrder.proofImage} 
+                           className="w-full max-h-[400px] object-contain rounded-xl cursor-pointer shadow-md" 
+                           onClick={()=>window.open(selectedOrder.proofImage, '_blank')}
+                           alt="Bukti Transfer"
+                         />
+                       ) : (
+                         <p className="text-[10px] text-zinc-300 py-10">Gambar tidak tersedia</p>
+                       )}
                     </div>
+                    <p className="text-[7px] text-zinc-400 italic text-center">Klik gambar untuk memperbesar</p>
                  </div>
+
                  <div className="pt-4 flex gap-2">
                     {selectedOrder.status === 'pending' && (
                        <button 
@@ -923,12 +985,12 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
                            setSelectedOrder(null);
                            notify("Pesanan Dikonfirmasi.", "success");
                          }} 
-                         className="flex-1 bg-zinc-900 text-[#D4AF37] py-3 rounded-xl text-[10px] font-bold"
+                         className="flex-1 bg-green-600 text-white py-3 rounded-xl text-[10px] font-bold shadow-lg"
                        >
-                         Konfirmasi Sekarang
+                         KONFIRMASI SEKARANG
                        </button>
                     )}
-                    <button onClick={()=>setSelectedOrder(null)} className="flex-1 bg-zinc-50 py-3 rounded-xl text-[10px] text-zinc-400">Tutup</button>
+                    <button onClick={()=>setSelectedOrder(null)} className="flex-1 bg-zinc-100 py-3 rounded-xl text-[10px] text-zinc-500 font-bold">TUTUP</button>
                  </div>
               </div>
            </div>
@@ -981,8 +1043,8 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
                     <input type="number" className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] font-bold outline-none" placeholder="Harga Default" value={formData.price} onChange={e=>setFormData({...formData, price:e.target.value})}/>
                     
                     <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-100">
-                       <p className="text-[8px] mb-2 font-bold">Custom Size Pricing</p>
-                       <div className="grid grid-cols-3 gap-1.5">
+                       <p className="text-[8px] mb-2 font-bold">Custom Size Pricing (IDR)</p>
+                       <div className="grid grid-cols-4 gap-1.5">
                           {SIZE_OPTIONS.map(sz => (
                             <div key={sz} className="space-y-0.5">
                                <p className="text-[7px] text-zinc-400">{sz}</p>
@@ -990,6 +1052,13 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
                             </div>
                           ))}
                        </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <p className="text-[8px] text-zinc-400 font-bold uppercase">Kategori Produk</p>
+                      <select className="w-full bg-zinc-50 p-2.5 rounded-lg border-none text-[9px] outline-none cursor-pointer font-bold" value={formData.category} onChange={e=>setFormData({...formData, category:e.target.value})}>
+                        {CATEGORIES.map(c=><option key={c} value={c}>{c.toUpperCase()}</option>)}
+                      </select>
                     </div>
 
                     <textarea className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] italic h-24 outline-none resize-none" placeholder="Material Story..." value={formData.description} onChange={e=>setFormData({...formData, description:e.target.value})}/>
@@ -1000,7 +1069,7 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
               </div>
 
               <div className="space-y-4">
-                 <h3 className="text-xs font-serif tracking-widest border-b border-zinc-50 pb-2">Catalog Database</h3>
+                 <h3 className="text-xs font-serif tracking-widest border-b border-zinc-50 pb-2">Katalog Saat Ini</h3>
                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {products.map(p => (
                       <div key={p.id} className="bg-white border border-zinc-100 rounded-xl overflow-hidden group shadow-sm relative transition-all hover:shadow-md">
@@ -1024,33 +1093,36 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
          
          {tab === 'orders' && (
            <div className="space-y-4 animate-in fade-in">
-              <h3 className="text-xs font-serif tracking-widest">Client Requests</h3>
+              <h3 className="text-xs font-serif tracking-widest">Daftar Pesanan Konsumen</h3>
               {orders.map(o => (
                 <div key={o.id} onClick={()=>setSelectedOrder(o)} className="p-3 bg-zinc-50 rounded-xl flex items-center justify-between border border-zinc-100 shadow-sm cursor-pointer hover:bg-zinc-100 transition-all active:scale-[0.98]">
                    <div className="flex items-center gap-4 flex-1">
-                      <img src={o.proofImage} className="w-10 h-14 rounded-lg object-cover shadow-sm"/>
+                      <div className="w-10 h-14 bg-white border rounded-lg overflow-hidden shadow-sm flex items-center justify-center">
+                         {o.proofImage ? <img src={o.proofImage} className="w-full h-full object-cover"/> : <CreditCard size={16} className="text-zinc-200"/>}
+                      </div>
                       <div className="space-y-0.5">
-                         <span className={`text-[6px] font-bold px-1.5 py-0.5 rounded-full uppercase border ${o.status === 'pending' ? 'bg-yellow-50 text-yellow-600' : 'bg-green-50 text-green-600'}`}>{String(o.status)}</span>
+                         <span className={`text-[6px] font-bold px-1.5 py-0.5 rounded-full uppercase border ${o.status === 'pending' ? 'bg-yellow-50 text-yellow-600 border-yellow-100' : 'bg-green-50 text-green-600 border-green-100'}`}>{String(o.status)}</span>
                          <h4 className="text-[10px] font-serif italic font-bold">{String(o.shipping?.name)}</h4>
                          <p className="text-[9px] text-[#D4AF37] font-bold">{formatIDR(o.amount)}</p>
-                         <p className="text-[7px] text-zinc-400">Order ID: #{o.id.slice(-6)}</p>
+                         <p className="text-[7px] text-zinc-400">KLIK UNTUK DETAIL</p>
                       </div>
                    </div>
                    <div className="flex items-center gap-4">
                       <div className="text-right hidden sm:block">
-                         <p className="text-[8px] text-zinc-400">{o.productName}</p>
+                         <p className="text-[8px] text-zinc-400 truncate max-w-[80px]">{o.productName}</p>
                          <p className="text-[7px] font-bold">SIZE: {o.productSize}</p>
                       </div>
                       <button onClick={(e)=>{ e.stopPropagation(); handleDeleteOrder(o.id); }} className="p-2 text-zinc-300 hover:text-red-500 transition-all border-none bg-transparent cursor-pointer"><Trash2 size={16}/></button>
                    </div>
                 </div>
               ))}
+              {orders.length === 0 && <p className="text-center py-20 text-zinc-300 text-[10px]">Belum ada pesanan masuk</p>}
            </div>
          )}
 
          {tab === 'banking' && (
            <div className="space-y-6 animate-in fade-in">
-              <h3 className="text-xs font-serif">Credential Perbankan</h3>
+              <h3 className="text-xs font-serif">Setup Pembayaran</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                  <div className="space-y-3 bg-zinc-50 p-5 rounded-2xl border border-zinc-100 shadow-inner">
                     <p className="text-[9px] font-bold text-zinc-500 uppercase">Input Rekening Baru</p>
@@ -1208,7 +1280,7 @@ function CartView({ items, onRemove, onCheckout }) {
                        <p className="text-xs font-serif font-bold italic text-zinc-900 leading-none">{formatIDR(item.chosenPrice || item.price)}</p>
                     </div>
                  </div>
-                 <button onClick={()=>onRemove(idx)} className="p-3 text-red-200 hover:text-red-500 transition-all border-none bg-zinc-50 rounded-xl cursor-pointer active:scale-90 outline-none"><Trash2 size={18}/></button>
+                 <button onClick={()=>onRemove(idx)} className="p-3 text-red-100 hover:text-red-500 transition-all border-none bg-zinc-50 rounded-xl cursor-pointer active:scale-90 outline-none"><Trash2 size={18}/></button>
               </div>
             ))}
             <div className="pt-10 border-t border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-10">
