@@ -129,7 +129,7 @@ import {
 /**
  * ==========================================================================================
  * --- DEVI OFFICIAL LUXURY BOUTIQUE ECOSYSTEM ---
- * VERSION: 13.0.0 (ADMIN BANKING & DYNAMIC PRICING UPGRADE)
+ * VERSION: 14.0.0 (MULTI-IMAGE GALLERY & ADMIN UPGRADE)
  * ==========================================================================================
  */
 
@@ -507,7 +507,7 @@ function TrendingSelection({ products, onView }) {
             {products.map(p => (
               <div key={p.id} onClick={() => onView(p)} className="cursor-pointer space-y-3">
                  <div className="relative aspect-[3/4.2] rounded-xl overflow-hidden border border-white/5">
-                    <img src={p.imageURL} className="w-full h-full object-cover" alt=""/>
+                    <img src={p.imageURLs?.[0] || p.imageURL} className="w-full h-full object-cover" alt=""/>
                  </div>
                  <div className="text-center space-y-0.5">
                     <h4 className="text-[9px] font-bold uppercase tracking-widest text-zinc-400 truncate">{String(p.name)}</h4>
@@ -550,7 +550,7 @@ function ProductGrid({ products, onView }) {
         {products.map((p) => (
           <div key={p.id} className="group cursor-pointer flex flex-col items-center" onClick={() => onView(p)}>
             <div className="relative aspect-[3/4.4] w-full overflow-hidden rounded-xl md:rounded-[2.5rem] bg-zinc-50 shadow-sm transition-transform duration-500 group-hover:-translate-y-1">
-              <img src={p.imageURL} className="w-full h-full object-cover" alt={p.name} />
+              <img src={p.imageURLs?.[0] || p.imageURL} className="w-full h-full object-cover" alt={p.name} />
               <div className="absolute bottom-2 right-2 bg-black/80 text-[#D4AF37] px-2.5 py-1 rounded-full text-[7px] md:text-[9px] font-bold tracking-widest uppercase">
                 {String(p.category)}
               </div>
@@ -573,15 +573,25 @@ function ProductGrid({ products, onView }) {
 function ProductDetailView({ product, onBack, onBuy, onAddToCart, notify }) {
   const [selectedSize, setSelectedSize] = useState('');
   const [currentPrice, setCurrentPrice] = useState(Number(product.price));
+  const [activeImg, setActiveImg] = useState(0);
+
+  // Normalisasi list gambar
+  const images = useMemo(() => {
+    const list = product.imageURLs ? product.imageURLs.filter(url => url && url.trim() !== '') : [];
+    if (list.length === 0 && product.imageURL) list.push(product.imageURL);
+    return list;
+  }, [product]);
 
   useEffect(() => {
-    // Logic: Jika admin set harga khusus per size, gunakan itu. Jika tidak, gunakan harga default produk.
     if (selectedSize && product.sizePrices && product.sizePrices[selectedSize]) {
       setCurrentPrice(Number(product.sizePrices[selectedSize]));
     } else {
       setCurrentPrice(Number(product.price));
     }
   }, [selectedSize, product]);
+
+  const nextImg = () => setActiveImg((prev) => (prev + 1) % images.length);
+  const prevImg = () => setActiveImg((prev) => (prev - 1 + images.length) % images.length);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-4 md:py-12 animate-in fade-in duration-500">
@@ -590,8 +600,25 @@ function ProductDetailView({ product, onBack, onBuy, onAddToCart, notify }) {
       </button>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-16 items-start">
-        <div className="w-full aspect-[4/5] bg-zinc-50 rounded-xl overflow-hidden shadow-lg border border-zinc-100">
-          <img src={product.imageURL} className="w-full h-full object-cover" alt={product.name} />
+        {/* Gallery Section */}
+        <div className="relative w-full aspect-[4/5] bg-zinc-50 rounded-xl overflow-hidden shadow-lg border border-zinc-100 group">
+          <img src={images[activeImg]} className="w-full h-full object-cover transition-all duration-500" alt={product.name} />
+          
+          {images.length > 1 && (
+            <>
+              <button onClick={prevImg} className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center shadow-md md:opacity-0 group-hover:opacity-100 transition-opacity">
+                <ChevronLeft size={20} />
+              </button>
+              <button onClick={nextImg} className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center shadow-md md:opacity-0 group-hover:opacity-100 transition-opacity">
+                <ChevronRight size={20} />
+              </button>
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
+                {images.map((_, idx) => (
+                  <div key={idx} className={`w-1.5 h-1.5 rounded-full transition-all ${activeImg === idx ? 'bg-[#D4AF37] w-4' : 'bg-white/50'}`}></div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
         <div className="flex flex-col space-y-6">
@@ -757,21 +784,37 @@ function CheckoutView({ product, rekening, onComplete, onBack, notify }) {
 function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, creds }) {
   const [tab, setTab] = useState('inventory');
   const [saving, setSaving] = useState(false);
-  const [instaUrl, setInstaUrl] = useState('');
+  const [instaUrls, setInstaUrls] = useState(['', '', '', '', '']);
   const [formData, setFormData] = useState({ 
-    imageURL: '', name: '', price: '', category: 'Baju', description: '', sizes: SIZE_OPTIONS, sizePrices: {} 
+    imageURLs: [], name: '', price: '', category: 'Baju', description: '', sizes: SIZE_OPTIONS, sizePrices: {} 
   });
   const [newCreds, setNewCreds] = useState({ username: creds?.username || '', password: creds?.password || '' });
 
   const publishProduct = async () => {
-    if (!formData.name.trim() || !formData.price || !formData.imageURL) return notify("Lengkapi data!", "error");
+    if (!formData.name.trim() || !formData.price || formData.imageURLs.length === 0) {
+      return notify("Harap isi nama, harga, dan minimal 1 link IG!", "error");
+    }
     setSaving(true);
     try {
-      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), { ...formData, price: Number(formData.price), createdAt: serverTimestamp() });
-      setFormData({ imageURL: '', name: '', price: '', category: 'Baju', description: '', sizes: SIZE_OPTIONS, sizePrices: {} });
-      setInstaUrl('');
+      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), { 
+        ...formData, 
+        price: Number(formData.price), 
+        createdAt: serverTimestamp() 
+      });
+      setFormData({ imageURLs: [], name: '', price: '', category: 'Baju', description: '', sizes: SIZE_OPTIONS, sizePrices: {} });
+      setInstaUrls(['', '', '', '', '']);
       notify("Maha karya dipublikasikan.", "success");
     } catch (e) { notify(e.message, "error"); } finally { setSaving(false); }
+  };
+
+  const handleFetchImage = (url, index) => {
+    if (!url) return;
+    const clean = url.split('?')[0]; 
+    const finalUrl = `https://images.weserv.nl/?url=${encodeURIComponent(clean.endsWith('/') ? clean + 'media/?size=l' : clean + '/media/?size=l')}&w=1000&output=jpg`;
+    
+    const newImages = [...formData.imageURLs];
+    newImages[index] = finalUrl;
+    setFormData({ ...formData, imageURLs: newImages });
   };
 
   const updateAdminAuth = async () => {
@@ -812,17 +855,30 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
          {tab === 'inventory' && (
            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
-                 <div className="aspect-[3/4] bg-zinc-50 rounded-xl border-2 border-dashed border-zinc-100 overflow-hidden relative flex items-center justify-center">
-                    {formData.imageURL ? <img src={formData.imageURL} className="w-full h-full object-cover"/> : <Instagram size={32} className="text-zinc-200" />}
+                 <div className="aspect-[3/4] bg-zinc-50 rounded-xl border-2 border-dashed border-zinc-100 overflow-hidden relative flex flex-col items-center justify-center gap-2">
+                    {formData.imageURLs.length > 0 ? (
+                      <img src={formData.imageURLs[0]} className="w-full h-full object-cover"/>
+                    ) : (
+                      <Instagram size={32} className="text-zinc-200" />
+                    )}
+                    <p className="text-[7px] text-zinc-300">Preview Foto Utama</p>
                  </div>
-                 <div className="flex gap-2">
-                    <input className="flex-1 bg-zinc-50 p-3 rounded-lg border-none text-[9px] font-bold outline-none shadow-inner" placeholder="Link IG..." value={instaUrl} onChange={e=>setInstaUrl(e.target.value)}/>
-                    <button onClick={()=>{ 
-                      const clean = instaUrl.split('?')[0]; 
-                      setFormData({...formData, imageURL: `https://images.weserv.nl/?url=${encodeURIComponent(clean.endsWith('/') ? clean + 'media/?size=l' : clean + '/media/?size=l')}&w=800&output=jpg`});
-                    }} className="bg-black text-[#D4AF37] px-3 rounded-lg text-[8px] border-none cursor-pointer">FETCH</button>
+                 
+                 <div className="space-y-2">
+                    <p className="text-[9px] text-zinc-500">Instagram Links (Maks 5 - Foto 1 Wajib)</p>
+                    {instaUrls.map((url, idx) => (
+                      <div key={idx} className="flex gap-1.5">
+                         <input className="flex-1 bg-zinc-50 p-2 rounded-lg border-none text-[8px] font-bold outline-none shadow-inner" placeholder={`Link IG ${idx + 1}...`} value={url} onChange={e => {
+                           const newUrls = [...instaUrls];
+                           newUrls[idx] = e.target.value;
+                           setInstaUrls(newUrls);
+                         }}/>
+                         <button onClick={() => handleFetchImage(instaUrls[idx], idx)} className="bg-black text-[#D4AF37] px-2.5 rounded-lg text-[7px] border-none cursor-pointer">FETCH</button>
+                      </div>
+                    ))}
                  </div>
               </div>
+              
               <div className="space-y-3">
                  <input className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] font-bold outline-none" placeholder="Nama Produk" value={formData.name} onChange={e=>setFormData({...formData, name:e.target.value})}/>
                  <input type="number" className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] font-bold outline-none" placeholder="Harga Default" value={formData.price} onChange={e=>setFormData({...formData, price:e.target.value})}/>
@@ -833,7 +889,7 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
                        {SIZE_OPTIONS.map(sz => (
                          <div key={sz} className="flex items-center gap-1">
                             <span className="text-[9px] w-6">{sz}</span>
-                            <input type="number" className="flex-1 bg-white border border-zinc-200 p-1 text-[8px] rounded" placeholder="Harga..." onChange={(e)=>setFormData({...formData, sizePrices: {...formData.sizePrices, [sz]: e.target.value}})}/>
+                            <input type="number" className="flex-1 bg-white border border-zinc-200 p-1 text-[8px] rounded" placeholder="IDR..." onChange={(e)=>setFormData({...formData, sizePrices: {...formData.sizePrices, [sz]: e.target.value}})}/>
                          </div>
                        ))}
                     </div>
@@ -1018,9 +1074,9 @@ function CartView({ items, onRemove, onCheckout }) {
        ) : (
          <div className="space-y-4">
             {items.map((item, idx) => (
-              <div key={idx} className="p-3 bg-white border border-zinc-100 rounded-xl flex items-center justify-between gap-4 shadow-sm relative overflow-hidden">
+              <div key={idx} className="p-3 bg-white border border-zinc-100 rounded-xl flex items-center justify-between gap-3 shadow-sm relative overflow-hidden">
                  <div className="flex items-center gap-3 flex-1">
-                    <img src={item.imageURL} className="w-12 h-16 rounded-lg object-cover border border-zinc-50 shadow-sm"/>
+                    <img src={item.imageURLs?.[0] || item.imageURL} className="w-12 h-16 rounded-lg object-cover border border-zinc-50 shadow-sm"/>
                     <div className="space-y-0.5">
                        <h4 className="text-[10px] font-serif font-bold uppercase tracking-tight text-zinc-800 truncate max-w-[130px]">{String(item.name)}</h4>
                        <span className="text-[7px] font-bold px-2 py-0.5 bg-zinc-50 text-zinc-400 rounded-full border border-zinc-100 uppercase tracking-widest">Size {String(item.chosenSize || "Default")}</span>
