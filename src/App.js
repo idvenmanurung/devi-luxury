@@ -129,7 +129,7 @@ import {
 /**
  * ==========================================================================================
  * --- DEVI OFFICIAL LUXURY BOUTIQUE ECOSYSTEM ---
- * VERSION: 16.5.0 (CATEGORY ARROWS & ADMIN ORDER DETAILS FIX)
+ * VERSION: 20.0.0 (GUARANTEED ORDER DELIVERY & CLEAN ADMIN ORDERS)
  * ==========================================================================================
  */
 
@@ -205,7 +205,6 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState([]);
 
-  // Ref untuk category slider
   const catScrollRef = useRef(null);
 
   const notify = (message, type = 'info') => {
@@ -245,7 +244,7 @@ export default function App() {
 
   const scrollCat = (dir) => {
     if (catScrollRef.current) {
-      const scrollAmt = 150;
+      const scrollAmt = 180;
       catScrollRef.current.scrollBy({ left: dir === 'left' ? -scrollAmt : scrollAmt, behavior: 'smooth' });
     }
   };
@@ -286,21 +285,19 @@ export default function App() {
               <HeroSection onExplore={() => document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' })} />
               <CraftsmanshipSection />
               
-              {/* Category Navigation with Arrows */}
               <div id="catalog" className="bg-white/95 backdrop-blur-xl border-b border-zinc-100 sticky top-14 md:top-20 z-40 shadow-sm relative group">
-                <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center relative">
+                <div className="max-w-7xl mx-auto px-2 py-2 flex items-center relative h-12">
                   
-                  {/* Left Arrow */}
                   <button 
                     onClick={() => scrollCat('left')}
-                    className="absolute left-1 z-10 p-1.5 bg-white/80 rounded-full shadow-md border border-zinc-100 opacity-0 group-hover:opacity-100 transition-opacity active:scale-90"
+                    className="absolute left-1 z-10 p-1.5 bg-white/90 rounded-full shadow-md border border-zinc-100 md:opacity-0 group-hover:opacity-100 transition-opacity active:scale-90 outline-none border-none cursor-pointer"
                   >
-                    <ChevronLeft size={14} className="text-zinc-600" />
+                    <ChevronLeft size={16} className="text-zinc-600" />
                   </button>
 
                   <div 
                     ref={catScrollRef}
-                    className="flex items-center justify-start md:justify-center gap-3 whitespace-nowrap overflow-x-auto no-scrollbar w-full px-6"
+                    className="flex items-center justify-start md:justify-center gap-2 whitespace-nowrap overflow-x-auto no-scrollbar w-full px-8 py-1"
                   >
                     {CATEGORIES.map(c => (
                       <button 
@@ -313,12 +310,11 @@ export default function App() {
                     ))}
                   </div>
 
-                  {/* Right Arrow */}
                   <button 
                     onClick={() => scrollCat('right')}
-                    className="absolute right-1 z-10 p-1.5 bg-white/80 rounded-full shadow-md border border-zinc-100 opacity-0 group-hover:opacity-100 transition-opacity active:scale-90"
+                    className="absolute right-1 z-10 p-1.5 bg-white/90 rounded-full shadow-md border border-zinc-100 md:opacity-0 group-hover:opacity-100 transition-opacity active:scale-90 outline-none border-none cursor-pointer"
                   >
-                    <ChevronRight size={14} className="text-zinc-600" />
+                    <ChevronRight size={16} className="text-zinc-600" />
                   </button>
 
                 </div>
@@ -424,7 +420,7 @@ function Header({ cartCount, isAdmin, setView, setCategoryFilter, searchTerm, se
 
   return (
     <header className={`fixed top-0 left-0 w-full z-[100] transition-all duration-300 ${scrolled ? 'h-14 bg-white/95 shadow-md' : 'h-14 md:h-16 bg-white'} backdrop-blur-md border-b border-zinc-100`}>
-      <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between gap-4 text-black">
         
         <div className="flex-1 hidden md:flex items-center">
           <div className="relative">
@@ -434,7 +430,7 @@ function Header({ cartCount, isAdmin, setView, setCategoryFilter, searchTerm, se
               placeholder="Cari..." 
               value={searchTerm} 
               onChange={(e) => setSearchTerm(e.target.value)} 
-              className="bg-zinc-50 border-none rounded-full pl-9 pr-4 py-1.5 text-xs w-40 focus:w-60 focus:bg-white transition-all outline-none" 
+              className="bg-zinc-50 border-none rounded-full pl-9 pr-4 py-1.5 text-xs w-40 focus:w-60 focus:bg-white transition-all outline-none text-black font-bold" 
             />
           </div>
         </div>
@@ -459,7 +455,7 @@ function Header({ cartCount, isAdmin, setView, setCategoryFilter, searchTerm, se
                   <LayoutDashboard size={18} />
                 </button>
               ) : (
-                <button onClick={() => setView('login')} className="p-2 bg-zinc-50 rounded-full hover:bg-black hover:text-white transition-all border-none cursor-pointer outline-none">
+                <button onClick={() => setView('login')} className="p-2 bg-zinc-50 rounded-full hover:bg-black hover:text-white transition-all border-none cursor-pointer outline-none shadow-none">
                   <Key size={18} className="text-zinc-600" />
                 </button>
               )}
@@ -503,13 +499,13 @@ function CraftsmanshipSection() {
            { icon: <Palette size={20} />, title: "Elite Textiles", desc: "Material premium standar global." },
            { icon: <Crown size={20} />, title: "Seal of Royalty", desc: "Sentuhan akhir elegan kristal tangan." }
          ].map((item, idx) => (
-           <div key={idx} className="flex flex-col items-center text-center space-y-2">
+           <div key={idx} className="flex flex-col items-center text-center space-y-2 text-black">
               <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center text-[#D4AF37]">
                  {item.icon}
               </div>
               <div>
                  <h4 className="text-[10px] font-bold uppercase tracking-widest text-zinc-900">{item.title}</h4>
-                 <p className="text-zinc-400 text-[9px] leading-relaxed max-w-[180px] mx-auto">{item.desc}</p>
+                 <p className="text-zinc-400 text-[9px] leading-relaxed max-w-[180px] mx-auto font-bold">{item.desc}</p>
               </div>
            </div>
          ))}
@@ -520,14 +516,14 @@ function CraftsmanshipSection() {
 
 function MembershipBanner() {
   return (
-    <section className="max-w-7xl mx-auto px-4 py-8 md:py-20">
+    <section className="max-w-7xl mx-auto px-4 py-8 md:py-20 text-black">
        <div className="bg-[#0D0D0D] rounded-2xl md:rounded-[3rem] p-6 md:p-16 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6 border border-white/5">
-         <div className="relative z-10 space-y-4 max-w-lg text-center md:text-left">
+         <div className="relative z-10 space-y-4 max-w-lg text-center md:text-left flex-1">
             <h2 className="text-xl md:text-4xl font-serif font-bold italic tracking-tight uppercase text-white leading-tight">Privilege <span className="text-[#D4AF37]">Member</span></h2>
-            <p className="text-zinc-500 text-[10px] md:text-base leading-relaxed">Akses eksklusif koleksi terbaru dan penawaran spesial Maison.</p>
-            <button className="px-6 py-2 bg-white text-black text-[9px] font-bold uppercase tracking-widest rounded-full border-none cursor-pointer outline-none">Gabung Sekarang</button>
+            <p className="text-zinc-500 text-[10px] md:text-base leading-relaxed font-bold">Akses eksklusif koleksi terbaru dan penawaran spesial Maison.</p>
+            <button className="px-6 py-2 bg-white text-black text-[9px] font-bold uppercase tracking-widest rounded-full border-none cursor-pointer outline-none active:scale-95">Gabung Sekarang</button>
          </div>
-         <div className="relative z-10 w-full md:w-56 aspect-[3/4] rounded-xl overflow-hidden border border-white/10 shadow-lg">
+         <div className="relative z-10 w-full md:w-56 aspect-[3/4] rounded-xl overflow-hidden border border-white/10 shadow-lg flex-shrink-0">
             <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1020&auto=format&fit=crop" className="w-full h-full object-cover" alt="Promo" />
          </div>
        </div>
@@ -545,12 +541,12 @@ function TrendingSelection({ products, onView }) {
          </div>
          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {products.map(p => (
-              <div key={p.id} onClick={() => onView(p)} className="cursor-pointer space-y-3">
+              <div key={p.id} onClick={() => onView(p)} className="cursor-pointer space-y-3 group">
                  <div className="relative aspect-[3/4.2] rounded-xl overflow-hidden border border-white/5">
-                    <img src={p.imageURLs?.[0] || p.imageURL} className="w-full h-full object-cover" alt=""/>
+                    <img src={p.imageURLs?.[0] || p.imageURL} className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500" alt=""/>
                  </div>
                  <div className="text-center space-y-0.5">
-                    <h4 className="text-[9px] font-bold uppercase tracking-widest text-zinc-400 truncate">{String(p.name)}</h4>
+                    <h4 className="text-[9px] font-bold uppercase tracking-widest text-zinc-400 truncate font-bold">{String(p.name)}</h4>
                     <p className="text-xs font-serif font-bold italic text-white">{formatIDR(p.price)}</p>
                  </div>
               </div>
@@ -563,13 +559,13 @@ function TrendingSelection({ products, onView }) {
 
 function SustainabilityReport() {
   return (
-    <section className="py-10 md:py-24 bg-white border-t border-zinc-50 px-6 overflow-hidden">
+    <section className="py-10 md:py-24 bg-white border-t border-zinc-50 px-6 overflow-hidden text-black">
        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-8 md:gap-24">
           <div className="flex-1 space-y-4 text-center lg:text-left">
              <div className="flex items-center gap-3 justify-center lg:justify-start"><div className="w-8 h-[1px] bg-[#D4AF37]"></div><span className="text-[9px] font-bold uppercase tracking-[0.4em] text-[#D4AF37]">Ethics</span></div>
              <h2 className="text-xl md:text-6xl font-serif font-bold italic tracking-tighter uppercase leading-tight text-zinc-950">Maison <span className="text-zinc-300">DNA</span></h2>
-             <p className="text-zinc-500 text-[10px] md:text-lg leading-relaxed italic border-l-2 border-[#D4AF37]/30 pl-4">Kemewahan abadi berawal dari tanggung jawab sosial dalam setiap produksi.</p>
-             <button className="px-8 py-2.5 border border-zinc-200 rounded-full text-[9px] font-bold uppercase tracking-widest text-zinc-800 outline-none">Selengkapnya</button>
+             <p className="text-zinc-500 text-[10px] md:text-lg leading-relaxed italic border-l-2 border-[#D4AF37]/30 pl-4 font-bold">Kemewahan abadi berawal dari tanggung jawab sosial dalam setiap produksi.</p>
+             <button className="px-8 py-2.5 border border-zinc-200 rounded-full text-[9px] font-bold uppercase tracking-widest text-zinc-800 outline-none hover:bg-black hover:text-white transition-all border-none cursor-pointer">Selengkapnya</button>
           </div>
        </div>
     </section>
@@ -578,25 +574,25 @@ function SustainabilityReport() {
 
 function ProductGrid({ products, onView }) {
   if (!products || products.length === 0) return (
-    <div className="py-16 text-center flex flex-col items-center gap-3">
+    <div className="py-16 text-center flex flex-col items-center gap-3 text-black">
       <Loader2 className="animate-spin text-[#D4AF37]" size={24} />
       <p className="text-zinc-400 font-bold uppercase text-[8px] tracking-widest">Memuat Koleksi...</p>
     </div>
   );
   
   return (
-    <section className="max-w-7xl mx-auto px-4 py-6 md:py-20">
+    <section className="max-w-7xl mx-auto px-4 py-6 md:py-20 text-black">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 md:gap-x-10 gap-y-8 md:gap-y-16">
         {products.map((p) => (
           <div key={p.id} className="group cursor-pointer flex flex-col items-center" onClick={() => onView(p)}>
             <div className="relative aspect-[3/4.4] w-full overflow-hidden rounded-xl md:rounded-[2.5rem] bg-zinc-50 shadow-sm transition-transform duration-500 group-hover:-translate-y-1">
-              <img src={p.imageURLs?.[0] || p.imageURL} className="w-full h-full object-cover" alt={p.name} />
-              <div className="absolute bottom-2 right-2 bg-black/80 text-[#D4AF37] px-2.5 py-1 rounded-full text-[7px] md:text-[9px] font-bold tracking-widest uppercase">
+              <img src={p.imageURLs?.[0] || p.imageURL} className="w-full h-full object-cover group-hover:scale-105 transition-transform" alt={p.name} />
+              <div className="absolute bottom-2 right-2 bg-black/80 text-[#D4AF37] px-2.5 py-1 rounded-full text-[7px] md:text-[9px] font-bold tracking-widest uppercase shadow-md">
                 {String(p.category)}
               </div>
             </div>
             <div className="text-center mt-3 space-y-0.5 w-full px-1">
-              <h3 className="text-[9px] md:text-xs font-serif font-medium tracking-wide text-zinc-500 uppercase truncate">
+              <h3 className="text-[9px] md:text-xs font-serif font-medium tracking-wide text-zinc-500 uppercase truncate font-bold text-black">
                 {String(p.name)}
               </h3>
               <p className="text-sm md:text-xl font-bold text-black font-serif italic">
@@ -639,8 +635,8 @@ function ProductDetailView({ product, onBack, onBuy, onAddToCart, notify }) {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-4 md:py-12 animate-in fade-in duration-500">
-      <button onClick={onBack} className="flex items-center gap-1.5 text-zinc-400 mb-4 text-[10px] font-bold uppercase tracking-widest bg-transparent border-none cursor-pointer outline-none">
+    <div className="max-w-7xl mx-auto px-4 py-4 md:py-12 animate-in fade-in duration-500 text-black">
+      <button onClick={onBack} className="flex items-center gap-1.5 text-zinc-400 mb-4 text-[10px] font-bold uppercase tracking-widest bg-transparent border-none cursor-pointer outline-none hover:text-black">
         <ChevronLeft size={16} /> Kembali
       </button>
 
@@ -655,10 +651,10 @@ function ProductDetailView({ product, onBack, onBuy, onAddToCart, notify }) {
           
           {images.length > 1 && (
             <>
-              <button onClick={prevImg} className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center shadow-md z-10 outline-none border-none cursor-pointer">
+              <button onClick={prevImg} className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center shadow-md z-10 outline-none border-none cursor-pointer hover:bg-white active:scale-90">
                 <ChevronLeft size={20} className="text-black" />
               </button>
-              <button onClick={nextImg} className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center shadow-md z-10 outline-none border-none cursor-pointer">
+              <button onClick={nextImg} className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center shadow-md z-10 outline-none border-none cursor-pointer hover:bg-white active:scale-90">
                 <ChevronRight size={20} className="text-black" />
               </button>
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
@@ -672,16 +668,16 @@ function ProductDetailView({ product, onBack, onBuy, onAddToCart, notify }) {
 
         <div className="flex flex-col space-y-6">
           <div className="space-y-2">
-            <p className="text-[#D4AF37] text-[9px] font-bold uppercase tracking-widest border-l-2 border-[#D4AF37] pl-3">
+            <p className="text-[#D4AF37] text-[9px] font-bold uppercase tracking-widest border-l-2 border-[#D4AF37] pl-3 uppercase">
               {String(product.category).toUpperCase()}
             </p>
-            <h2 className="text-xl md:text-4xl font-serif font-bold uppercase tracking-tight leading-tight">{String(product.name)}</h2>
+            <h2 className="text-xl md:text-4xl font-serif font-bold uppercase tracking-tight leading-tight text-black font-bold">{String(product.name)}</h2>
             <p className="text-2xl md:text-5xl font-bold text-black font-serif italic">{formatIDR(currentPrice)}</p>
           </div>
 
           <div className="bg-zinc-50 p-4 md:p-8 rounded-xl border border-zinc-100">
-             <span className="text-[8px] font-bold uppercase tracking-widest text-black border-b border-zinc-200 block mb-3 pb-1">Materials & Story</span>
-             <p className="text-zinc-700 leading-relaxed text-[11px] md:text-base italic font-serif whitespace-pre-wrap">
+             <span className="text-[8px] font-bold uppercase tracking-widest text-black border-b border-zinc-200 block mb-3 pb-1 uppercase font-bold">Bahan & Material</span>
+             <p className="text-zinc-700 leading-relaxed text-[11px] md:text-base italic font-serif whitespace-pre-wrap font-bold">
                 {String(product.description || "Kemewahan yang dipersonalisasi. Setiap jahitan mencerminkan dedikasi butik kami.")}
              </p>
           </div>
@@ -695,7 +691,7 @@ function ProductDetailView({ product, onBack, onBuy, onAddToCart, notify }) {
                  <button 
                    key={s}
                    onClick={() => setSelectedSize(s)} 
-                   className={`w-10 h-10 md:w-14 md:h-14 rounded-lg flex items-center justify-center font-bold text-xs border transition-all cursor-pointer outline-none ${selectedSize === s ? 'bg-black text-[#D4AF37] border-black scale-105' : 'bg-white border-zinc-100 text-zinc-400'}`}
+                   className={`w-10 h-10 md:w-14 md:h-14 rounded-lg flex items-center justify-center font-bold text-xs border transition-all cursor-pointer outline-none ${selectedSize === s ? 'bg-black text-[#D4AF37] border-black scale-105 shadow-md' : 'bg-white border-zinc-100 text-zinc-400 hover:border-zinc-300'}`}
                  >
                    {String(s)}
                  </button>
@@ -712,7 +708,7 @@ function ProductDetailView({ product, onBack, onBuy, onAddToCart, notify }) {
               
               <button 
                 onClick={() => { if(!selectedSize) return notify("Pilih ukuran terlebih dahulu!", "error"); onAddToCart({...product, chosenSize: selectedSize, chosenPrice: currentPrice}); }}
-                className="w-full bg-zinc-50 border border-zinc-200 py-3 rounded-full text-[9px] font-bold uppercase tracking-widest text-zinc-800 cursor-pointer outline-none"
+                className="w-full bg-zinc-50 border border-zinc-200 py-3 rounded-full text-[9px] font-bold uppercase tracking-widest text-zinc-800 cursor-pointer outline-none active:scale-95 transition-all"
               >
                 Tambah ke Bag
               </button>
@@ -727,70 +723,88 @@ function ProductDetailView({ product, onBack, onBuy, onAddToCart, notify }) {
 function CheckoutView({ product, rekening, onComplete, onBack, notify }) {
   const [step, setStep] = useState(1);
   const [uploading, setUploading] = useState(false);
+  const [fileToUpload, setFileToUpload] = useState(null); 
+  const [localPreview, setLocalPreview] = useState(null); 
   const [shipping, setShipping] = useState({ name: '', address: '', phone: '', dropship: false });
   const [payment, setPayment] = useState({ 
     invoice: `INV-DEVI-${Math.floor(Date.now() / 1000).toString().slice(-6)}`,
     transferTo: '', originBank: '', senderName: '', amount: Number(product.chosenPrice || product.price), proofImage: '', status: 'pending'
   });
 
-  const handleUpload = async (e) => {
+  const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    setUploading(true);
-    try {
-      const storageRef = ref(storage, `artifacts/${appId}/public/data/proofs/${Date.now()}_${file.name}`);
-      const uploadResult = await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(uploadResult.ref);
-      setPayment(prev => ({ ...prev, proofImage: url }));
-    } catch (err) { console.error(err); }
-    finally { setUploading(false); }
+    setFileToUpload(file);
+    setLocalPreview(URL.createObjectURL(file)); // Preview instan
+    notify("Foto bukti berhasil dipilih.", "success");
   };
 
   const submitFinalOrder = async () => {
-    if (!payment.senderName || !payment.originBank || !shipping.name || !shipping.address || !shipping.phone) return notify("Lengkapi seluruh formulir.", "error");
+    if (!payment.senderName || !payment.originBank || !shipping.name || !shipping.address || !shipping.phone) return notify("Lengkapi formulir.", "error");
+    if (!fileToUpload) return notify("Harap lampirkan bukti transfer.", "error");
+    
+    setUploading(true); // Mulai proses upload
     try {
+      // 1. Upload foto bukti TF
+      const storageRef = ref(storage, `artifacts/${appId}/public/data/proofs/${Date.now()}_${fileToUpload.name}`);
+      const uploadResult = await uploadBytes(storageRef, fileToUpload);
+      const url = await getDownloadURL(uploadResult.ref);
+
+      // 2. Simpan data pesanan ke Firestore
       await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), { 
-        ...payment, shipping, productName: String(product.name), productSize: String(product.chosenSize), createdAt: serverTimestamp() 
+        ...payment, 
+        proofImage: url,
+        shipping, 
+        productName: String(product.name), 
+        productSize: String(product.chosenSize), 
+        createdAt: serverTimestamp() 
       });
+
+      // 3. Jika semua berhasil, baru pindah halaman sukses
       setStep(4);
-    } catch (e) { notify(e.message, "error"); }
+      notify("Pesanan Anda berhasil dikirim!", "success");
+    } catch (e) { 
+      notify("Gagal mengirim pesanan: " + e.message, "error"); 
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
-    <div className="max-w-md mx-auto py-6 px-4 font-bold uppercase">
+    <div className="max-w-md mx-auto py-6 px-4 font-bold uppercase text-black">
        <div className="bg-white rounded-2xl shadow-xl border border-zinc-100 overflow-hidden relative">
-          <button onClick={onBack} className="absolute top-4 right-4 p-2 text-zinc-300 bg-transparent border-none cursor-pointer z-50"><X size={20} /></button>
+          <button onClick={onBack} className="absolute top-4 right-4 p-2 text-zinc-300 bg-transparent border-none cursor-pointer z-50 outline-none"><X size={20} /></button>
           
           {step === 1 && (
-            <div className="p-6 space-y-6">
-               <h3 className="text-base font-serif italic border-b border-zinc-50 pb-2">Data Client</h3>
+            <div className="p-6 space-y-6 animate-in fade-in">
+               <h3 className="text-base font-serif italic border-b border-zinc-50 pb-2">Informasi Client</h3>
                <div className="space-y-4">
                   <div className="border-b border-zinc-100 focus-within:border-[#D4AF37] pb-1">
-                    <label className="text-[8px] text-zinc-400 tracking-widest">Nama Lengkap</label>
-                    <input className="w-full py-1.5 text-xs font-bold border-none outline-none bg-transparent" placeholder="Sherly Adelia" value={shipping.name} onChange={e=>setShipping({...shipping, name:e.target.value})}/>
+                    <label className="text-[8px] text-zinc-400 tracking-widest font-bold">Nama Lengkap</label>
+                    <input className="w-full py-1.5 text-xs font-bold border-none outline-none bg-transparent text-black" placeholder="Nama Anda..." value={shipping.name} onChange={e=>setShipping({...shipping, name:e.target.value})}/>
                   </div>
                   <div className="border-b border-zinc-100 focus-within:border-[#D4AF37] pb-1">
-                    <label className="text-[8px] text-zinc-400 tracking-widest">Nomor HP</label>
-                    <input className="w-full py-1.5 text-xs font-bold border-none outline-none bg-transparent" placeholder="0812..." value={shipping.phone} onChange={e=>setShipping({...shipping, phone:e.target.value})}/>
+                    <label className="text-[8px] text-zinc-400 tracking-widest font-bold">Nomor HP</label>
+                    <input className="w-full py-1.5 text-xs font-bold border-none outline-none bg-transparent text-black" placeholder="08..." value={shipping.phone} onChange={e=>setShipping({...shipping, phone:e.target.value})}/>
                   </div>
                   <div className="border-b border-zinc-100 focus-within:border-[#D4AF37] pb-1">
-                    <label className="text-[8px] text-zinc-400 tracking-widest">Alamat Lengkap</label>
-                    <textarea className="w-full py-1.5 text-xs font-bold border-none outline-none bg-transparent h-16 resize-none" placeholder="Alamat..." value={shipping.address} onChange={e=>setShipping({...shipping, address:e.target.value})}/>
+                    <label className="text-[8px] text-zinc-400 tracking-widest font-bold">Alamat Pengiriman</label>
+                    <textarea className="w-full py-1.5 text-xs font-bold border-none outline-none bg-transparent h-16 resize-none text-black" placeholder="Alamat lengkap..." value={shipping.address} onChange={e=>setShipping({...shipping, address:e.target.value})}/>
                   </div>
                </div>
-               <button onClick={()=>setStep(2)} className="w-full bg-[#3b82f6] text-white py-3 rounded-full text-[9px] font-bold border-none cursor-pointer shadow-lg active:scale-95">LANJUT PEMBAYARAN</button>
+               <button onClick={()=>setStep(2)} className="w-full bg-[#3b82f6] text-white py-3 rounded-full text-[9px] font-bold border-none cursor-pointer shadow-lg active:scale-95 transition-all">LANJUT PEMBAYARAN</button>
             </div>
           )}
 
           {step === 2 && (
-            <div className="p-6 space-y-6">
+            <div className="p-6 space-y-6 animate-in slide-in-from-right">
                <div className="text-center"><h3 className="text-base font-serif italic uppercase">Pilih Bank / E-Wallet</h3></div>
                <div className="grid grid-cols-2 gap-3 max-h-[400px] overflow-y-auto no-scrollbar pr-1">
                   {rekening.map(rek => (
                     <div key={rek.id} onClick={()=>{ setPayment({...payment, transferTo: `${rek.bankName} - ${rek.accountNumber} - ${rek.accountHolder}`}); setStep(3); }} className="p-3 border border-zinc-100 rounded-xl hover:border-[#D4AF37] cursor-pointer transition-all flex flex-col items-center text-center bg-zinc-50/50 group shadow-sm active:scale-95">
                        <img src={BANK_LOGOS[rek.bankName]} className="h-6 object-contain mb-2" alt=""/>
-                       <p className="text-[7px] text-zinc-400 uppercase leading-tight mb-1">{rek.bankName}</p>
-                       <p className="text-[10px] font-mono tracking-tighter text-black">{String(rek.accountNumber)}</p>
+                       <p className="text-[7px] text-zinc-400 uppercase leading-tight mb-1 font-bold">{rek.bankName}</p>
+                       <p className="text-[10px] font-mono tracking-tighter text-black font-bold">{String(rek.accountNumber)}</p>
                     </div>
                   ))}
                </div>
@@ -798,20 +812,39 @@ function CheckoutView({ product, rekening, onComplete, onBack, notify }) {
           )}
 
           {step === 3 && (
-            <div className="p-6 space-y-6">
+            <div className="p-6 space-y-6 animate-in slide-in-from-right">
                <h3 className="text-center text-lg font-serif italic border-b border-zinc-50 pb-2 uppercase leading-none">Konfirmasi</h3>
                <div className="space-y-4">
-                  <div className="p-3 bg-zinc-900 rounded-lg text-[9px] text-[#D4AF37] tracking-widest uppercase text-center border border-[#D4AF37]/20">{String(payment.transferTo)}</div>
-                  <input className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] outline-none" placeholder="Bank Asal" value={payment.originBank} onChange={e=>setPayment({...payment, originBank:e.target.value})}/>
-                  <input className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] outline-none" placeholder="Nama Pengirim" value={payment.senderName} onChange={e=>setPayment({...payment, senderName:e.target.value})}/>
+                  <div className="p-3 bg-zinc-900 rounded-lg text-[9px] text-[#D4AF37] tracking-widest uppercase text-center border border-[#D4AF37]/20 font-bold">{String(payment.transferTo)}</div>
+                  <input className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] outline-none text-black font-bold" placeholder="Bank Asal" value={payment.originBank} onChange={e=>setPayment({...payment, originBank:e.target.value})}/>
+                  <input className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] outline-none text-black font-bold" placeholder="Nama Pengirim" value={payment.senderName} onChange={e=>setPayment({...payment, senderName:e.target.value})}/>
                   
                   <div onClick={()=>document.getElementById('uPf').click()} className="w-full aspect-video border-2 border-dashed border-zinc-100 rounded-xl bg-zinc-50 flex items-center justify-center cursor-pointer overflow-hidden relative shadow-inner group transition-all hover:bg-zinc-100">
-                    {payment.proofImage ? <img src={payment.proofImage} className="w-full h-full object-cover"/> : <div className="text-center text-zinc-300"><Upload size={24} className="mx-auto mb-1 opacity-50" /><p className="text-[8px] uppercase tracking-widest">Bukti Transfer</p></div>}
-                    {uploading && <div className="absolute inset-0 bg-white/60 flex items-center justify-center"><Loader2 className="animate-spin text-[#D4AF37]" size={24}/></div>}
-                    <input type="file" id="uPf" className="hidden" accept="image/*" onChange={handleUpload}/>
+                    {localPreview ? (
+                      <img src={localPreview} className="w-full h-full object-cover animate-in zoom-in" alt="Preview"/>
+                    ) : (
+                      <div className="text-center text-zinc-300">
+                        <Upload size={24} className="mx-auto mb-1 opacity-50" />
+                        <p className="text-[8px] uppercase tracking-widest font-bold">Pilih Bukti Transfer</p>
+                      </div>
+                    )}
+                    <input type="file" id="uPf" className="hidden" accept="image/*" onChange={handleFileSelect}/>
                   </div>
                </div>
-               <button onClick={submitFinalOrder} className="w-full bg-black text-[#D4AF37] py-3.5 rounded-full text-[9px] font-bold border-none cursor-pointer shadow-lg active:scale-95">KONFIRMASI SEKARANG</button>
+               <button 
+                 onClick={submitFinalOrder} 
+                 className={`w-full bg-black text-[#D4AF37] py-3.5 rounded-full text-[9px] font-bold border-none cursor-pointer shadow-lg active:scale-95 flex items-center justify-center gap-2 ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                 disabled={uploading}
+               >
+                 {uploading ? (
+                   <>
+                     <Loader2 className="animate-spin" size={14} />
+                     MENGIRIM PESANAN...
+                   </>
+                 ) : (
+                   'KONFIRMASI SEKARANG'
+                 )}
+               </button>
             </div>
           )}
 
@@ -819,10 +852,10 @@ function CheckoutView({ product, rekening, onComplete, onBack, notify }) {
             <div className="p-10 text-center space-y-6 animate-in zoom-in duration-700">
                <div className="w-12 h-12 bg-green-500 text-white rounded-full flex items-center justify-center mx-auto shadow-lg"><SuccessIcon size={24}/></div>
                <div className="space-y-2">
-                  <h3 className="text-xl font-serif">Berhasil</h3>
-                  <p className="text-[9px] text-zinc-400 tracking-widest uppercase">Pesanan Anda telah diterima.</p>
+                  <h3 className="text-xl font-serif leading-tight">Berhasil</h3>
+                  <p className="text-[9px] text-zinc-400 tracking-widest uppercase font-bold">Maison telah menerima pesanan Anda.</p>
                </div>
-               <button onClick={onComplete} className="w-full bg-black text-[#D4AF37] py-3 rounded-full text-[9px] font-bold border-none outline-none cursor-pointer">KEMBALI KE HOME</button>
+               <button onClick={onComplete} className="w-full bg-black text-[#D4AF37] py-3 rounded-full text-[9px] font-bold border-none outline-none cursor-pointer active:scale-95 transition-all uppercase">Kembali ke Home</button>
             </div>
           )}
        </div>
@@ -843,19 +876,25 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
 
   const publishProduct = async () => {
     const validImages = formData.imageURLs.filter(url => url && url.trim() !== '');
-    if (!formData.name.trim() || !formData.price || validImages.length === 0) return notify("Harap isi nama, harga, dan 1 foto!", "error");
+    if (!formData.name.trim() || !formData.price || validImages.length === 0) return notify("Lengkapi Nama, Harga, & 1 Foto!", "error");
+    
     setSaving(true);
     try {
-      const data = { ...formData, imageURLs: validImages, price: Number(formData.price), updatedAt: serverTimestamp() };
+      const dataToSend = { ...formData, imageURLs: validImages, price: Number(formData.price), updatedAt: serverTimestamp() };
+      
       if (editingId) {
-        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', editingId), data);
-        notify("Katalog diupdate.", "success");
+        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', editingId), dataToSend);
+        notify("Katalog Terupdate.", "success");
       } else {
-        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), { ...data, createdAt: serverTimestamp() });
-        notify("Katalog dipublikasi.", "success");
+        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), { ...dataToSend, createdAt: serverTimestamp() });
+        notify("Katalog Terpublikasi.", "success");
       }
       resetForm();
-    } catch (e) { notify(e.message, "error"); } finally { setSaving(false); }
+    } catch (e) { 
+      notify(e.message, "error"); 
+    } finally {
+      setSaving(false);
+    }
   };
 
   const resetForm = () => {
@@ -875,18 +914,18 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Hapus Katalog?")) return;
+    if (!window.confirm("Hapus Katalog ini?")) return;
     try {
       await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', id));
-      notify("Dihapus.", "success");
+      notify("Katalog Dihapus.", "success");
     } catch (e) { notify(e.message, "error"); }
   };
 
   const handleDeleteOrder = async (id) => {
-    if (!window.confirm("Hapus Data Pesanan?")) return;
+    if (!window.confirm("Hapus Permanen Pesanan Ini?")) return;
     try {
       await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', id));
-      notify("Pesanan Dihapus.", "success");
+      notify("Pesanan Terhapus.", "success");
     } catch (e) { notify(e.message, "error"); }
   };
 
@@ -897,72 +936,70 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
     const newImages = [...formData.imageURLs];
     newImages[index] = finalUrl;
     setFormData({ ...formData, imageURLs: newImages });
-    notify(`Foto ${index+1} ditarik.`);
+    notify(`Foto ${index+1} Terdeteksi.`);
   };
 
   const updateAdminAuth = async () => {
     if (!newCreds.username || !newCreds.password) return notify("Isi lengkap!", "error");
-    setSaving(true);
     try {
       await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'admin_settings', 'main'), newCreds);
-      notify("Security updated.", "success");
-    } catch (e) { notify(e.message, "error"); } finally { setSaving(false); }
+      notify("Keamanan diperbarui.", "success");
+    } catch (e) { notify(e.message, "error"); }
   };
 
   const [bankForm, setBankForm] = useState({ bankName: 'Bank Central Asia (BCA)', accountNumber: '', accountHolder: '' });
   const addBank = async () => {
-    if (!bankForm.accountNumber || !bankForm.accountHolder) return notify("Isi data!", "error");
+    if (!bankForm.accountNumber || !bankForm.accountHolder) return notify("Isi data bank!", "error");
     try {
       await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'rekening'), bankForm);
       setBankForm({ bankName: 'Bank Central Asia (BCA)', accountNumber: '', accountHolder: '' });
-      notify("Banking added.", "success");
+      notify("Metode Pembayaran Ditambahkan.", "success");
     } catch (e) { notify(e.message, "error"); }
   };
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col md:flex-row gap-6 font-bold uppercase text-black relative">
       
-      {/* Detail Pesanan (Informasi Konsumen) */}
+      {/* JENDELA INFORMASI KONSUMEN & BUKTI TF */}
       {selectedOrder && (
         <div className="fixed inset-0 z-[6000] bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
            <div className="bg-white w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in duration-300">
               <div className="p-4 bg-zinc-900 text-[#D4AF37] flex justify-between items-center">
-                 <h3 className="text-[10px] font-serif tracking-[0.2em]">INFORMASI KONSUMEN</h3>
-                 <button onClick={()=>setSelectedOrder(null)} className="p-1.5 bg-white/10 rounded-full hover:bg-white/20 transition-all cursor-pointer"><X size={20}/></button>
+                 <h3 className="text-[10px] font-serif tracking-[0.2em] font-bold">DETAIL INFORMASI KONSUMEN</h3>
+                 <button onClick={()=>setSelectedOrder(null)} className="p-1.5 bg-white/10 rounded-full hover:bg-white/20 transition-all cursor-pointer border-none outline-none text-white"><X size={20}/></button>
               </div>
               <div className="p-6 space-y-6 max-h-[85vh] overflow-y-auto no-scrollbar">
                  <div className="grid grid-cols-2 gap-4 border-b border-zinc-100 pb-4">
-                    <div className="space-y-1">
-                       <p className="text-[8px] text-zinc-400">NAMA LENGKAP</p>
+                    <div className="space-y-1 text-black">
+                       <p className="text-[8px] text-zinc-400 font-bold uppercase tracking-widest">Nama Lengkap</p>
                        <p className="text-[11px] font-bold">{selectedOrder.shipping?.name}</p>
                     </div>
-                    <div className="space-y-1">
-                       <p className="text-[8px] text-zinc-400">NOMOR HP</p>
+                    <div className="space-y-1 text-black">
+                       <p className="text-[8px] text-zinc-400 font-bold uppercase tracking-widest">Nomor HP</p>
                        <p className="text-[11px] font-bold">{selectedOrder.shipping?.phone}</p>
                     </div>
                  </div>
                  
-                 <div className="space-y-1 border-b border-zinc-100 pb-4">
-                    <p className="text-[8px] text-zinc-400">ALAMAT PENGIRIMAN</p>
-                    <p className="text-[10px] font-medium leading-relaxed bg-zinc-50 p-3 rounded-xl">{selectedOrder.shipping?.address}</p>
+                 <div className="space-y-1 border-b border-zinc-100 pb-4 text-black">
+                    <p className="text-[8px] text-zinc-400 font-bold uppercase tracking-widest">Alamat Pengiriman</p>
+                    <p className="text-[10px] font-medium leading-relaxed bg-zinc-50 p-3 rounded-xl border border-zinc-100 shadow-inner">{selectedOrder.shipping?.address}</p>
                  </div>
 
-                 <div className="grid grid-cols-2 gap-4 border-b border-zinc-100 pb-4">
+                 <div className="grid grid-cols-2 gap-4 border-b border-zinc-100 pb-4 text-black">
                     <div className="space-y-1">
-                       <p className="text-[8px] text-zinc-400">PESANAN</p>
-                       <p className="text-[11px] font-bold">{selectedOrder.productName}</p>
-                       <span className="text-[9px] px-2 py-0.5 bg-zinc-100 rounded-full">SIZE: {selectedOrder.productSize}</span>
+                       <p className="text-[8px] text-zinc-400 font-bold uppercase tracking-widest">Barang</p>
+                       <p className="text-[11px] font-bold uppercase">{selectedOrder.productName}</p>
+                       <span className="text-[9px] px-2 py-0.5 bg-zinc-100 rounded-full font-bold">SIZE: {selectedOrder.productSize}</span>
                     </div>
                     <div className="space-y-1 text-right">
-                       <p className="text-[8px] text-zinc-400">TOTAL TRANSFER</p>
+                       <p className="text-[8px] text-zinc-400 font-bold uppercase tracking-widest">Total Bayar</p>
                        <p className="text-sm font-bold text-black">{formatIDR(selectedOrder.amount)}</p>
-                       <p className="text-[7px] text-zinc-400">{selectedOrder.transferTo}</p>
                     </div>
                  </div>
 
-                 <div className="space-y-2">
-                    <p className="text-[8px] text-zinc-400 font-bold">BUKTI TRANSFER DIGITAL</p>
-                    <div className="border border-zinc-100 rounded-2xl overflow-hidden bg-zinc-50 flex items-center justify-center p-2">
+                 <div className="space-y-2 text-black">
+                    <p className="text-[8px] text-zinc-400 font-bold uppercase tracking-widest">Bukti Transfer</p>
+                    <div className="border border-zinc-100 rounded-2xl overflow-hidden bg-zinc-50 flex items-center justify-center p-2 shadow-inner">
                        {selectedOrder.proofImage ? (
                          <img 
                            src={selectedOrder.proofImage} 
@@ -971,10 +1008,10 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
                            alt="Bukti Transfer"
                          />
                        ) : (
-                         <p className="text-[10px] text-zinc-300 py-10">Gambar tidak tersedia</p>
+                         <p className="text-[10px] text-zinc-300 py-10 italic">Gambar tidak ditemukan</p>
                        )}
                     </div>
-                    <p className="text-[7px] text-zinc-400 italic text-center">Klik gambar untuk memperbesar</p>
+                    <p className="text-[7px] text-zinc-400 italic text-center font-bold">Klik gambar untuk melihat resolusi penuh</p>
                  </div>
 
                  <div className="pt-4 flex gap-2">
@@ -983,14 +1020,14 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
                          onClick={async()=>{
                            await updateDoc(doc(db,'artifacts',appId,'public','data','orders',selectedOrder.id), {status:'confirmed'});
                            setSelectedOrder(null);
-                           notify("Pesanan Dikonfirmasi.", "success");
+                           notify("Order Berhasil Dikonfirmasi.", "success");
                          }} 
-                         className="flex-1 bg-green-600 text-white py-3 rounded-xl text-[10px] font-bold shadow-lg"
+                         className="flex-1 bg-green-600 text-white py-3 rounded-xl text-[10px] font-bold shadow-lg border-none cursor-pointer"
                        >
                          KONFIRMASI SEKARANG
                        </button>
                     )}
-                    <button onClick={()=>setSelectedOrder(null)} className="flex-1 bg-zinc-100 py-3 rounded-xl text-[10px] text-zinc-500 font-bold">TUTUP</button>
+                    <button onClick={()=>setSelectedOrder(null)} className="flex-1 bg-zinc-100 py-3 rounded-xl text-[10px] text-zinc-500 font-bold uppercase border-none cursor-pointer">Tutup</button>
                  </div>
               </div>
            </div>
@@ -998,20 +1035,19 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
       )}
 
       <aside className="md:w-56 space-y-3">
-         <div className="bg-zinc-950 p-5 rounded-2xl text-white border border-white/5 relative overflow-hidden group">
-           <div className="absolute top-0 right-0 w-24 h-24 bg-[#D4AF37]/10 blur-3xl"></div>
+         <div className="bg-zinc-950 p-5 rounded-2xl text-white border border-white/5 relative overflow-hidden">
            <Crown className="text-[#D4AF37] mb-1.5 relative z-10" size={24} />
-           <h2 className="text-base font-serif italic relative z-10">Maison Admin</h2>
+           <h2 className="text-base font-serif italic relative z-10 leading-none">Maison Admin</h2>
          </div>
-         <div className="bg-white p-3 rounded-xl border border-zinc-100 flex flex-col gap-1.5 shadow-sm">
+         <div className="bg-white p-3 rounded-xl border border-zinc-100 flex flex-col gap-1.5 shadow-sm text-black">
             {['inventory', 'orders', 'banking', 'settings'].map(t => (
-              <button key={t} onClick={()=>setTab(t)} className={`text-left px-5 py-2.5 rounded-lg text-[9px] tracking-widest border-none cursor-pointer transition-all ${tab === t ? 'bg-black text-[#D4AF37]' : 'text-zinc-400 bg-transparent hover:bg-zinc-50'}`}>{t.toUpperCase()}</button>
+              <button key={t} onClick={()=>setTab(t)} className={`text-left px-5 py-2.5 rounded-lg text-[9px] tracking-widest border-none cursor-pointer transition-all ${tab === t ? 'bg-black text-[#D4AF37]' : 'text-zinc-400 bg-transparent hover:bg-zinc-50 font-bold'}`}>{t.toUpperCase()}</button>
             ))}
-            <button onClick={onLogout} className="text-left px-5 py-2.5 rounded-lg text-[9px] text-red-500 border-none bg-transparent cursor-pointer hover:bg-red-50 tracking-widest mt-1">LOGOUT</button>
+            <button onClick={onLogout} className="text-left px-5 py-2.5 rounded-lg text-[9px] text-red-500 border-none bg-transparent cursor-pointer hover:bg-red-50 tracking-widest mt-1 font-bold">LOGOUT</button>
          </div>
       </aside>
 
-      <div className="flex-1 bg-white p-4 md:p-10 rounded-2xl border border-zinc-100 min-h-[60vh] shadow-sm">
+      <div className="flex-1 bg-white p-4 md:p-10 rounded-2xl border border-zinc-100 min-h-[60vh] shadow-sm text-black">
          {tab === 'inventory' && (
            <div className="space-y-12">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-12 border-b border-zinc-100 animate-in slide-in-from-top duration-500">
@@ -1021,14 +1057,15 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
                        <p className="text-[7px] text-zinc-300">Thumbnail Preview</p>
                     </div>
                     <div className="space-y-2">
+                       <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest">Link Instagram (1-5)</p>
                        {instaUrls.map((url, idx) => (
                          <div key={idx} className="flex gap-1.5 items-center">
                             <span className={`text-[8px] w-4 font-bold ${idx === 0 ? 'text-[#D4AF37]' : 'text-zinc-300'}`}>{idx+1}</span>
-                            <input className="flex-1 bg-zinc-50 p-2.5 rounded-lg border-none text-[8px] outline-none shadow-inner" placeholder={`Link IG Foto ${idx + 1}...`} value={url} onChange={e => {
+                            <input className="flex-1 bg-zinc-50 p-2.5 rounded-lg border-none text-[8px] outline-none shadow-inner text-black font-bold" placeholder={`Link IG Foto ${idx + 1}...`} value={url} onChange={e => {
                               const nu = [...instaUrls]; nu[idx] = e.target.value; setInstaUrls(nu);
                             }}/>
-                            <button onClick={() => handleFetchImage(instaUrls[idx], idx)} className="bg-black text-[#D4AF37] px-2.5 py-1.5 rounded-lg text-[7px] border-none cursor-pointer">FETCH</button>
-                            {formData.imageURLs[idx] && <button onClick={() => { const ni = [...formData.imageURLs]; ni[idx] = ''; setFormData({...formData, imageURLs: ni}); }} className="p-1.5 bg-red-50 text-red-400 rounded-lg"><X size={12}/></button>}
+                            <button onClick={() => handleFetchImage(instaUrls[idx], idx)} className="bg-black text-[#D4AF37] px-2.5 py-1.5 rounded-lg text-[7px] border-none cursor-pointer active:scale-90">FETCH</button>
+                            {formData.imageURLs[idx] && <button onClick={() => { const ni = [...formData.imageURLs]; ni[idx] = ''; setFormData({...formData, imageURLs: ni}); }} className="p-1.5 bg-red-50 text-red-400 rounded-lg outline-none border-none cursor-pointer"><X size={12}/></button>}
                          </div>
                        ))}
                     </div>
@@ -1036,53 +1073,53 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
                  
                  <div className="space-y-3">
                     <div className="flex justify-between items-center">
-                       <h3 className="text-xs font-serif">{editingId ? "Edit Produk" : "Publikasi Baru"}</h3>
-                       {editingId && <button onClick={resetForm} className="text-[8px] bg-zinc-100 px-3 py-1 rounded-full cursor-pointer">Batal</button>}
+                       <h3 className="text-xs font-serif uppercase tracking-widest font-bold">Katalog Produk</h3>
+                       {editingId && <button onClick={resetForm} className="text-[8px] bg-zinc-100 px-3 py-1 rounded-full cursor-pointer border-none font-bold uppercase">Batal</button>}
                     </div>
-                    <input className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] font-bold outline-none" placeholder="Judul Katalog" value={formData.name} onChange={e=>setFormData({...formData, name:e.target.value})}/>
-                    <input type="number" className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] font-bold outline-none" placeholder="Harga Default" value={formData.price} onChange={e=>setFormData({...formData, price:e.target.value})}/>
+                    <input className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] font-bold outline-none text-black uppercase" placeholder="Judul Katalog" value={formData.name} onChange={e=>setFormData({...formData, name:e.target.value})}/>
+                    <input type="number" className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] font-bold outline-none text-black" placeholder="Harga Default" value={formData.price} onChange={e=>setFormData({...formData, price:e.target.value})}/>
                     
                     <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-100">
-                       <p className="text-[8px] mb-2 font-bold">Custom Size Pricing (IDR)</p>
+                       <p className="text-[8px] mb-2 font-bold uppercase tracking-widest">Pricing per Ukuran</p>
                        <div className="grid grid-cols-4 gap-1.5">
                           {SIZE_OPTIONS.map(sz => (
                             <div key={sz} className="space-y-0.5">
-                               <p className="text-[7px] text-zinc-400">{sz}</p>
-                               <input type="number" className="w-full bg-white border border-zinc-200 p-1 text-[8px] rounded" value={formData.sizePrices[sz] || ''} placeholder="IDR" onChange={(e)=>setFormData({...formData, sizePrices: {...formData.sizePrices, [sz]: e.target.value}})}/>
+                               <p className="text-[7px] text-zinc-400 font-bold uppercase">{sz}</p>
+                               <input type="number" className="w-full bg-white border border-zinc-200 p-1 text-[8px] rounded outline-none text-black font-bold" value={formData.sizePrices[sz] || ''} placeholder="IDR" onChange={(e)=>setFormData({...formData, sizePrices: {...formData.sizePrices, [sz]: e.target.value}})}/>
                             </div>
                           ))}
                        </div>
                     </div>
 
                     <div className="space-y-1">
-                      <p className="text-[8px] text-zinc-400 font-bold uppercase">Kategori Produk</p>
-                      <select className="w-full bg-zinc-50 p-2.5 rounded-lg border-none text-[9px] outline-none cursor-pointer font-bold" value={formData.category} onChange={e=>setFormData({...formData, category:e.target.value})}>
+                      <p className="text-[8px] text-zinc-400 font-bold uppercase tracking-widest">Pilih Kategori</p>
+                      <select className="w-full bg-zinc-50 p-2.5 rounded-lg border-none text-[9px] outline-none cursor-pointer font-bold text-black uppercase" value={formData.category} onChange={e=>setFormData({...formData, category:e.target.value})}>
                         {CATEGORIES.map(c=><option key={c} value={c}>{c.toUpperCase()}</option>)}
                       </select>
                     </div>
 
-                    <textarea className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] italic h-24 outline-none resize-none" placeholder="Material Story..." value={formData.description} onChange={e=>setFormData({...formData, description:e.target.value})}/>
-                    <button onClick={publishProduct} disabled={saving} className="w-full bg-black text-[#D4AF37] py-3.5 rounded-full text-[9px] tracking-widest border-none cursor-pointer active:scale-95 shadow-lg">
-                       {saving ? "PRODUCING..." : editingId ? "UPDATE CATALOG" : "PUBLISH TO MAISON"}
+                    <textarea className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] italic h-24 outline-none resize-none text-black font-bold" placeholder="Material Story..." value={formData.description} onChange={e=>setFormData({...formData, description:e.target.value})}/>
+                    <button onClick={publishProduct} disabled={saving} className="w-full bg-black text-[#D4AF37] py-3.5 rounded-full text-[9px] font-bold tracking-widest border-none cursor-pointer active:scale-95 shadow-lg">
+                       {saving ? "SEDANG MEMPROSES..." : "PUBLISH / UPDATE MAISON"}
                     </button>
                  </div>
               </div>
 
               <div className="space-y-4">
-                 <h3 className="text-xs font-serif tracking-widest border-b border-zinc-50 pb-2">Katalog Saat Ini</h3>
+                 <h3 className="text-xs font-serif tracking-widest border-b border-zinc-50 pb-2 uppercase text-black font-bold">DAFTAR KATALOG AKTIF</h3>
                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {products.map(p => (
                       <div key={p.id} className="bg-white border border-zinc-100 rounded-xl overflow-hidden group shadow-sm relative transition-all hover:shadow-md">
                          <div className="aspect-[3/4.2] relative">
                             <img src={p.imageURLs?.[0] || p.imageURL} className="w-full h-full object-cover" alt=""/>
                             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-4">
-                               <button onClick={() => handleEdit(p)} className="p-2.5 bg-white rounded-full text-black cursor-pointer shadow-xl active:scale-90"><Edit size={16}/></button>
-                               <button onClick={() => handleDelete(p.id)} className="p-2.5 bg-red-500 rounded-full text-white cursor-pointer shadow-xl active:scale-90"><Trash2 size={16}/></button>
+                               <button onClick={() => handleEdit(p)} className="p-2.5 bg-white rounded-full text-black cursor-pointer shadow-xl active:scale-90 border-none outline-none"><Edit size={16}/></button>
+                               <button onClick={() => handleDelete(p.id)} className="p-2.5 bg-red-500 rounded-full text-white cursor-pointer shadow-xl active:scale-90 border-none outline-none"><Trash2 size={16}/></button>
                             </div>
                          </div>
-                         <div className="p-2.5">
-                            <p className="text-[9px] font-bold truncate leading-none mb-1">{p.name}</p>
-                            <p className="text-[9px] text-[#D4AF37] font-serif italic">{formatIDR(p.price)}</p>
+                         <div className="p-2.5 text-black">
+                            <p className="text-[9px] font-bold truncate leading-none mb-1 uppercase">{p.name}</p>
+                            <p className="text-[9px] text-[#D4AF37] font-serif italic font-bold">{formatIDR(p.price)}</p>
                          </div>
                       </div>
                     ))}
@@ -1093,53 +1130,55 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
          
          {tab === 'orders' && (
            <div className="space-y-4 animate-in fade-in">
-              <h3 className="text-xs font-serif tracking-widest">Daftar Pesanan Konsumen</h3>
-              {orders.map(o => (
-                <div key={o.id} onClick={()=>setSelectedOrder(o)} className="p-3 bg-zinc-50 rounded-xl flex items-center justify-between border border-zinc-100 shadow-sm cursor-pointer hover:bg-zinc-100 transition-all active:scale-[0.98]">
-                   <div className="flex items-center gap-4 flex-1">
-                      <div className="w-10 h-14 bg-white border rounded-lg overflow-hidden shadow-sm flex items-center justify-center">
-                         {o.proofImage ? <img src={o.proofImage} className="w-full h-full object-cover"/> : <CreditCard size={16} className="text-zinc-200"/>}
-                      </div>
-                      <div className="space-y-0.5">
-                         <span className={`text-[6px] font-bold px-1.5 py-0.5 rounded-full uppercase border ${o.status === 'pending' ? 'bg-yellow-50 text-yellow-600 border-yellow-100' : 'bg-green-50 text-green-600 border-green-100'}`}>{String(o.status)}</span>
-                         <h4 className="text-[10px] font-serif italic font-bold">{String(o.shipping?.name)}</h4>
-                         <p className="text-[9px] text-[#D4AF37] font-bold">{formatIDR(o.amount)}</p>
-                         <p className="text-[7px] text-zinc-400">KLIK UNTUK DETAIL</p>
-                      </div>
-                   </div>
-                   <div className="flex items-center gap-4">
-                      <div className="text-right hidden sm:block">
-                         <p className="text-[8px] text-zinc-400 truncate max-w-[80px]">{o.productName}</p>
-                         <p className="text-[7px] font-bold">SIZE: {o.productSize}</p>
-                      </div>
-                      <button onClick={(e)=>{ e.stopPropagation(); handleDeleteOrder(o.id); }} className="p-2 text-zinc-300 hover:text-red-500 transition-all border-none bg-transparent cursor-pointer"><Trash2 size={16}/></button>
-                   </div>
-                </div>
-              ))}
-              {orders.length === 0 && <p className="text-center py-20 text-zinc-300 text-[10px]">Belum ada pesanan masuk</p>}
+              <h3 className="text-xs font-serif tracking-widest uppercase text-black font-bold border-b border-zinc-50 pb-2">DAFTAR ORDER MASUK</h3>
+              <div className="space-y-3">
+                {orders.map(o => (
+                  <div key={o.id} onClick={()=>setSelectedOrder(o)} className="p-3 bg-zinc-50 rounded-xl flex items-center justify-between border border-zinc-100 shadow-sm cursor-pointer hover:bg-zinc-100 transition-all active:scale-[0.98]">
+                     <div className="flex items-center gap-4 flex-1">
+                        <div className="w-10 h-14 bg-white border border-zinc-100 rounded-lg overflow-hidden shadow-sm flex items-center justify-center flex-shrink-0 text-zinc-300">
+                           {o.proofImage ? <img src={o.proofImage} className="w-full h-full object-cover"/> : <CreditCard size={16} />}
+                        </div>
+                        <div className="space-y-0.5 text-black">
+                           <span className={`text-[6px] font-bold px-1.5 py-0.5 rounded-full uppercase border ${o.status === 'pending' ? 'bg-yellow-50 text-yellow-600 border-yellow-100' : 'bg-green-50 text-green-600 border-green-100'}`}>{String(o.status)}</span>
+                           <h4 className="text-[10px] font-serif italic font-bold uppercase">{String(o.shipping?.name)}</h4>
+                           <p className="text-[9px] text-[#D4AF37] font-bold">{formatIDR(o.amount)}</p>
+                           <p className="text-[7px] text-zinc-400 font-bold uppercase">KLIK INFO KONSUMEN</p>
+                        </div>
+                     </div>
+                     <div className="flex items-center gap-4">
+                        <div className="text-right hidden sm:block text-black">
+                           <p className="text-[8px] text-zinc-400 truncate max-w-[100px] uppercase font-bold">{o.productName}</p>
+                           <p className="text-[7px] font-bold uppercase">SIZE: {o.productSize}</p>
+                        </div>
+                        <button onClick={(e)=>{ e.stopPropagation(); handleDeleteOrder(o.id); }} className="p-2 text-zinc-300 hover:text-red-500 transition-all border-none bg-transparent cursor-pointer active:scale-90"><Trash2 size={16}/></button>
+                     </div>
+                  </div>
+                ))}
+                {orders.length === 0 && <p className="text-center py-20 text-zinc-300 text-[10px] uppercase font-bold tracking-widest animate-pulse">Belum ada pesanan masuk</p>}
+              </div>
            </div>
          )}
 
          {tab === 'banking' && (
            <div className="space-y-6 animate-in fade-in">
-              <h3 className="text-xs font-serif">Setup Pembayaran</h3>
+              <h3 className="text-xs font-serif uppercase tracking-widest text-black font-bold">SETUP PAYMENT SYSTEM</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                  <div className="space-y-3 bg-zinc-50 p-5 rounded-2xl border border-zinc-100 shadow-inner">
-                    <p className="text-[9px] font-bold text-zinc-500 uppercase">Input Rekening Baru</p>
-                    <select className="w-full p-2.5 text-[9px] rounded-lg border-zinc-200 outline-none bg-white font-bold" value={bankForm.bankName} onChange={e=>setBankForm({...bankForm, bankName: e.target.value})}>
+                    <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Input Rekening</p>
+                    <select className="w-full p-2.5 text-[9px] rounded-lg border-zinc-200 outline-none bg-white font-bold text-black uppercase" value={bankForm.bankName} onChange={e=>setBankForm({...bankForm, bankName: e.target.value})}>
                        {Object.keys(BANK_LOGOS).map(name => <option key={name} value={name}>{name}</option>)}
                     </select>
-                    <input className="w-full p-2.5 text-[9px] rounded-lg border-zinc-100 outline-none" placeholder="Nomor Rekening / ID" value={bankForm.accountNumber} onChange={e=>setBankForm({...bankForm, accountNumber: e.target.value})}/>
-                    <input className="w-full p-2.5 text-[9px] rounded-lg border-zinc-100 outline-none" placeholder="A.N (Atas Nama)" value={bankForm.accountHolder} onChange={e=>setBankForm({...bankForm, accountHolder: e.target.value})}/>
-                    <button onClick={addBank} className="w-full bg-zinc-900 text-[#D4AF37] py-2.5 rounded-lg text-[9px] font-bold shadow-lg">AUTHORIZE & SAVE</button>
+                    <input className="w-full p-2.5 text-[9px] rounded-lg border-zinc-100 outline-none bg-white font-bold text-black" placeholder="Nomor Rekening / ID" value={bankForm.accountNumber} onChange={e=>setBankForm({...bankForm, accountNumber: e.target.value})}/>
+                    <input className="w-full p-2.5 text-[9px] rounded-lg border-zinc-100 outline-none bg-white font-bold text-black" placeholder="Nama Pemilik" value={bankForm.accountHolder} onChange={e=>setBankForm({...bankForm, accountHolder: e.target.value})}/>
+                    <button onClick={addBank} className="w-full bg-zinc-900 text-[#D4AF37] py-2.5 rounded-lg text-[9px] font-bold shadow-lg border-none active:scale-95 transition-all cursor-pointer">SAVE BANKING</button>
                  </div>
-                 <div className="grid grid-cols-2 gap-3 max-h-[300px] overflow-y-auto no-scrollbar">
+                 <div className="grid grid-cols-2 gap-3 max-h-[350px] overflow-y-auto no-scrollbar pr-1">
                     {rekening.map(rek => (
-                      <div key={rek.id} className="p-3 bg-white border border-zinc-100 rounded-xl relative group flex flex-col items-center justify-center text-center shadow-sm">
+                      <div key={rek.id} className="p-3 bg-white border border-zinc-100 rounded-xl relative group flex flex-col items-center justify-center text-center shadow-sm hover:shadow-md transition-all">
                          <img src={BANK_LOGOS[rek.bankName]} className="h-4 object-contain mb-1.5" alt=""/>
-                         <p className="text-[8px] font-bold truncate w-full leading-none">{rek.accountNumber}</p>
-                         <p className="text-[6px] text-zinc-400 italic">A.N {rek.accountHolder}</p>
-                         <button onClick={async()=>await deleteDoc(doc(db,'artifacts',appId,'public','data','rekening',rek.id))} className="absolute top-1 right-1 p-1 text-red-300 opacity-0 group-hover:opacity-100 transition-all cursor-pointer"><Trash2 size={10}/></button>
+                         <p className="text-[8px] font-bold truncate w-full leading-none text-black uppercase">{rek.accountNumber}</p>
+                         <p className="text-[6px] text-zinc-400 italic uppercase font-bold">A.N {rek.accountHolder}</p>
+                         <button onClick={async()=>await deleteDoc(doc(db,'artifacts',appId,'public','data','rekening',rek.id))} className="absolute top-1 right-1 p-1 text-red-300 opacity-0 group-hover:opacity-100 transition-all cursor-pointer border-none bg-transparent outline-none shadow-none"><Trash2 size={10}/></button>
                       </div>
                     ))}
                  </div>
@@ -1148,19 +1187,19 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
          )}
 
          {tab === 'settings' && (
-           <div className="max-w-sm space-y-4 animate-in fade-in">
-              <h3 className="text-xs font-serif tracking-widest">Admin Authentication</h3>
+           <div className="max-w-sm space-y-4 animate-in fade-in text-black">
+              <h3 className="text-xs font-serif tracking-widest uppercase font-bold">AKSES ADMIN</h3>
               <div className="space-y-4 p-6 bg-zinc-50 rounded-2xl border border-zinc-100 shadow-inner">
                  <div className="space-y-1.5">
-                    <label className="text-[9px] text-zinc-400 font-bold">IDENTIFY USERNAME</label>
-                    <input className="w-full p-3 text-[10px] rounded-xl border-none shadow-sm outline-none font-bold" value={newCreds.username} onChange={e=>setNewCreds({...newCreds, username: e.target.value})}/>
+                    <label className="text-[9px] text-zinc-400 font-bold uppercase tracking-widest font-bold">Username Baru</label>
+                    <input className="w-full p-3 text-[10px] rounded-xl border-none shadow-sm outline-none font-bold text-black" value={newCreds.username} onChange={e=>setNewCreds({...newCreds, username: e.target.value})}/>
                  </div>
                  <div className="space-y-1.5">
-                    <label className="text-[9px] text-zinc-400 font-bold">SECURITY KEY (PASSWORD)</label>
-                    <input className="w-full p-3 text-[10px] rounded-xl border-none shadow-sm outline-none" type="password" value={newCreds.password} onChange={e=>setNewCreds({...newCreds, password: e.target.value})}/>
+                    <label className="text-[9px] text-zinc-400 font-bold uppercase tracking-widest font-bold">Password Baru</label>
+                    <input className="w-full p-3 text-[10px] rounded-xl border-none shadow-sm outline-none font-bold text-black" type="password" value={newCreds.password} onChange={e=>setNewCreds({...newCreds, password: e.target.value})}/>
                  </div>
-                 <button onClick={updateAdminAuth} disabled={saving} className="w-full bg-zinc-900 text-[#D4AF37] py-3 rounded-xl text-[9px] font-bold shadow-xl transition-all active:scale-95">
-                    {saving ? "ENCRYPTING..." : "UPDATE SECURITY PORTAL"}
+                 <button onClick={updateAdminAuth} className="w-full bg-zinc-900 text-[#D4AF37] py-3 rounded-xl text-[9px] font-bold shadow-xl transition-all active:scale-95 border-none cursor-pointer">
+                    UPDATE SECURITY PORTAL
                  </button>
               </div>
            </div>
@@ -1174,42 +1213,42 @@ function NotificationItem({ notification }) {
   const { message, type } = notification;
   return (
     <div className={`p-3.5 rounded-xl shadow-xl border animate-in slide-in-from-top-5 duration-500 backdrop-blur-md flex items-center gap-3 pointer-events-auto ${
-      type === 'success' ? 'bg-green-50/95 border-green-100 text-green-950' : 
-      type === 'error' ? 'bg-red-50/95 border-red-100 text-red-950' : 'bg-white/95 border-zinc-100 text-black shadow-2xl'
+      type === 'success' ? 'bg-green-50/95 border-green-100 text-green-950 font-bold' : 
+      type === 'error' ? 'bg-red-50/95 border-red-100 text-red-950 font-bold' : 'bg-white/95 border-zinc-100 text-black shadow-2xl font-bold'
     }`}>
       <div className={`p-2 rounded-lg shadow-sm ${type === 'success' ? 'bg-green-400 text-white' : 'bg-zinc-900 text-[#D4AF37]'}`}>
         {type === 'success' ? <SuccessIcon size={14} /> : <Bell size={14} />}
       </div>
-      <p className="text-[10px] font-bold uppercase tracking-widest">{String(message)}</p>
+      <p className="text-[10px] font-bold uppercase tracking-widest text-black">{String(message)}</p>
     </div>
   );
 }
 
 function Footer({ setView }) {
   return (
-    <footer className="bg-[#030303] text-white pt-12 md:pt-24 pb-10 px-6 border-t-[3px] border-[#D4AF37] relative">
+    <footer className="bg-[#030303] text-white pt-12 md:pt-24 pb-10 px-6 border-t-[3px] border-[#D4AF37] relative font-bold">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-10 font-bold uppercase">
-        <div className="space-y-4">
-           <h2 className="text-2xl md:text-5xl font-serif font-bold italic tracking-widest text-[#D4AF37] leading-none">DEVI OFFICIAL</h2>
-           <p className="text-zinc-500 text-[10px] leading-relaxed italic border-l border-zinc-900 pl-4 uppercase opacity-60">Elevating modest fashion to a global standard of absolute luxury.</p>
+        <div className="space-y-4 text-center md:text-left">
+           <h2 className="text-2xl md:text-5xl font-serif font-bold italic tracking-widest text-[#D4AF37] leading-none uppercase">DEVI OFFICIAL</h2>
+           <p className="text-zinc-500 text-[10px] leading-relaxed italic border-l border-zinc-900 pl-4 uppercase opacity-60 font-bold">Elevating modest fashion to a global standard of absolute luxury.</p>
         </div>
-        <div className="space-y-4">
-           <h4 className="text-[10px] font-bold uppercase tracking-widest text-zinc-100 border-b border-zinc-900 pb-1.5 italic">Maison Bank</h4>
+        <div className="space-y-4 hidden md:block">
+           <h4 className="text-[10px] font-bold uppercase tracking-widest text-zinc-100 border-b border-zinc-900 pb-1.5 italic text-zinc-100 uppercase">Maison Bank</h4>
            <div className="flex gap-4 opacity-20 grayscale hover:opacity-100 transition-all duration-[2s] cursor-pointer">
-              {Object.values(BANK_LOGOS).slice(0,3).map((l, i) => <img key={i} src={l} className="h-4 object-contain" alt="" />)}
+              {Object.values(BANK_LOGOS).slice(0,3).map((l, i) => <img key={i} src={l} className="h-4 object-contain shadow-none" alt="" />)}
            </div>
         </div>
-        <div className="space-y-4">
-           <h4 className="text-[10px] font-bold uppercase tracking-widest text-zinc-100 border-b border-zinc-900 pb-1.5 italic">Concierge</h4>
-           <div className="text-[9px] text-zinc-500 tracking-widest space-y-1 uppercase italic leading-none">
+        <div className="space-y-4 text-center md:text-left">
+           <h4 className="text-[10px] font-bold uppercase tracking-widest text-zinc-100 border-b border-zinc-900 pb-1.5 italic text-zinc-100 uppercase">Concierge</h4>
+           <div className="text-[9px] text-zinc-500 tracking-widest space-y-1 uppercase italic leading-none font-bold">
               <p>Jakarta, Indonesia</p>
               <p>+62 812 9988 7766</p>
            </div>
         </div>
       </div>
-      <div className="max-w-7xl mx-auto mt-12 pt-6 border-t border-zinc-900 flex flex-col md:flex-row justify-between items-center gap-6">
-         <div className="text-zinc-800 text-[8px] uppercase tracking-[0.4em] italic font-bold">© 2024 DEVI_OFFICIAL LUXURY GROUP</div>
-         <button onClick={() => setView('login')} className="flex items-center gap-1.5 text-zinc-700 text-[9px] tracking-widest hover:text-[#D4AF37] transition-all border border-zinc-900 px-6 py-2 rounded-full bg-transparent cursor-pointer active:scale-95 shadow-inner">
+      <div className="max-w-7xl mx-auto mt-12 pt-6 border-t border-zinc-900 flex flex-col md:flex-row justify-between items-center gap-6 text-zinc-800">
+         <div className="text-[8px] uppercase tracking-[0.4em] italic font-bold opacity-50 font-bold">© 2024 DEVI_OFFICIAL LUXURY GROUP</div>
+         <button onClick={() => setView('login')} className="flex items-center gap-1.5 text-zinc-700 text-[9px] tracking-widest hover:text-[#D4AF37] transition-all border border-zinc-900 px-6 py-2 rounded-full bg-transparent cursor-pointer active:scale-95 shadow-inner outline-none font-bold">
             <ShieldAlert size={16} /> <span>ADMIN ACCESS</span>
          </button>
       </div>
@@ -1219,18 +1258,15 @@ function Footer({ setView }) {
 
 function AdminLogin({ creds, onLoginSuccess, onBack, notify }) {
   const [u, setU] = useState(''); const [p, setP] = useState('');
-  const [loading, setLoading] = useState(false);
 
   const handleLogin = (e) => {
     e.preventDefault();
-    setLoading(true);
     setTimeout(() => {
       if (u.trim().toLowerCase() === (creds?.username || 'admin').toLowerCase() && p === (creds?.password || 'admin123')) {
         onLoginSuccess();
         notify("Access Granted.", "success");
       } else { notify("Access Denied.", "error"); }
-      setLoading(false);
-    }, 1200);
+    }, 500);
   };
 
   return (
@@ -1241,13 +1277,13 @@ function AdminLogin({ creds, onLoginSuccess, onBack, notify }) {
           <div className="w-16 h-16 bg-zinc-50 rounded-2xl flex items-center justify-center mx-auto text-[#D4AF37] shadow-inner border border-[#D4AF37]/10 animate-pulse">
             <Lock size={32} />
           </div>
-          <h3 className="text-xl font-serif font-bold uppercase leading-none tracking-tighter">Security Portal</h3>
+          <h3 className="text-xl font-serif font-bold uppercase leading-none tracking-tighter text-black">Security Portal</h3>
         </div>
         <form onSubmit={handleLogin} className="space-y-5">
-          <input placeholder="Admin ID" value={u} onChange={e=>setU(e.target.value)} className="w-full bg-zinc-50 p-4 rounded-xl border-none text-[11px] font-bold uppercase shadow-inner outline-none"/>
-          <input type="password" placeholder="Pass-Key" value={p} onChange={e=>setP(e.target.value)} className="w-full bg-zinc-50 p-4 rounded-xl border-none text-[11px] font-bold outline-none shadow-inner"/>
-          <button type="submit" disabled={loading} className="w-full bg-black text-[#D4AF37] py-4 rounded-full font-bold uppercase text-[10px] tracking-widest shadow-2xl active:scale-95 transition-all outline-none">
-             {loading ? "ENCRYPTING..." : "AUTHORIZE"}
+          <input placeholder="Admin ID" value={u} onChange={e=>setU(e.target.value)} className="w-full bg-zinc-50 p-4 rounded-xl border-none text-[11px] font-bold uppercase shadow-inner outline-none text-black font-bold"/>
+          <input type="password" placeholder="Pass-Key" value={p} onChange={e=>setP(e.target.value)} className="w-full bg-zinc-50 p-4 rounded-xl border-none text-[11px] font-bold outline-none shadow-inner text-black font-bold"/>
+          <button type="submit" className="w-full bg-black text-[#D4AF37] py-4 rounded-full font-bold uppercase text-[10px] tracking-widest shadow-2xl active:scale-95 transition-all outline-none border-none cursor-pointer">
+             AUTHORIZE ACCESS
           </button>
         </form>
       </div>
@@ -1260,13 +1296,13 @@ function CartView({ items, onRemove, onCheckout }) {
   return (
     <div className="max-w-2xl mx-auto py-12 md:py-32 px-4 font-bold uppercase">
        <div className="text-center mb-14 space-y-2 animate-in slide-in-from-bottom duration-500">
-          <h2 className="text-3xl md:text-5xl font-serif font-bold italic tracking-tighter uppercase text-zinc-950 leading-none">Shopping <span className="text-[#D4AF37]">Bag</span></h2>
-          <div className="w-12 h-[2px] bg-[#D4AF37] mx-auto opacity-40 animate-pulse"></div>
+          <h2 className="text-3xl md:text-5xl font-serif font-bold italic tracking-tighter uppercase text-zinc-950 leading-none text-black uppercase font-bold">Shopping <span className="text-[#D4AF37]">Bag</span></h2>
+          <div className="w-12 h-[2px] bg-[#D4AF37] mx-auto opacity-40 animate-pulse shadow-[0_0_10px_rgba(212,175,55,1)]"></div>
        </div>
        {items.length === 0 ? (
-         <div className="text-center py-28 border-2 border-dashed border-zinc-100 rounded-3xl bg-white opacity-60">
-            <BagIcon size={64} className="mx-auto text-zinc-100 mb-6" />
-            <p className="text-zinc-300 font-bold uppercase text-[10px] tracking-widest">Tas Belanja Kosong</p>
+         <div className="text-center py-28 border-2 border-dashed border-zinc-100 rounded-3xl bg-white opacity-60 flex flex-col items-center">
+            <BagIcon size={64} className="text-zinc-100 mb-6" />
+            <p className="text-zinc-300 font-bold uppercase text-[10px] tracking-widest text-zinc-400 font-bold">Tas Belanja Kosong</p>
          </div>
        ) : (
          <div className="space-y-6">
@@ -1274,21 +1310,21 @@ function CartView({ items, onRemove, onCheckout }) {
               <div key={idx} className="p-4 bg-white border border-zinc-100 rounded-2xl flex items-center justify-between gap-4 shadow-sm relative overflow-hidden transition-all hover:shadow-lg">
                  <div className="flex items-center gap-5 flex-1">
                     <img src={item.imageURLs?.[0] || item.imageURL} className="w-16 h-20 rounded-xl object-cover border border-zinc-50 shadow-md"/>
-                    <div className="space-y-1.5 flex-1">
-                       <h4 className="text-[11px] font-serif font-bold uppercase tracking-tight text-zinc-800 truncate max-w-[150px]">{String(item.name)}</h4>
-                       <span className="text-[7px] font-bold px-3 py-1 bg-[#D4AF37]/5 text-[#D4AF37] rounded-full border border-[#D4AF37]/10 uppercase tracking-widest">Size {String(item.chosenSize || "Default")}</span>
-                       <p className="text-xs font-serif font-bold italic text-zinc-900 leading-none">{formatIDR(item.chosenPrice || item.price)}</p>
+                    <div className="space-y-1.5 flex-1 text-black">
+                       <h4 className="text-[11px] font-serif font-bold uppercase tracking-tight text-zinc-800 truncate max-w-[150px] font-bold uppercase">{String(item.name)}</h4>
+                       <span className="text-[7px] font-bold px-3 py-1 bg-[#D4AF37]/5 text-[#D4AF37] rounded-full border border-[#D4AF37]/10 uppercase tracking-widest font-bold">Size {String(item.chosenSize || "Default")}</span>
+                       <p className="text-xs font-serif font-bold italic text-zinc-900 leading-none font-bold uppercase">{formatIDR(item.chosenPrice || item.price)}</p>
                     </div>
                  </div>
                  <button onClick={()=>onRemove(idx)} className="p-3 text-red-100 hover:text-red-500 transition-all border-none bg-zinc-50 rounded-xl cursor-pointer active:scale-90 outline-none"><Trash2 size={18}/></button>
               </div>
             ))}
-            <div className="pt-10 border-t border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-10">
+            <div className="pt-10 border-t border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-10 text-black font-bold">
                <div className="text-center md:text-left space-y-0.5">
-                  <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">Total Invoiced</p>
-                  <p className="text-4xl md:text-6xl font-serif font-bold italic tracking-tighter text-zinc-950 leading-none">{formatIDR(total)}</p>
+                  <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest font-bold uppercase">Total Invoiced</p>
+                  <p className="text-4xl md:text-6xl font-serif font-bold italic tracking-tighter text-zinc-950 leading-none text-black font-bold uppercase">{formatIDR(total)}</p>
                </div>
-               <button onClick={onCheckout} className="w-full md:w-auto bg-black text-[#D4AF37] px-14 py-5 rounded-full font-bold uppercase text-[11px] tracking-widest shadow-[0_20px_40px_rgba(0,0,0,0.2)] border-none cursor-pointer hover:bg-zinc-800 transition-all active:scale-95 flex items-center justify-center gap-4 outline-none">
+               <button onClick={onCheckout} className="w-full md:w-auto bg-black text-[#D4AF37] px-14 py-5 rounded-full font-bold uppercase text-[11px] tracking-widest shadow-[0_20px_40px_rgba(0,0,0,0.2)] border-none cursor-pointer hover:bg-zinc-800 transition-all active:scale-95 flex items-center justify-center gap-4 outline-none font-bold uppercase">
                  Checkout Sekarang <ArrowRight size={20} />
                </button>
             </div>
