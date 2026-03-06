@@ -129,7 +129,7 @@ import {
 /**
  * ==========================================================================================
  * --- DEVI OFFICIAL LUXURY BOUTIQUE ECOSYSTEM ---
- * VERSION: 14.5.0 (GALLERY FIX & STABLE ADMIN IMAGES)
+ * VERSION: 15.0.0 (ADMIN CRUD & CATALOG MANAGEMENT UPGRADE)
  * ==========================================================================================
  */
 
@@ -797,6 +797,7 @@ function CheckoutView({ product, rekening, onComplete, onBack, notify }) {
 function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, creds }) {
   const [tab, setTab] = useState('inventory');
   const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState(null); // Track if editing an existing product
   const [instaUrls, setInstaUrls] = useState(['', '', '', '', '']);
   const [formData, setFormData] = useState({ 
     imageURLs: ['', '', '', '', ''], 
@@ -810,7 +811,6 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
   const [newCreds, setNewCreds] = useState({ username: creds?.username || '', password: creds?.password || '' });
 
   const publishProduct = async () => {
-    // Filter array imageURLs agar tidak menyimpan string kosong
     const validImages = formData.imageURLs.filter(url => url && url.trim() !== '');
     
     if (!formData.name.trim() || !formData.price || validImages.length === 0) {
@@ -818,17 +818,55 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
     }
     setSaving(true);
     try {
-      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), { 
+      const data = { 
         ...formData, 
-        imageURLs: validImages, // Simpan hanya yang ada isinya
+        imageURLs: validImages, 
         price: Number(formData.price), 
-        createdAt: serverTimestamp() 
-      });
-      // Reset state
-      setFormData({ imageURLs: ['', '', '', '', ''], name: '', price: '', category: 'Baju', description: '', sizes: SIZE_OPTIONS, sizePrices: {} });
-      setInstaUrls(['', '', '', '', '']);
-      notify("Maha karya dipublikasikan.", "success");
+        updatedAt: serverTimestamp() 
+      };
+
+      if (editingId) {
+        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', editingId), data);
+        notify("Produk berhasil diperbarui.", "success");
+      } else {
+        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), { ...data, createdAt: serverTimestamp() });
+        notify("Produk berhasil ditambahkan.", "success");
+      }
+      
+      resetForm();
     } catch (e) { notify(e.message, "error"); } finally { setSaving(false); }
+  };
+
+  const resetForm = () => {
+    setEditingId(null);
+    setFormData({ imageURLs: ['', '', '', '', ''], name: '', price: '', category: 'Baju', description: '', sizes: SIZE_OPTIONS, sizePrices: {} });
+    setInstaUrls(['', '', '', '', '']);
+  };
+
+  const handleEdit = (p) => {
+    setEditingId(p.id);
+    const urls = ['', '', '', '', ''];
+    p.imageURLs.forEach((url, i) => { urls[i] = url; });
+    setInstaUrls(urls);
+    setFormData({
+      imageURLs: urls,
+      name: p.name,
+      price: p.price,
+      category: p.category,
+      description: p.description,
+      sizes: p.sizes || SIZE_OPTIONS,
+      sizePrices: p.sizePrices || {}
+    });
+    setTab('inventory');
+    window.scrollTo(0, 0);
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Hapus produk ini secara permanen?")) return;
+    try {
+      await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', id));
+      notify("Produk berhasil dihapus.", "success");
+    } catch (e) { notify(e.message, "error"); }
   };
 
   const handleFetchImage = (url, index) => {
@@ -877,53 +915,86 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
 
       <div className="flex-1 bg-white p-4 md:p-10 rounded-2xl border border-zinc-100 min-h-[50vh] shadow-sm">
          {tab === 'inventory' && (
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                 <div className="aspect-[3/4] bg-zinc-50 rounded-xl border-2 border-dashed border-zinc-100 overflow-hidden relative flex flex-col items-center justify-center gap-2">
-                    {formData.imageURLs[0] ? (
-                      <img src={formData.imageURLs[0]} className="w-full h-full object-cover"/>
-                    ) : (
-                      <Instagram size={32} className="text-zinc-200" />
-                    )}
-                    <p className="text-[7px] text-zinc-300">Preview Foto Utama</p>
-                 </div>
-                 
-                 <div className="space-y-2">
-                    <p className="text-[9px] text-zinc-500 font-bold">Instagram Links (Slot 1 Wajib)</p>
-                    {instaUrls.map((url, idx) => (
-                      <div key={idx} className="flex gap-1.5">
-                         <input className="flex-1 bg-zinc-50 p-2 rounded-lg border-none text-[8px] font-bold outline-none shadow-inner" placeholder={`Link IG ${idx + 1}...`} value={url} onChange={e => {
-                           const newUrls = [...instaUrls];
-                           newUrls[idx] = e.target.value;
-                           setInstaUrls(newUrls);
-                         }}/>
-                         <button onClick={() => handleFetchImage(instaUrls[idx], idx)} className="bg-black text-[#D4AF37] px-2.5 rounded-lg text-[7px] border-none cursor-pointer">FETCH</button>
-                      </div>
-                    ))}
-                    <p className="text-[7px] text-zinc-400 italic italic">Klik FETCH di setiap baris untuk mengambil gambar.</p>
-                 </div>
-              </div>
-              
-              <div className="space-y-3">
-                 <input className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] font-bold outline-none" placeholder="Nama Produk" value={formData.name} onChange={e=>setFormData({...formData, name:e.target.value})}/>
-                 <input type="number" className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] font-bold outline-none" placeholder="Harga Default" value={formData.price} onChange={e=>setFormData({...formData, price:e.target.value})}/>
-                 
-                 <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-100">
-                    <p className="text-[8px] mb-2 font-bold">Harga Per Ukuran (Opsional)</p>
-                    <div className="grid grid-cols-2 gap-2">
-                       {SIZE_OPTIONS.map(sz => (
-                         <div key={sz} className="flex items-center gap-1">
-                            <span className="text-[9px] w-6">{sz}</span>
-                            <input type="number" className="flex-1 bg-white border border-zinc-200 p-1 text-[8px] rounded" placeholder="IDR..." onChange={(e)=>setFormData({...formData, sizePrices: {...formData.sizePrices, [sz]: e.target.value}})}/>
+           <div className="space-y-12">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-12 border-b border-zinc-100">
+                 <div className="space-y-4">
+                    <div className="aspect-[3/4] bg-zinc-50 rounded-xl border-2 border-dashed border-zinc-100 overflow-hidden relative flex flex-col items-center justify-center gap-2">
+                       {formData.imageURLs[0] ? (
+                         <img src={formData.imageURLs[0]} className="w-full h-full object-cover"/>
+                       ) : (
+                         <Instagram size={32} className="text-zinc-200" />
+                       )}
+                       <p className="text-[7px] text-zinc-300">Preview Foto Utama</p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                       <p className="text-[9px] text-zinc-500 font-bold">Instagram Links (Slot 1 Wajib)</p>
+                       {instaUrls.map((url, idx) => (
+                         <div key={idx} className="flex gap-1.5">
+                            <input className="flex-1 bg-zinc-50 p-2 rounded-lg border-none text-[8px] font-bold outline-none shadow-inner" placeholder={`Link IG ${idx + 1}...`} value={url} onChange={e => {
+                              const newUrls = [...instaUrls];
+                              newUrls[idx] = e.target.value;
+                              setInstaUrls(newUrls);
+                            }}/>
+                            <button onClick={() => handleFetchImage(instaUrls[idx], idx)} className="bg-black text-[#D4AF37] px-2.5 rounded-lg text-[7px] border-none cursor-pointer">FETCH</button>
+                            {formData.imageURLs[idx] && (
+                              <button onClick={() => {
+                                const ni = [...formData.imageURLs]; ni[idx] = '';
+                                const nu = [...instaUrls]; nu[idx] = '';
+                                setFormData({...formData, imageURLs: ni}); setInstaUrls(nu);
+                              }} className="p-2 bg-red-50 text-red-400 rounded-lg"><X size={12}/></button>
+                            )}
                          </div>
                        ))}
                     </div>
                  </div>
+                 
+                 <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                       <h3 className="text-xs font-serif">{editingId ? "Edit Produk" : "Tambah Produk Baru"}</h3>
+                       {editingId && <button onClick={resetForm} className="text-[8px] bg-zinc-100 px-3 py-1 rounded-full">Batal Edit</button>}
+                    </div>
+                    <input className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] font-bold outline-none" placeholder="Nama Produk" value={formData.name} onChange={e=>setFormData({...formData, name:e.target.value})}/>
+                    <input type="number" className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] font-bold outline-none" placeholder="Harga Default" value={formData.price} onChange={e=>setFormData({...formData, price:e.target.value})}/>
+                    
+                    <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-100">
+                       <p className="text-[8px] mb-2 font-bold">Harga Per Ukuran (Opsional)</p>
+                       <div className="grid grid-cols-2 gap-2">
+                          {SIZE_OPTIONS.map(sz => (
+                            <div key={sz} className="flex items-center gap-1">
+                               <span className="text-[9px] w-6">{sz}</span>
+                               <input type="number" className="flex-1 bg-white border border-zinc-200 p-1 text-[8px] rounded" value={formData.sizePrices[sz] || ''} placeholder="IDR..." onChange={(e)=>setFormData({...formData, sizePrices: {...formData.sizePrices, [sz]: e.target.value}})}/>
+                            </div>
+                          ))}
+                       </div>
+                    </div>
 
-                 <textarea className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] italic h-20 outline-none resize-none" placeholder="Deskripsi..." value={formData.description} onChange={e=>setFormData({...formData, description:e.target.value})}/>
-                 <button onClick={publishProduct} disabled={saving} className="w-full bg-black text-[#D4AF37] py-3 rounded-full text-[9px] tracking-widest border-none cursor-pointer active:scale-95">
-                    {saving ? "PRODUCING..." : "PUBLISH KOLEKSI"}
-                 </button>
+                    <textarea className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] italic h-20 outline-none resize-none" placeholder="Deskripsi..." value={formData.description} onChange={e=>setFormData({...formData, description:e.target.value})}/>
+                    <button onClick={publishProduct} disabled={saving} className="w-full bg-black text-[#D4AF37] py-3 rounded-full text-[9px] tracking-widest border-none cursor-pointer active:scale-95">
+                       {saving ? "PRODUCING..." : editingId ? "UPDATE MAISON" : "PUBLISH MAISON"}
+                    </button>
+                 </div>
+              </div>
+
+              <div className="space-y-6">
+                 <h3 className="text-xs font-serif">Kelola Katalog</h3>
+                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {products.map(p => (
+                      <div key={p.id} className="bg-white border border-zinc-100 rounded-xl overflow-hidden group shadow-sm relative">
+                         <div className="aspect-[3/4] relative">
+                            <img src={p.imageURLs?.[0] || p.imageURL} className="w-full h-full object-cover" alt=""/>
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-3">
+                               <button onClick={() => handleEdit(p)} className="p-2 bg-white rounded-full text-zinc-900"><Edit size={14}/></button>
+                               <button onClick={() => handleDelete(p.id)} className="p-2 bg-red-500 rounded-full text-white"><Trash2 size={14}/></button>
+                            </div>
+                         </div>
+                         <div className="p-2">
+                            <p className="text-[8px] font-bold truncate">{p.name}</p>
+                            <p className="text-[8px] text-[#D4AF37]">{formatIDR(p.price)}</p>
+                         </div>
+                      </div>
+                    ))}
+                 </div>
               </div>
            </div>
          )}
@@ -1087,7 +1158,7 @@ function CartView({ items, onRemove, onCheckout }) {
   const total = items.reduce((s, i) => s + Number(i.chosenPrice || i.price), 0);
   return (
     <div className="max-w-2xl mx-auto py-10 md:py-32 px-4 font-bold uppercase">
-       <div className="text-center mb-8 space-y-1.5">
+       <div className="text-center mb-12 space-y-1.5">
           <h2 className="text-2xl font-serif font-bold italic tracking-tighter uppercase text-zinc-950 leading-none">Shopping <span className="text-[#D4AF37]">Bag</span></h2>
           <div className="w-10 h-[1.5px] bg-[#D4AF37] mx-auto opacity-40"></div>
        </div>
