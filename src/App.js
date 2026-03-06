@@ -129,7 +129,7 @@ import {
 /**
  * ==========================================================================================
  * --- DEVI OFFICIAL LUXURY BOUTIQUE ECOSYSTEM ---
- * VERSION: 15.0.0 (ADMIN CRUD & CATALOG MANAGEMENT UPGRADE)
+ * VERSION: 15.5.0 (ADMIN ORDER DETAILS & GALLERY STABILITY)
  * ==========================================================================================
  */
 
@@ -576,7 +576,6 @@ function ProductDetailView({ product, onBack, onBuy, onAddToCart, notify }) {
   const [currentPrice, setCurrentPrice] = useState(Number(product.price));
   const [activeImg, setActiveImg] = useState(0);
 
-  // Normalisasi list gambar
   const images = useMemo(() => {
     const list = product.imageURLs ? product.imageURLs.filter(url => url && url.trim() !== '') : [];
     if (list.length === 0 && product.imageURL) list.push(product.imageURL);
@@ -607,22 +606,20 @@ function ProductDetailView({ product, onBack, onBuy, onAddToCart, notify }) {
       </button>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-16 items-start">
-        {/* Gallery Section */}
         <div className="relative w-full aspect-[4/5] bg-zinc-50 rounded-xl overflow-hidden shadow-lg border border-zinc-100 group">
-          {/* Key property forces re-render so image actually changes visual state */}
           <img 
-            key={images[activeImg]} 
+            key={`${product.id}-${activeImg}`} 
             src={images[activeImg]} 
-            className="w-full h-full object-cover transition-opacity duration-300" 
+            className="w-full h-full object-cover transition-opacity duration-300 animate-in fade-in" 
             alt={product.name} 
           />
           
           {images.length > 1 && (
             <>
-              <button onClick={prevImg} className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center shadow-md z-10">
+              <button onClick={prevImg} className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center shadow-md z-10 outline-none border-none cursor-pointer">
                 <ChevronLeft size={20} className="text-black" />
               </button>
-              <button onClick={nextImg} className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center shadow-md z-10">
+              <button onClick={nextImg} className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center shadow-md z-10 outline-none border-none cursor-pointer">
                 <ChevronRight size={20} className="text-black" />
               </button>
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
@@ -645,7 +642,7 @@ function ProductDetailView({ product, onBack, onBuy, onAddToCart, notify }) {
 
           <div className="bg-zinc-50 p-4 md:p-8 rounded-xl border border-zinc-100">
              <span className="text-[8px] font-bold uppercase tracking-widest text-black border-b border-zinc-200 block mb-3 pb-1">Materials & Story</span>
-             <p className="text-zinc-700 leading-relaxed text-[11px] md:text-base italic font-serif">
+             <p className="text-zinc-700 leading-relaxed text-[11px] md:text-base italic font-serif whitespace-pre-wrap">
                 {String(product.description || "Kemewahan yang dipersonalisasi. Setiap jahitan mencerminkan dedikasi butik kami.")}
              </p>
           </div>
@@ -742,19 +739,19 @@ function CheckoutView({ product, rekening, onComplete, onBack, notify }) {
                     <textarea className="w-full py-1.5 text-xs font-bold border-none outline-none bg-transparent h-16 resize-none" placeholder="Alamat..." value={shipping.address} onChange={e=>setShipping({...shipping, address:e.target.value})}/>
                   </div>
                </div>
-               <button onClick={()=>setStep(2)} className="w-full bg-[#3b82f6] text-white py-3 rounded-full text-[9px] font-bold border-none cursor-pointer">LANJUT PEMBAYARAN</button>
+               <button onClick={()=>setStep(2)} className="w-full bg-[#3b82f6] text-white py-3 rounded-full text-[9px] font-bold border-none cursor-pointer shadow-lg active:scale-95">LANJUT PEMBAYARAN</button>
             </div>
           )}
 
           {step === 2 && (
             <div className="p-6 space-y-6">
                <div className="text-center"><h3 className="text-base font-serif italic uppercase">Pilih Bank / E-Wallet</h3></div>
-               <div className="grid grid-cols-2 gap-3">
+               <div className="grid grid-cols-2 gap-3 max-h-[400px] overflow-y-auto no-scrollbar pr-1">
                   {rekening.map(rek => (
-                    <div key={rek.id} onClick={()=>{ setPayment({...payment, transferTo: `${rek.bankName} - ${rek.accountNumber} - ${rek.accountHolder}`}); setStep(3); }} className="p-3 border border-zinc-100 rounded-xl hover:border-[#D4AF37] cursor-pointer transition-all flex flex-col items-center text-center bg-zinc-50/50">
+                    <div key={rek.id} onClick={()=>{ setPayment({...payment, transferTo: `${rek.bankName} - ${rek.accountNumber} - ${rek.accountHolder}`}); setStep(3); }} className="p-3 border border-zinc-100 rounded-xl hover:border-[#D4AF37] cursor-pointer transition-all flex flex-col items-center text-center bg-zinc-50/50 group shadow-sm active:scale-95">
                        <img src={BANK_LOGOS[rek.bankName]} className="h-6 object-contain mb-2" alt=""/>
                        <p className="text-[7px] text-zinc-400 uppercase leading-tight mb-1">{rek.bankName}</p>
-                       <p className="text-[10px] font-mono tracking-tighter">{String(rek.accountNumber)}</p>
+                       <p className="text-[10px] font-mono tracking-tighter text-black">{String(rek.accountNumber)}</p>
                     </div>
                   ))}
                </div>
@@ -765,11 +762,11 @@ function CheckoutView({ product, rekening, onComplete, onBack, notify }) {
             <div className="p-6 space-y-6">
                <h3 className="text-center text-lg font-serif italic border-b border-zinc-50 pb-2 uppercase leading-none">Konfirmasi</h3>
                <div className="space-y-4">
-                  <div className="p-3 bg-zinc-900 rounded-lg text-[9px] text-[#D4AF37] tracking-widest uppercase text-center">{String(payment.transferTo)}</div>
+                  <div className="p-3 bg-zinc-900 rounded-lg text-[9px] text-[#D4AF37] tracking-widest uppercase text-center border border-[#D4AF37]/20">{String(payment.transferTo)}</div>
                   <input className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] outline-none" placeholder="Bank Asal" value={payment.originBank} onChange={e=>setPayment({...payment, originBank:e.target.value})}/>
                   <input className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] outline-none" placeholder="Nama Pengirim" value={payment.senderName} onChange={e=>setPayment({...payment, senderName:e.target.value})}/>
                   
-                  <div onClick={()=>document.getElementById('uPf').click()} className="w-full aspect-video border-2 border-dashed border-zinc-100 rounded-xl bg-zinc-50 flex items-center justify-center cursor-pointer overflow-hidden relative shadow-inner">
+                  <div onClick={()=>document.getElementById('uPf').click()} className="w-full aspect-video border-2 border-dashed border-zinc-100 rounded-xl bg-zinc-50 flex items-center justify-center cursor-pointer overflow-hidden relative shadow-inner group transition-all hover:bg-zinc-100">
                     {payment.proofImage ? <img src={payment.proofImage} className="w-full h-full object-cover"/> : <div className="text-center text-zinc-300"><Upload size={24} className="mx-auto mb-1 opacity-50" /><p className="text-[8px] uppercase tracking-widest">Bukti Transfer</p></div>}
                     {uploading && <div className="absolute inset-0 bg-white/60 flex items-center justify-center"><Loader2 className="animate-spin text-[#D4AF37]" size={24}/></div>}
                     <input type="file" id="uPf" className="hidden" accept="image/*" onChange={handleUpload}/>
@@ -797,42 +794,27 @@ function CheckoutView({ product, rekening, onComplete, onBack, notify }) {
 function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, creds }) {
   const [tab, setTab] = useState('inventory');
   const [saving, setSaving] = useState(false);
-  const [editingId, setEditingId] = useState(null); // Track if editing an existing product
+  const [editingId, setEditingId] = useState(null);
   const [instaUrls, setInstaUrls] = useState(['', '', '', '', '']);
   const [formData, setFormData] = useState({ 
-    imageURLs: ['', '', '', '', ''], 
-    name: '', 
-    price: '', 
-    category: 'Baju', 
-    description: '', 
-    sizes: SIZE_OPTIONS, 
-    sizePrices: {} 
+    imageURLs: ['', '', '', '', ''], name: '', price: '', category: 'Baju', description: '', sizes: SIZE_OPTIONS, sizePrices: {} 
   });
   const [newCreds, setNewCreds] = useState({ username: creds?.username || '', password: creds?.password || '' });
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
   const publishProduct = async () => {
     const validImages = formData.imageURLs.filter(url => url && url.trim() !== '');
-    
-    if (!formData.name.trim() || !formData.price || validImages.length === 0) {
-      return notify("Harap isi nama, harga, dan minimal 1 foto utama!", "error");
-    }
+    if (!formData.name.trim() || !formData.price || validImages.length === 0) return notify("Harap isi nama, harga, dan 1 foto!", "error");
     setSaving(true);
     try {
-      const data = { 
-        ...formData, 
-        imageURLs: validImages, 
-        price: Number(formData.price), 
-        updatedAt: serverTimestamp() 
-      };
-
+      const data = { ...formData, imageURLs: validImages, price: Number(formData.price), updatedAt: serverTimestamp() };
       if (editingId) {
         await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', editingId), data);
-        notify("Produk berhasil diperbarui.", "success");
+        notify("Katalog diupdate.", "success");
       } else {
         await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), { ...data, createdAt: serverTimestamp() });
-        notify("Produk berhasil ditambahkan.", "success");
+        notify("Katalog dipublikasi.", "success");
       }
-      
       resetForm();
     } catch (e) { notify(e.message, "error"); } finally { setSaving(false); }
   };
@@ -846,26 +828,18 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
   const handleEdit = (p) => {
     setEditingId(p.id);
     const urls = ['', '', '', '', ''];
-    p.imageURLs.forEach((url, i) => { urls[i] = url; });
+    if (p.imageURLs) p.imageURLs.forEach((url, i) => { urls[i] = url; });
     setInstaUrls(urls);
-    setFormData({
-      imageURLs: urls,
-      name: p.name,
-      price: p.price,
-      category: p.category,
-      description: p.description,
-      sizes: p.sizes || SIZE_OPTIONS,
-      sizePrices: p.sizePrices || {}
-    });
+    setFormData({ ...p, imageURLs: urls });
     setTab('inventory');
     window.scrollTo(0, 0);
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Hapus produk ini secara permanen?")) return;
+    if (!window.confirm("Hapus Katalog?")) return;
     try {
       await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', id));
-      notify("Produk berhasil dihapus.", "success");
+      notify("Dihapus.", "success");
     } catch (e) { notify(e.message, "error"); }
   };
 
@@ -873,77 +847,126 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
     if (!url) return;
     const clean = url.split('?')[0]; 
     const finalUrl = `https://images.weserv.nl/?url=${encodeURIComponent(clean.endsWith('/') ? clean + 'media/?size=l' : clean + '/media/?size=l')}&w=1000&output=jpg`;
-    
     const newImages = [...formData.imageURLs];
     newImages[index] = finalUrl;
     setFormData({ ...formData, imageURLs: newImages });
+    notify(`Foto ${index+1} ditarik.`);
   };
 
   const updateAdminAuth = async () => {
-    if (!newCreds.username || !newCreds.password) return notify("Harap isi Username & Password!", "error");
+    if (!newCreds.username || !newCreds.password) return notify("Isi lengkap!", "error");
     setSaving(true);
     try {
       await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'admin_settings', 'main'), newCreds);
-      notify("Credential Admin berhasil diupdate.", "success");
+      notify("Security updated.", "success");
     } catch (e) { notify(e.message, "error"); } finally { setSaving(false); }
   };
 
   const [bankForm, setBankForm] = useState({ bankName: 'Bank Central Asia (BCA)', accountNumber: '', accountHolder: '' });
   const addBank = async () => {
-    if (!bankForm.accountNumber || !bankForm.accountHolder) return notify("Lengkapi data bank!", "error");
+    if (!bankForm.accountNumber || !bankForm.accountHolder) return notify("Isi data!", "error");
     try {
       await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'rekening'), bankForm);
       setBankForm({ bankName: 'Bank Central Asia (BCA)', accountNumber: '', accountHolder: '' });
-      notify("Metode pembayaran ditambahkan.", "success");
+      notify("Banking added.", "success");
     } catch (e) { notify(e.message, "error"); }
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col md:flex-row gap-6 font-bold uppercase text-black">
+    <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col md:flex-row gap-6 font-bold uppercase text-black relative">
+      
+      {/* Order Detail Modal */}
+      {selectedOrder && (
+        <div className="fixed inset-0 z-[6000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+           <div className="bg-white w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in duration-300">
+              <div className="p-4 bg-zinc-900 text-[#D4AF37] flex justify-between items-center">
+                 <h3 className="text-xs font-serif tracking-widest">Detail Pesanan</h3>
+                 <button onClick={()=>setSelectedOrder(null)} className="p-1 bg-white/10 rounded-full hover:bg-white/20 transition-all cursor-pointer"><X size={20}/></button>
+              </div>
+              <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto no-scrollbar">
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                       <p className="text-[8px] text-zinc-400">Pembeli</p>
+                       <p className="text-[11px] font-bold">{selectedOrder.shipping?.name}</p>
+                    </div>
+                    <div className="space-y-1">
+                       <p className="text-[8px] text-zinc-400">Nomor HP</p>
+                       <p className="text-[11px] font-bold">{selectedOrder.shipping?.phone}</p>
+                    </div>
+                 </div>
+                 <div className="space-y-1">
+                    <p className="text-[8px] text-zinc-400">Alamat Lengkap</p>
+                    <p className="text-[10px] font-medium leading-relaxed bg-zinc-50 p-3 rounded-lg border border-zinc-100">{selectedOrder.shipping?.address}</p>
+                 </div>
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                       <p className="text-[8px] text-zinc-400">Produk</p>
+                       <p className="text-[10px] font-bold">{selectedOrder.productName}</p>
+                       <p className="text-[9px] text-[#D4AF37]">Size: {selectedOrder.productSize}</p>
+                    </div>
+                    <div className="space-y-1 text-right">
+                       <p className="text-[8px] text-zinc-400">Total Pembayaran</p>
+                       <p className="text-sm font-bold">{formatIDR(selectedOrder.amount)}</p>
+                    </div>
+                 </div>
+                 <div className="space-y-2">
+                    <p className="text-[8px] text-zinc-400">Bukti Transfer (Klik Gambar)</p>
+                    <div className="border border-zinc-100 rounded-xl overflow-hidden shadow-sm">
+                       <img src={selectedOrder.proofImage} className="w-full object-contain max-h-[300px] cursor-pointer" onClick={()=>window.open(selectedOrder.proofImage, '_blank')}/>
+                    </div>
+                 </div>
+                 <div className="pt-4 flex gap-2">
+                    {selectedOrder.status === 'pending' && (
+                       <button 
+                         onClick={async()=>{
+                           await updateDoc(doc(db,'artifacts',appId,'public','data','orders',selectedOrder.id), {status:'confirmed'});
+                           setSelectedOrder(null);
+                           notify("Pesanan Dikonfirmasi.", "success");
+                         }} 
+                         className="flex-1 bg-zinc-900 text-[#D4AF37] py-3 rounded-xl text-[10px] font-bold"
+                       >
+                         Konfirmasi Sekarang
+                       </button>
+                    )}
+                    <button onClick={()=>setSelectedOrder(null)} className="flex-1 bg-zinc-50 py-3 rounded-xl text-[10px] text-zinc-400">Tutup</button>
+                 </div>
+              </div>
+           </div>
+        </div>
+      )}
+
       <aside className="md:w-56 space-y-3">
-         <div className="bg-zinc-950 p-5 rounded-2xl text-white border border-white/5">
-           <Crown className="text-[#D4AF37] mb-1.5" size={24} />
-           <h2 className="text-base font-serif italic">Maison Master</h2>
+         <div className="bg-zinc-950 p-5 rounded-2xl text-white border border-white/5 relative overflow-hidden group">
+           <div className="absolute top-0 right-0 w-24 h-24 bg-[#D4AF37]/10 blur-3xl"></div>
+           <Crown className="text-[#D4AF37] mb-1.5 relative z-10" size={24} />
+           <h2 className="text-base font-serif italic relative z-10">Maison Admin</h2>
          </div>
          <div className="bg-white p-3 rounded-xl border border-zinc-100 flex flex-col gap-1.5 shadow-sm">
             {['inventory', 'orders', 'banking', 'settings'].map(t => (
-              <button key={t} onClick={()=>setTab(t)} className={`text-left px-5 py-2.5 rounded-lg text-[9px] tracking-widest border-none cursor-pointer ${tab === t ? 'bg-black text-[#D4AF37]' : 'text-zinc-400 bg-transparent hover:bg-zinc-50'}`}>{t.toUpperCase()}</button>
+              <button key={t} onClick={()=>setTab(t)} className={`text-left px-5 py-2.5 rounded-lg text-[9px] tracking-widest border-none cursor-pointer transition-all ${tab === t ? 'bg-black text-[#D4AF37]' : 'text-zinc-400 bg-transparent hover:bg-zinc-50'}`}>{t.toUpperCase()}</button>
             ))}
             <button onClick={onLogout} className="text-left px-5 py-2.5 rounded-lg text-[9px] text-red-500 border-none bg-transparent cursor-pointer hover:bg-red-50 tracking-widest mt-1">LOGOUT</button>
          </div>
       </aside>
 
-      <div className="flex-1 bg-white p-4 md:p-10 rounded-2xl border border-zinc-100 min-h-[50vh] shadow-sm">
+      <div className="flex-1 bg-white p-4 md:p-10 rounded-2xl border border-zinc-100 min-h-[60vh] shadow-sm">
          {tab === 'inventory' && (
            <div className="space-y-12">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-12 border-b border-zinc-100">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-12 border-b border-zinc-100 animate-in slide-in-from-top duration-500">
                  <div className="space-y-4">
                     <div className="aspect-[3/4] bg-zinc-50 rounded-xl border-2 border-dashed border-zinc-100 overflow-hidden relative flex flex-col items-center justify-center gap-2">
-                       {formData.imageURLs[0] ? (
-                         <img src={formData.imageURLs[0]} className="w-full h-full object-cover"/>
-                       ) : (
-                         <Instagram size={32} className="text-zinc-200" />
-                       )}
-                       <p className="text-[7px] text-zinc-300">Preview Foto Utama</p>
+                       {formData.imageURLs[0] ? <img src={formData.imageURLs[0]} className="w-full h-full object-cover"/> : <Instagram size={32} className="text-zinc-200" />}
+                       <p className="text-[7px] text-zinc-300">Thumbnail Preview</p>
                     </div>
-                    
                     <div className="space-y-2">
-                       <p className="text-[9px] text-zinc-500 font-bold">Instagram Links (Slot 1 Wajib)</p>
                        {instaUrls.map((url, idx) => (
-                         <div key={idx} className="flex gap-1.5">
-                            <input className="flex-1 bg-zinc-50 p-2 rounded-lg border-none text-[8px] font-bold outline-none shadow-inner" placeholder={`Link IG ${idx + 1}...`} value={url} onChange={e => {
-                              const newUrls = [...instaUrls];
-                              newUrls[idx] = e.target.value;
-                              setInstaUrls(newUrls);
+                         <div key={idx} className="flex gap-1.5 items-center">
+                            <span className={`text-[8px] w-4 font-bold ${idx === 0 ? 'text-[#D4AF37]' : 'text-zinc-300'}`}>{idx+1}</span>
+                            <input className="flex-1 bg-zinc-50 p-2.5 rounded-lg border-none text-[8px] outline-none shadow-inner" placeholder={`Link IG Foto ${idx + 1}...`} value={url} onChange={e => {
+                              const nu = [...instaUrls]; nu[idx] = e.target.value; setInstaUrls(nu);
                             }}/>
-                            <button onClick={() => handleFetchImage(instaUrls[idx], idx)} className="bg-black text-[#D4AF37] px-2.5 rounded-lg text-[7px] border-none cursor-pointer">FETCH</button>
-                            {formData.imageURLs[idx] && (
-                              <button onClick={() => {
-                                const ni = [...formData.imageURLs]; ni[idx] = '';
-                                const nu = [...instaUrls]; nu[idx] = '';
-                                setFormData({...formData, imageURLs: ni}); setInstaUrls(nu);
-                              }} className="p-2 bg-red-50 text-red-400 rounded-lg"><X size={12}/></button>
-                            )}
+                            <button onClick={() => handleFetchImage(instaUrls[idx], idx)} className="bg-black text-[#D4AF37] px-2.5 py-1.5 rounded-lg text-[7px] border-none cursor-pointer">FETCH</button>
+                            {formData.imageURLs[idx] && <button onClick={() => { const ni = [...formData.imageURLs]; ni[idx] = ''; setFormData({...formData, imageURLs: ni}); }} className="p-1.5 bg-red-50 text-red-400 rounded-lg"><X size={12}/></button>}
                          </div>
                        ))}
                     </div>
@@ -951,46 +974,46 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
                  
                  <div className="space-y-3">
                     <div className="flex justify-between items-center">
-                       <h3 className="text-xs font-serif">{editingId ? "Edit Produk" : "Tambah Produk Baru"}</h3>
-                       {editingId && <button onClick={resetForm} className="text-[8px] bg-zinc-100 px-3 py-1 rounded-full">Batal Edit</button>}
+                       <h3 className="text-xs font-serif">{editingId ? "Edit Produk" : "Publikasi Baru"}</h3>
+                       {editingId && <button onClick={resetForm} className="text-[8px] bg-zinc-100 px-3 py-1 rounded-full cursor-pointer">Batal</button>}
                     </div>
-                    <input className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] font-bold outline-none" placeholder="Nama Produk" value={formData.name} onChange={e=>setFormData({...formData, name:e.target.value})}/>
+                    <input className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] font-bold outline-none" placeholder="Judul Katalog" value={formData.name} onChange={e=>setFormData({...formData, name:e.target.value})}/>
                     <input type="number" className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] font-bold outline-none" placeholder="Harga Default" value={formData.price} onChange={e=>setFormData({...formData, price:e.target.value})}/>
                     
                     <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-100">
-                       <p className="text-[8px] mb-2 font-bold">Harga Per Ukuran (Opsional)</p>
-                       <div className="grid grid-cols-2 gap-2">
+                       <p className="text-[8px] mb-2 font-bold">Custom Size Pricing</p>
+                       <div className="grid grid-cols-3 gap-1.5">
                           {SIZE_OPTIONS.map(sz => (
-                            <div key={sz} className="flex items-center gap-1">
-                               <span className="text-[9px] w-6">{sz}</span>
-                               <input type="number" className="flex-1 bg-white border border-zinc-200 p-1 text-[8px] rounded" value={formData.sizePrices[sz] || ''} placeholder="IDR..." onChange={(e)=>setFormData({...formData, sizePrices: {...formData.sizePrices, [sz]: e.target.value}})}/>
+                            <div key={sz} className="space-y-0.5">
+                               <p className="text-[7px] text-zinc-400">{sz}</p>
+                               <input type="number" className="w-full bg-white border border-zinc-200 p-1 text-[8px] rounded" value={formData.sizePrices[sz] || ''} placeholder="IDR" onChange={(e)=>setFormData({...formData, sizePrices: {...formData.sizePrices, [sz]: e.target.value}})}/>
                             </div>
                           ))}
                        </div>
                     </div>
 
-                    <textarea className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] italic h-20 outline-none resize-none" placeholder="Deskripsi..." value={formData.description} onChange={e=>setFormData({...formData, description:e.target.value})}/>
-                    <button onClick={publishProduct} disabled={saving} className="w-full bg-black text-[#D4AF37] py-3 rounded-full text-[9px] tracking-widest border-none cursor-pointer active:scale-95">
-                       {saving ? "PRODUCING..." : editingId ? "UPDATE MAISON" : "PUBLISH MAISON"}
+                    <textarea className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] italic h-24 outline-none resize-none" placeholder="Material Story..." value={formData.description} onChange={e=>setFormData({...formData, description:e.target.value})}/>
+                    <button onClick={publishProduct} disabled={saving} className="w-full bg-black text-[#D4AF37] py-3.5 rounded-full text-[9px] tracking-widest border-none cursor-pointer active:scale-95 shadow-lg">
+                       {saving ? "PRODUCING..." : editingId ? "UPDATE CATALOG" : "PUBLISH TO MAISON"}
                     </button>
                  </div>
               </div>
 
-              <div className="space-y-6">
-                 <h3 className="text-xs font-serif">Kelola Katalog</h3>
-                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              <div className="space-y-4">
+                 <h3 className="text-xs font-serif tracking-widest border-b border-zinc-50 pb-2">Catalog Database</h3>
+                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {products.map(p => (
-                      <div key={p.id} className="bg-white border border-zinc-100 rounded-xl overflow-hidden group shadow-sm relative">
-                         <div className="aspect-[3/4] relative">
+                      <div key={p.id} className="bg-white border border-zinc-100 rounded-xl overflow-hidden group shadow-sm relative transition-all hover:shadow-md">
+                         <div className="aspect-[3/4.2] relative">
                             <img src={p.imageURLs?.[0] || p.imageURL} className="w-full h-full object-cover" alt=""/>
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-3">
-                               <button onClick={() => handleEdit(p)} className="p-2 bg-white rounded-full text-zinc-900"><Edit size={14}/></button>
-                               <button onClick={() => handleDelete(p.id)} className="p-2 bg-red-500 rounded-full text-white"><Trash2 size={14}/></button>
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-4">
+                               <button onClick={() => handleEdit(p)} className="p-2.5 bg-white rounded-full text-black cursor-pointer shadow-xl active:scale-90"><Edit size={16}/></button>
+                               <button onClick={() => handleDelete(p.id)} className="p-2.5 bg-red-500 rounded-full text-white cursor-pointer shadow-xl active:scale-90"><Trash2 size={16}/></button>
                             </div>
                          </div>
-                         <div className="p-2">
-                            <p className="text-[8px] font-bold truncate">{p.name}</p>
-                            <p className="text-[8px] text-[#D4AF37]">{formatIDR(p.price)}</p>
+                         <div className="p-2.5">
+                            <p className="text-[9px] font-bold truncate leading-none mb-1">{p.name}</p>
+                            <p className="text-[9px] text-[#D4AF37] font-serif italic">{formatIDR(p.price)}</p>
                          </div>
                       </div>
                     ))}
@@ -1000,21 +1023,25 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
          )}
          
          {tab === 'orders' && (
-           <div className="space-y-3">
+           <div className="space-y-4 animate-in fade-in">
+              <h3 className="text-xs font-serif tracking-widest">Client Requests</h3>
               {orders.map(o => (
-                <div key={o.id} className="p-3 bg-zinc-50 rounded-xl flex items-center justify-between border border-zinc-100 shadow-sm">
-                   <div className="flex items-center gap-3 flex-1">
-                      <img src={o.proofImage} className="w-10 h-14 rounded-lg object-cover shadow-sm cursor-pointer" onClick={()=>window.open(o.proofImage, '_blank')}/>
+                <div key={o.id} onClick={()=>setSelectedOrder(o)} className="p-3 bg-zinc-50 rounded-xl flex items-center justify-between border border-zinc-100 shadow-sm cursor-pointer hover:bg-zinc-100 transition-all active:scale-[0.98]">
+                   <div className="flex items-center gap-4 flex-1">
+                      <img src={o.proofImage} className="w-10 h-14 rounded-lg object-cover shadow-sm"/>
                       <div className="space-y-0.5">
-                         <span className="text-[6px] font-bold px-1.5 py-0.5 rounded-full uppercase border bg-white">{String(o.status)}</span>
-                         <h4 className="text-[9px] font-serif italic truncate max-w-[100px]">{String(o.shipping?.name)}</h4>
+                         <span className={`text-[6px] font-bold px-1.5 py-0.5 rounded-full uppercase border ${o.status === 'pending' ? 'bg-yellow-50 text-yellow-600' : 'bg-green-50 text-green-600'}`}>{String(o.status)}</span>
+                         <h4 className="text-[10px] font-serif italic font-bold">{String(o.shipping?.name)}</h4>
                          <p className="text-[9px] text-[#D4AF37] font-bold">{formatIDR(o.amount)}</p>
-                         <p className="text-[7px] text-zinc-400">Size: {o.productSize}</p>
+                         <p className="text-[7px] text-zinc-400">Order ID: #{o.id.slice(-6)}</p>
                       </div>
                    </div>
-                   <div className="flex gap-1.5">
-                      {o.status === 'pending' && <button onClick={async()=>await updateDoc(doc(db,'artifacts',appId,'public', 'data', 'orders', o.id), {status:'confirmed'})} className="px-2.5 py-1.5 bg-black text-[#D4AF37] rounded-lg text-[7px] border-none cursor-pointer">Confirm</button>}
-                      <button onClick={async()=>await deleteDoc(doc(db,'artifacts',appId,'public','data','orders',o.id))} className="p-1.5 text-red-500 bg-transparent border-none cursor-pointer outline-none"><Trash2 size={14}/></button>
+                   <div className="flex items-center gap-4">
+                      <div className="text-right hidden sm:block">
+                         <p className="text-[8px] text-zinc-400">{o.productName}</p>
+                         <p className="text-[7px] font-bold">SIZE: {o.productSize}</p>
+                      </div>
+                      <button onClick={(e)=>{ e.stopPropagation(); handleDeleteOrder(o.id); }} className="p-2 text-zinc-300 hover:text-red-500 transition-all border-none bg-transparent cursor-pointer"><Trash2 size={16}/></button>
                    </div>
                 </div>
               ))}
@@ -1022,24 +1049,25 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
          )}
 
          {tab === 'banking' && (
-           <div className="space-y-6">
-              <h3 className="text-sm font-serif">Setup Pembayaran</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 <div className="space-y-3 bg-zinc-50 p-4 rounded-xl border border-zinc-100">
-                    <p className="text-[10px]">Tambah Bank / E-Wallet</p>
-                    <select className="w-full p-2 text-[9px] rounded-lg border-zinc-200 outline-none" value={bankForm.bankName} onChange={e=>setBankForm({...bankForm, bankName: e.target.value})}>
+           <div className="space-y-6 animate-in fade-in">
+              <h3 className="text-xs font-serif">Credential Perbankan</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div className="space-y-3 bg-zinc-50 p-5 rounded-2xl border border-zinc-100 shadow-inner">
+                    <p className="text-[9px] font-bold text-zinc-500 uppercase">Input Rekening Baru</p>
+                    <select className="w-full p-2.5 text-[9px] rounded-lg border-zinc-200 outline-none bg-white font-bold" value={bankForm.bankName} onChange={e=>setBankForm({...bankForm, bankName: e.target.value})}>
                        {Object.keys(BANK_LOGOS).map(name => <option key={name} value={name}>{name}</option>)}
                     </select>
-                    <input className="w-full p-2 text-[9px] rounded-lg border-zinc-200" placeholder="Nomor Rekening / HP" value={bankForm.accountNumber} onChange={e=>setBankForm({...bankForm, accountNumber: e.target.value})}/>
-                    <input className="w-full p-2 text-[9px] rounded-lg border-zinc-200" placeholder="Nama Pemilik" value={bankForm.accountHolder} onChange={e=>setBankForm({...bankForm, accountHolder: e.target.value})}/>
-                    <button onClick={addBank} className="w-full bg-black text-[#D4AF37] py-2 rounded-lg text-[8px]">SIMPAN METODE</button>
+                    <input className="w-full p-2.5 text-[9px] rounded-lg border-zinc-100 outline-none" placeholder="Nomor Rekening / ID" value={bankForm.accountNumber} onChange={e=>setBankForm({...bankForm, accountNumber: e.target.value})}/>
+                    <input className="w-full p-2.5 text-[9px] rounded-lg border-zinc-100 outline-none" placeholder="A.N (Atas Nama)" value={bankForm.accountHolder} onChange={e=>setBankForm({...bankForm, accountHolder: e.target.value})}/>
+                    <button onClick={addBank} className="w-full bg-zinc-900 text-[#D4AF37] py-2.5 rounded-lg text-[9px] font-bold shadow-lg">AUTHORIZE & SAVE</button>
                  </div>
-                 <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto no-scrollbar">
+                 <div className="grid grid-cols-2 gap-3 max-h-[300px] overflow-y-auto no-scrollbar">
                     {rekening.map(rek => (
-                      <div key={rek.id} className="p-3 bg-white border border-zinc-100 rounded-xl relative group text-center flex flex-col items-center">
-                         <img src={BANK_LOGOS[rek.bankName]} className="h-4 object-contain mb-1" alt=""/>
-                         <p className="text-[7px] font-bold truncate w-full">{rek.accountNumber}</p>
-                         <button onClick={async()=>await deleteDoc(doc(db,'artifacts',appId,'public','data','rekening',rek.id))} className="absolute top-1 right-1 p-1 text-red-400 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={10}/></button>
+                      <div key={rek.id} className="p-3 bg-white border border-zinc-100 rounded-xl relative group flex flex-col items-center justify-center text-center shadow-sm">
+                         <img src={BANK_LOGOS[rek.bankName]} className="h-4 object-contain mb-1.5" alt=""/>
+                         <p className="text-[8px] font-bold truncate w-full leading-none">{rek.accountNumber}</p>
+                         <p className="text-[6px] text-zinc-400 italic">A.N {rek.accountHolder}</p>
+                         <button onClick={async()=>await deleteDoc(doc(db,'artifacts',appId,'public','data','rekening',rek.id))} className="absolute top-1 right-1 p-1 text-red-300 opacity-0 group-hover:opacity-100 transition-all cursor-pointer"><Trash2 size={10}/></button>
                       </div>
                     ))}
                  </div>
@@ -1048,19 +1076,19 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
          )}
 
          {tab === 'settings' && (
-           <div className="max-w-xs space-y-4">
-              <h3 className="text-sm font-serif">Credential Admin</h3>
-              <div className="space-y-3 p-4 bg-zinc-50 rounded-xl border border-zinc-100">
-                 <div className="space-y-1">
-                    <label className="text-[8px] text-zinc-400">Username Baru</label>
-                    <input className="w-full p-2 text-[9px] rounded-lg border-none shadow-inner outline-none" value={newCreds.username} onChange={e=>setNewCreds({...newCreds, username: e.target.value})}/>
+           <div className="max-w-sm space-y-4 animate-in fade-in">
+              <h3 className="text-xs font-serif tracking-widest">Admin Authentication</h3>
+              <div className="space-y-4 p-6 bg-zinc-50 rounded-2xl border border-zinc-100 shadow-inner">
+                 <div className="space-y-1.5">
+                    <label className="text-[9px] text-zinc-400 font-bold">IDENTIFY USERNAME</label>
+                    <input className="w-full p-3 text-[10px] rounded-xl border-none shadow-sm outline-none font-bold" value={newCreds.username} onChange={e=>setNewCreds({...newCreds, username: e.target.value})}/>
                  </div>
-                 <div className="space-y-1">
-                    <label className="text-[8px] text-zinc-400">Password Baru</label>
-                    <input className="w-full p-2 text-[9px] rounded-lg border-none shadow-inner outline-none" type="password" value={newCreds.password} onChange={e=>setNewCreds({...newCreds, password: e.target.value})}/>
+                 <div className="space-y-1.5">
+                    <label className="text-[9px] text-zinc-400 font-bold">SECURITY KEY (PASSWORD)</label>
+                    <input className="w-full p-3 text-[10px] rounded-xl border-none shadow-sm outline-none" type="password" value={newCreds.password} onChange={e=>setNewCreds({...newCreds, password: e.target.value})}/>
                  </div>
-                 <button onClick={updateAdminAuth} disabled={saving} className="w-full bg-black text-[#D4AF37] py-2 rounded-lg text-[8px] transition-all active:scale-95">
-                    {saving ? "SAVING..." : "UPDATE SECURITY"}
+                 <button onClick={updateAdminAuth} disabled={saving} className="w-full bg-zinc-900 text-[#D4AF37] py-3 rounded-xl text-[9px] font-bold shadow-xl transition-all active:scale-95">
+                    {saving ? "ENCRYPTING..." : "UPDATE SECURITY PORTAL"}
                  </button>
               </div>
            </div>
@@ -1073,44 +1101,44 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
 function NotificationItem({ notification }) {
   const { message, type } = notification;
   return (
-    <div className={`p-3 rounded-xl shadow-lg border animate-in slide-in-from-top-5 duration-500 backdrop-blur-md flex items-center gap-2.5 pointer-events-auto ${
+    <div className={`p-3.5 rounded-xl shadow-xl border animate-in slide-in-from-top-5 duration-500 backdrop-blur-md flex items-center gap-3 pointer-events-auto ${
       type === 'success' ? 'bg-green-50/95 border-green-100 text-green-950' : 
-      type === 'error' ? 'bg-red-50/95 border-red-100 text-red-950' : 'bg-white/95 border-zinc-100 text-black'
+      type === 'error' ? 'bg-red-50/95 border-red-100 text-red-950' : 'bg-white/95 border-zinc-100 text-black shadow-2xl'
     }`}>
-      <div className={`p-1.5 rounded-lg ${type === 'success' ? 'bg-green-400 text-white' : 'bg-black text-[#D4AF37]'}`}>
-        {type === 'success' ? <SuccessIcon size={12} /> : <Bell size={12} />}
+      <div className={`p-2 rounded-lg shadow-sm ${type === 'success' ? 'bg-green-400 text-white' : 'bg-zinc-900 text-[#D4AF37]'}`}>
+        {type === 'success' ? <SuccessIcon size={14} /> : <Bell size={14} />}
       </div>
-      <p className="text-[9px] font-bold uppercase tracking-widest">{String(message)}</p>
+      <p className="text-[10px] font-bold uppercase tracking-widest">{String(message)}</p>
     </div>
   );
 }
 
 function Footer({ setView }) {
   return (
-    <footer className="bg-[#030303] text-white pt-10 md:pt-24 pb-8 px-6 border-t-[3px] border-[#D4AF37] relative">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 font-bold uppercase">
-        <div className="space-y-3">
-           <h2 className="text-xl md:text-4xl font-serif font-bold italic tracking-widest text-[#D4AF37] leading-none">DEVI OFFICIAL</h2>
-           <p className="text-zinc-500 text-[9px] leading-relaxed italic border-l border-zinc-900 pl-4 uppercase opacity-60">Elevating modest fashion to a global standard of absolute luxury.</p>
+    <footer className="bg-[#030303] text-white pt-12 md:pt-24 pb-10 px-6 border-t-[3px] border-[#D4AF37] relative">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-10 font-bold uppercase">
+        <div className="space-y-4">
+           <h2 className="text-2xl md:text-5xl font-serif font-bold italic tracking-widest text-[#D4AF37] leading-none">DEVI OFFICIAL</h2>
+           <p className="text-zinc-500 text-[10px] leading-relaxed italic border-l border-zinc-900 pl-4 uppercase opacity-60">Elevating modest fashion to a global standard of absolute luxury.</p>
         </div>
-        <div className="space-y-3">
-           <h4 className="text-[9px] font-bold uppercase tracking-widest text-zinc-100 border-b border-zinc-900 pb-1.5 italic">Security</h4>
-           <div className="flex gap-3 opacity-20 grayscale hover:opacity-100 transition-all">
-              {Object.values(BANK_LOGOS).slice(0,3).map((l, i) => <img key={i} src={l} className="h-3.5 object-contain" alt="" />)}
+        <div className="space-y-4">
+           <h4 className="text-[10px] font-bold uppercase tracking-widest text-zinc-100 border-b border-zinc-900 pb-1.5 italic">Maison Bank</h4>
+           <div className="flex gap-4 opacity-20 grayscale hover:opacity-100 transition-all duration-[2s] cursor-pointer">
+              {Object.values(BANK_LOGOS).slice(0,3).map((l, i) => <img key={i} src={l} className="h-4 object-contain" alt="" />)}
            </div>
         </div>
-        <div className="space-y-3">
-           <h4 className="text-[9px] font-bold uppercase tracking-widest text-zinc-100 border-b border-zinc-900 pb-1.5 italic">Contact</h4>
-           <div className="text-[8px] text-zinc-500 tracking-widest space-y-1 uppercase italic leading-none">
+        <div className="space-y-4">
+           <h4 className="text-[10px] font-bold uppercase tracking-widest text-zinc-100 border-b border-zinc-900 pb-1.5 italic">Concierge</h4>
+           <div className="text-[9px] text-zinc-500 tracking-widest space-y-1 uppercase italic leading-none">
               <p>Jakarta, Indonesia</p>
               <p>+62 812 9988 7766</p>
            </div>
         </div>
       </div>
-      <div className="max-w-7xl mx-auto mt-10 pt-6 border-t border-zinc-900 flex flex-col md:flex-row justify-between items-center gap-4">
-         <div className="text-zinc-800 text-[7px] uppercase tracking-[0.4em] italic font-bold">© 2024 DEVI_OFFICIAL LUXURY GROUP</div>
-         <button onClick={() => setView('login')} className="flex items-center gap-1.5 text-zinc-700 text-[9px] tracking-widest hover:text-[#D4AF37] transition-all border border-zinc-900 px-5 py-1.5 rounded-full bg-transparent cursor-pointer active:scale-95">
-            <ShieldAlert size={14} /> <span>ADMIN</span>
+      <div className="max-w-7xl mx-auto mt-12 pt-6 border-t border-zinc-900 flex flex-col md:flex-row justify-between items-center gap-6">
+         <div className="text-zinc-800 text-[8px] uppercase tracking-[0.4em] italic font-bold">© 2024 DEVI_OFFICIAL LUXURY GROUP</div>
+         <button onClick={() => setView('login')} className="flex items-center gap-1.5 text-zinc-700 text-[9px] tracking-widest hover:text-[#D4AF37] transition-all border border-zinc-900 px-6 py-2 rounded-full bg-transparent cursor-pointer active:scale-95 shadow-inner">
+            <ShieldAlert size={16} /> <span>ADMIN ACCESS</span>
          </button>
       </div>
     </footer>
@@ -1127,26 +1155,27 @@ function AdminLogin({ creds, onLoginSuccess, onBack, notify }) {
     setTimeout(() => {
       if (u.trim().toLowerCase() === (creds?.username || 'admin').toLowerCase() && p === (creds?.password || 'admin123')) {
         onLoginSuccess();
-      } else { notify("Akses Ditolak.", "error"); }
+        notify("Access Granted.", "success");
+      } else { notify("Access Denied.", "error"); }
       setLoading(false);
-    }, 1000);
+    }, 1200);
   };
 
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 bg-black/95 backdrop-blur-xl animate-in zoom-in duration-500 font-bold uppercase">
-      <div className="bg-white w-full max-w-sm rounded-2xl p-8 md:p-12 relative shadow-2xl border border-[#D4AF37]/20">
-        <button onClick={onBack} className="absolute top-6 right-6 text-zinc-300 hover:text-black transition-all border-none bg-transparent cursor-pointer outline-none"><X size={24} /></button>
-        <div className="text-center mb-8 space-y-3">
-          <div className="w-14 h-14 bg-zinc-50 rounded-xl flex items-center justify-center mx-auto text-[#D4AF37]">
-            <Lock size={28} />
+      <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-10 md:p-16 relative shadow-[0_50px_100px_rgba(0,0,0,0.5)] border border-[#D4AF37]/20 overflow-hidden">
+        <button onClick={onBack} className="absolute top-8 right-8 text-zinc-300 hover:text-black transition-all border-none bg-transparent cursor-pointer outline-none"><X size={24} /></button>
+        <div className="text-center mb-12 space-y-4">
+          <div className="w-16 h-16 bg-zinc-50 rounded-2xl flex items-center justify-center mx-auto text-[#D4AF37] shadow-inner border border-[#D4AF37]/10 animate-pulse">
+            <Lock size={32} />
           </div>
-          <h3 className="text-lg font-serif font-bold uppercase leading-none">Security Portal</h3>
+          <h3 className="text-xl font-serif font-bold uppercase leading-none tracking-tighter">Security Portal</h3>
         </div>
-        <form onSubmit={handleLogin} className="space-y-4">
-          <input placeholder="Admin ID" value={u} onChange={e=>setU(e.target.value)} className="w-full bg-zinc-50 p-3.5 rounded-xl border-none text-[10px] font-bold uppercase outline-none"/>
-          <input type="password" placeholder="Pass-Key" value={p} onChange={e=>setP(e.target.value)} className="w-full bg-zinc-50 p-3.5 rounded-xl border-none text-[10px] font-bold outline-none"/>
-          <button type="submit" disabled={loading} className="w-full bg-black text-[#D4AF37] py-3.5 rounded-xl font-bold uppercase text-[9px] tracking-widest shadow-xl active:scale-95">
-             {loading ? "VERIFYING..." : "AUTHORIZE"}
+        <form onSubmit={handleLogin} className="space-y-5">
+          <input placeholder="Admin ID" value={u} onChange={e=>setU(e.target.value)} className="w-full bg-zinc-50 p-4 rounded-xl border-none text-[11px] font-bold uppercase shadow-inner outline-none"/>
+          <input type="password" placeholder="Pass-Key" value={p} onChange={e=>setP(e.target.value)} className="w-full bg-zinc-50 p-4 rounded-xl border-none text-[11px] font-bold outline-none shadow-inner"/>
+          <button type="submit" disabled={loading} className="w-full bg-black text-[#D4AF37] py-4 rounded-full font-bold uppercase text-[10px] tracking-widest shadow-2xl active:scale-95 transition-all outline-none">
+             {loading ? "ENCRYPTING..." : "AUTHORIZE"}
           </button>
         </form>
       </div>
@@ -1157,38 +1186,38 @@ function AdminLogin({ creds, onLoginSuccess, onBack, notify }) {
 function CartView({ items, onRemove, onCheckout }) {
   const total = items.reduce((s, i) => s + Number(i.chosenPrice || i.price), 0);
   return (
-    <div className="max-w-2xl mx-auto py-10 md:py-32 px-4 font-bold uppercase">
-       <div className="text-center mb-12 space-y-1.5">
-          <h2 className="text-2xl font-serif font-bold italic tracking-tighter uppercase text-zinc-950 leading-none">Shopping <span className="text-[#D4AF37]">Bag</span></h2>
-          <div className="w-10 h-[1.5px] bg-[#D4AF37] mx-auto opacity-40"></div>
+    <div className="max-w-2xl mx-auto py-12 md:py-32 px-4 font-bold uppercase">
+       <div className="text-center mb-14 space-y-2 animate-in slide-in-from-bottom duration-500">
+          <h2 className="text-3xl md:text-5xl font-serif font-bold italic tracking-tighter uppercase text-zinc-950 leading-none">Shopping <span className="text-[#D4AF37]">Bag</span></h2>
+          <div className="w-12 h-[2px] bg-[#D4AF37] mx-auto opacity-40 animate-pulse"></div>
        </div>
        {items.length === 0 ? (
-         <div className="text-center py-20 border-2 border-dashed border-zinc-100 rounded-2xl bg-white opacity-50">
-            <BagIcon size={56} className="mx-auto text-zinc-50 mb-4" />
-            <p className="text-zinc-300 font-bold uppercase text-[9px] tracking-widest">Bag is empty</p>
+         <div className="text-center py-28 border-2 border-dashed border-zinc-100 rounded-3xl bg-white opacity-60">
+            <BagIcon size={64} className="mx-auto text-zinc-100 mb-6" />
+            <p className="text-zinc-300 font-bold uppercase text-[10px] tracking-widest">Tas Belanja Kosong</p>
          </div>
        ) : (
-         <div className="space-y-4">
+         <div className="space-y-6">
             {items.map((item, idx) => (
-              <div key={idx} className="p-3 bg-white border border-zinc-100 rounded-xl flex items-center justify-between gap-3 shadow-sm relative overflow-hidden">
-                 <div className="flex items-center gap-3 flex-1">
-                    <img src={item.imageURLs?.[0] || item.imageURL} className="w-12 h-16 rounded-lg object-cover border border-zinc-50 shadow-sm"/>
-                    <div className="space-y-0.5">
-                       <h4 className="text-[10px] font-serif font-bold uppercase tracking-tight text-zinc-800 truncate max-w-[130px]">{String(item.name)}</h4>
-                       <span className="text-[7px] font-bold px-2 py-0.5 bg-zinc-50 text-zinc-400 rounded-full border border-zinc-100 uppercase tracking-widest">Size {String(item.chosenSize || "Default")}</span>
-                       <p className="text-[10px] font-serif font-bold italic text-zinc-900 leading-none">{formatIDR(item.chosenPrice || item.price)}</p>
+              <div key={idx} className="p-4 bg-white border border-zinc-100 rounded-2xl flex items-center justify-between gap-4 shadow-sm relative overflow-hidden transition-all hover:shadow-lg">
+                 <div className="flex items-center gap-5 flex-1">
+                    <img src={item.imageURLs?.[0] || item.imageURL} className="w-16 h-20 rounded-xl object-cover border border-zinc-50 shadow-md"/>
+                    <div className="space-y-1.5 flex-1">
+                       <h4 className="text-[11px] font-serif font-bold uppercase tracking-tight text-zinc-800 truncate max-w-[150px]">{String(item.name)}</h4>
+                       <span className="text-[7px] font-bold px-3 py-1 bg-[#D4AF37]/5 text-[#D4AF37] rounded-full border border-[#D4AF37]/10 uppercase tracking-widest">Size {String(item.chosenSize || "Default")}</span>
+                       <p className="text-xs font-serif font-bold italic text-zinc-900 leading-none">{formatIDR(item.chosenPrice || item.price)}</p>
                     </div>
                  </div>
-                 <button onClick={()=>onRemove(idx)} className="p-2.5 text-red-100 hover:text-red-500 transition-all border-none bg-transparent cursor-pointer active:scale-90 outline-none"><Trash2 size={16}/></button>
+                 <button onClick={()=>onRemove(idx)} className="p-3 text-red-200 hover:text-red-500 transition-all border-none bg-zinc-50 rounded-xl cursor-pointer active:scale-90 outline-none"><Trash2 size={18}/></button>
               </div>
             ))}
-            <div className="pt-8 border-t border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="pt-10 border-t border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-10">
                <div className="text-center md:text-left space-y-0.5">
-                  <p className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest">Total Invoiced</p>
-                  <p className="text-3xl md:text-5xl font-serif font-bold italic tracking-tighter text-zinc-950 leading-none">{formatIDR(total)}</p>
+                  <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">Total Invoiced</p>
+                  <p className="text-4xl md:text-6xl font-serif font-bold italic tracking-tighter text-zinc-950 leading-none">{formatIDR(total)}</p>
                </div>
-               <button onClick={onCheckout} className="w-full md:w-auto bg-black text-[#D4AF37] px-10 py-4 rounded-full font-bold uppercase text-[10px] tracking-widest shadow-xl border-none cursor-pointer hover:bg-zinc-800 transition-all active:scale-95 flex items-center justify-center gap-3 outline-none">
-                 Checkout Sekarang <ArrowRight size={18} />
+               <button onClick={onCheckout} className="w-full md:w-auto bg-black text-[#D4AF37] px-14 py-5 rounded-full font-bold uppercase text-[11px] tracking-widest shadow-[0_20px_40px_rgba(0,0,0,0.2)] border-none cursor-pointer hover:bg-zinc-800 transition-all active:scale-95 flex items-center justify-center gap-4 outline-none">
+                 Checkout Sekarang <ArrowRight size={20} />
                </button>
             </div>
          </div>
