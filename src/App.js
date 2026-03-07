@@ -129,7 +129,7 @@ import {
 /**
  * ==========================================================================================
  * --- DEVI OFFICIAL LUXURY BOUTIQUE ECOSYSTEM ---
- * VERSION: 23.0.0 (INSTANT BASE64 PROOF & CLEAN ADMIN ORDERS)
+ * VERSION: 26.0.0 (ADVANCED ADMIN CATALOG & EXTENDED BANKING)
  * ==========================================================================================
  */
 
@@ -148,38 +148,43 @@ const appId = "devi-official-premium-production-v1";
 const CATEGORIES = [
   'Semua', 'Baju', 'Dress', 'Hijab', 'Abaya', 'Koko', 
   'Tunik', 'Kaftan', 'Mukena', 'Inner', 'Set Keluarga', 
-  'Tas', 'Aksesoris'
+  'Tas', 'Aksesoris', 'Lainnya'
 ];
 
 const SIZE_OPTIONS = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'All Size'];
+const AGE_OPTIONS = ['1-2 Thn', '3-4 Thn', '5-6 Thn', '7-8 Thn', '9-10 Thn', '11-12 Thn'];
+
+const SHIPPING_METHODS = [
+  { id: 'jne_reg', name: 'JNE - REG', price: 10000, logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/New_JNE_Logo.svg/2560px-New_JNE_Logo.svg.png' },
+  { id: 'jnt_reg', name: 'J&T EXPRESS', price: 11000, logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/J%26T_Express_logo.svg/2560px-J%26T_Express_logo.svg.png' },
+  { id: 'anteraja', name: 'Anteraja', price: 9000, logo: 'https://upload.wikimedia.org/wikipedia/commons/4/4c/Logo_Anteraja.png' },
+  { id: 'sicepat', name: 'SiCepat Ekspres', price: 10000, logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Sicepat_logo.svg/2560px-Sicepat_logo.svg.png' },
+  { id: 'ninja', name: 'Ninja Xpress', price: 10500, logo: 'https://upload.wikimedia.org/wikipedia/id/thumb/2/25/Ninja_Xpress_logo.svg/1200px-Ninja_Xpress_logo.svg.png' },
+  { id: 'idexpress', name: 'ID Express', price: 9500, logo: 'https://upload.wikimedia.org/wikipedia/commons/8/8e/IDExpress_Logo.png' },
+  { id: 'sap', name: 'SAP Express', price: 12000, logo: 'https://upload.wikimedia.org/wikipedia/id/d/dc/Logo_sap_express.png' }
+];
 
 const BANK_LOGOS = {
   "Bank Central Asia (BCA)": "https://upload.wikimedia.org/wikipedia/commons/5/5c/Bank_Central_Asia.svg",
-  "Bank Rakyat Indonesia (BRI)": "https://upload.wikimedia.org/wikipedia/commons/2/2e/BRI_Logo.svg",
   "Bank Mandiri": "https://upload.wikimedia.org/wikipedia/commons/a/ad/Bank_Mandiri_logo_2016.svg",
+  "Bank Rakyat Indonesia (BRI)": "https://upload.wikimedia.org/wikipedia/commons/2/2e/BRI_Logo.svg",
   "Bank Negara Indonesia (BNI)": "https://upload.wikimedia.org/wikipedia/id/5/55/BNI_logo.svg",
-  "Bank Syariah Indonesia (BSI)": "https://upload.wikimedia.org/wikipedia/commons/a/a0/Bank_Syariah_Indonesia_logo.svg",
-  "CIMB Niaga": "https://upload.wikimedia.org/wikipedia/commons/5/5e/CIMB_Niaga_logo.svg",
+  "Bank CIMB Niaga": "https://upload.wikimedia.org/wikipedia/commons/5/5e/CIMB_Niaga_logo.svg",
   "Bank Danamon": "https://upload.wikimedia.org/wikipedia/commons/e/ec/Danamon_logo.svg",
-  "PermataBank": "https://upload.wikimedia.org/wikipedia/commons/b/b5/PermataBank_logo.svg",
-  "Bank Mega": "https://upload.wikimedia.org/wikipedia/commons/a/af/Bank_Mega_logo.svg",
-  "OCBC NISP": "https://upload.wikimedia.org/wikipedia/commons/0/0d/Logo_OCBC.svg",
+  "Bank Permata": "https://upload.wikimedia.org/wikipedia/commons/b/b5/PermataBank_logo.svg",
+  "Bank Syariah Indonesia": "https://upload.wikimedia.org/wikipedia/commons/a/a0/Bank_Syariah_Indonesia_logo.svg",
   "GoPay": "https://upload.wikimedia.org/wikipedia/commons/8/86/Gopay_logo.svg",
   "OVO": "https://upload.wikimedia.org/wikipedia/commons/e/eb/Logo_ovo_purple.svg",
   "DANA": "https://upload.wikimedia.org/wikipedia/commons/7/72/Logo_dan_automotive.png",
   "ShopeePay": "https://upload.wikimedia.org/wikipedia/commons/b/be/ShopeePay.svg",
   "LinkAja": "https://upload.wikimedia.org/wikipedia/commons/8/85/LinkAja.svg",
-  "PayPal": "https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg",
-  "Sakuku": "https://upload.wikimedia.org/wikipedia/id/3/30/Sakuku_logo.png",
-  "Jenius": "https://upload.wikimedia.org/wikipedia/commons/3/37/Jenius-logo.png",
-  "AstraPay": "https://upload.wikimedia.org/wikipedia/id/0/02/Logo_AstraPay.png",
-  "DOKU": "https://upload.wikimedia.org/wikipedia/id/c/c8/Logo_DOKU.png"
+  "iSaku": "https://upload.wikimedia.org/wikipedia/id/c/c8/Logo_DOKU.png",
+  "Sakuku": "https://upload.wikimedia.org/wikipedia/id/3/30/Sakuku_logo.png"
 };
 
 const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
 const db = initializeFirestore(firebaseApp, { experimentalForceLongPolling: true });
-const storage = getStorage(firebaseApp);
 
 const formatIDR = (amount) => {
   const val = Number(amount) || 0;
@@ -204,8 +209,6 @@ export default function App() {
   const [categoryFilter, setCategoryFilter] = useState('Semua');
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState([]);
-
-  const catScrollRef = useRef(null);
 
   const notify = (message, type = 'info') => {
     const id = Date.now();
@@ -246,13 +249,6 @@ export default function App() {
     return () => { unsubP(); unsubR(); unsubO(); unsubA(); };
   }, [user]);
 
-  const scrollCat = (dir) => {
-    if (catScrollRef.current) {
-      const scrollAmt = 180;
-      catScrollRef.current.scrollBy({ left: dir === 'left' ? -scrollAmt : scrollAmt, behavior: 'smooth' });
-    }
-  };
-
   const filteredProducts = useMemo(() => {
     return products.filter(p => {
       const name = String(p.name || '').toLowerCase();
@@ -266,69 +262,28 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-white text-zinc-900 font-sans antialiased overflow-x-hidden selection:bg-[#D4AF37] selection:text-white">
-      
       <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[5000] flex flex-col gap-2 w-full max-w-xs px-4 pointer-events-none">
         {notifications.map(n => (
           <NotificationItem key={n.id} notification={n} />
         ))}
       </div>
 
-      <Header 
-        cartCount={cart.length} 
-        isAdmin={isAdminLoggedIn} 
-        setView={setView} 
-        setCategoryFilter={setCategoryFilter}
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-      />
+      <Header cartCount={cart.length} isAdmin={isAdminLoggedIn} setView={setView} searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
 
       <div className="pt-14 md:pt-20">
         <main>
           {view === 'shop' && (
             <div className="animate-in fade-in duration-700">
               <HeroSection onExplore={() => document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' })} />
-              <CraftsmanshipSection />
-              
-              <div id="catalog" className="bg-white/95 backdrop-blur-xl border-b border-zinc-100 sticky top-14 md:top-20 z-40 shadow-sm relative group">
-                <div className="max-w-7xl mx-auto px-2 py-2 flex items-center relative h-12">
-                  
-                  <button 
-                    onClick={() => scrollCat('left')}
-                    className="absolute left-1 z-10 p-1.5 bg-white/90 rounded-full shadow-md border border-zinc-100 md:opacity-0 group-hover:opacity-100 transition-opacity active:scale-90 outline-none border-none cursor-pointer"
-                  >
-                    <ChevronLeft size={16} className="text-zinc-600" />
-                  </button>
-
-                  <div 
-                    ref={catScrollRef}
-                    className="flex items-center justify-start md:justify-center gap-3 whitespace-nowrap overflow-x-auto no-scrollbar w-full px-8 py-1"
-                  >
-                    {CATEGORIES.map(c => (
-                      <button 
-                        key={c} 
-                        onClick={() => setCategoryFilter(c)} 
-                        className={`text-[10px] uppercase font-bold tracking-widest transition-all px-4 py-2 rounded-full border-none cursor-pointer outline-none flex-shrink-0 ${categoryFilter === c ? 'bg-black text-[#D4AF37] shadow-lg' : 'text-zinc-400 bg-zinc-50 hover:bg-zinc-100'}`}
-                      >
-                        {c}
-                      </button>
-                    ))}
-                  </div>
-
-                  <button 
-                    onClick={() => scrollCat('right')}
-                    className="absolute right-1 z-10 p-1.5 bg-white/90 rounded-full shadow-md border border-zinc-100 md:opacity-0 group-hover:opacity-100 transition-opacity active:scale-90 outline-none border-none cursor-pointer"
-                  >
-                    <ChevronRight size={16} className="text-zinc-600" />
-                  </button>
-
+              <div id="catalog" className="bg-white/95 backdrop-blur-xl border-b border-zinc-100 sticky top-14 md:top-20 z-40 shadow-sm">
+                <div className="max-w-7xl mx-auto px-2 py-2 flex items-center justify-center gap-3 overflow-x-auto no-scrollbar">
+                  {CATEGORIES.map(c => (
+                    <button key={c} onClick={() => setCategoryFilter(c)} className={`text-[10px] uppercase font-bold tracking-widest px-4 py-2 rounded-full border-none cursor-pointer flex-shrink-0 ${categoryFilter === c ? 'bg-black text-[#D4AF37]' : 'text-zinc-400 bg-zinc-50 hover:bg-zinc-100'}`}>{c}</button>
+                  ))}
                 </div>
               </div>
-
               <ProductGrid products={filteredProducts} onView={(p) => { setSelectedProduct(p); setView('detail'); window.scrollTo(0,0); }} />
-              
               <MembershipBanner />
-              <TrendingSelection products={products.slice(0, 4)} onView={(p) => { setSelectedProduct(p); setView('detail'); window.scrollTo(0,0); }} />
-              <SustainabilityReport />
             </div>
           )}
 
@@ -336,69 +291,33 @@ export default function App() {
             <ProductDetailView 
               product={selectedProduct} 
               onBack={() => setView('shop')} 
-              onBuy={(size, price) => { 
-                setSelectedProduct({...selectedProduct, chosenSize: size, chosenPrice: price}); 
+              onBuy={(size, age, price) => { 
+                setSelectedProduct({...selectedProduct, chosenSize: size, chosenAge: age, chosenPrice: price}); 
                 setView('checkout'); 
+                window.scrollTo(0,0);
               }}
-              onAddToCart={(p) => {
-                setCart([...cart, p]);
-                notify(`Ditambahkan ke Bag.`, "success");
-              }}
+              onAddToCart={(p) => { setCart([...cart, p]); notify(`Ditambahkan ke Keranjang.`, "success"); }}
               notify={notify}
             />
           )}
 
           {view === 'checkout' && selectedProduct && (
-            <CheckoutView 
-              product={selectedProduct} 
-              rekening={rekening} 
-              onComplete={() => { setView('shop'); }} 
-              onBack={() => setView('shop')} 
-              notify={notify}
-            />
+            <CheckoutWizard product={selectedProduct} rekening={rekening} onComplete={() => { setView('shop'); }} onBack={() => setView('shop')} notify={notify} />
           )}
 
           {view === 'cart' && (
-            <CartView 
-              items={cart} 
-              onRemove={(idx) => {
-                const newCart = [...cart];
-                newCart.splice(idx, 1);
-                setCart(newCart);
-                notify("Item dilepaskan.");
-              }} 
-              onCheckout={() => {
-                if (cart.length > 0) {
-                  setSelectedProduct(cart[0]);
-                  setView('checkout');
-                }
-              }}
-            />
+            <CartView items={cart} onRemove={(idx) => { const nc = [...cart]; nc.splice(idx,1); setCart(nc); }} onCheckout={() => { if(cart.length > 0) { setSelectedProduct(cart[0]); setView('checkout'); } }} />
           )}
 
           {view === 'login' && (
-            <AdminLogin 
-              creds={adminCreds} 
-              onLoginSuccess={() => { setIsAdminLoggedIn(true); setView('admin'); }} 
-              onBack={() => setView('shop')} 
-              notify={notify} 
-            />
+            <AdminLogin creds={adminCreds} onLoginSuccess={() => { setIsAdminLoggedIn(true); setView('admin'); }} onBack={() => setView('shop')} notify={notify} />
           )}
           
           {view === 'admin' && isAdminLoggedIn && (
-            <AdminDashboard 
-              products={products} 
-              orders={orders} 
-              rekening={rekening} 
-              appId={appId} 
-              onLogout={() => { setIsAdminLoggedIn(false); setView('shop'); }} 
-              notify={notify}
-              creds={adminCreds}
-            />
+            <AdminDashboard products={products} orders={orders} rekening={rekening} appId={appId} onLogout={() => { setIsAdminLoggedIn(false); setView('shop'); }} notify={notify} creds={adminCreds} />
           )}
         </main>
       </div>
-
       <Footer setView={setView} />
     </div>
   );
@@ -406,64 +325,29 @@ export default function App() {
 
 function PremiumLoader() {
   return (
-    <div className="h-screen bg-[#050505] flex flex-col items-center justify-center gap-4 text-white">
+    <div className="h-screen bg-[#050505] flex flex-col items-center justify-center gap-4 text-white font-bold">
       <div className="w-10 h-10 border-2 border-[#D4AF37]/20 border-t-[#D4AF37] rounded-full animate-spin"></div>
-      <h2 className="font-serif text-base text-[#D4AF37] tracking-[0.2em] font-bold uppercase">DEVI</h2>
+      <h2 className="font-serif text-base text-[#D4AF37] tracking-[0.2em] uppercase">DEVI OFFICIAL</h2>
     </div>
   );
 }
 
-function Header({ cartCount, isAdmin, setView, setCategoryFilter, searchTerm, setSearchTerm }) {
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 10);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
+function Header({ cartCount, isAdmin, setView, searchTerm, setSearchTerm }) {
   return (
-    <header className={`fixed top-0 left-0 w-full z-[100] transition-all duration-300 ${scrolled ? 'h-14 bg-white/95 shadow-md' : 'h-14 md:h-16 bg-white'} backdrop-blur-md border-b border-zinc-100`}>
-      <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between gap-4 text-black font-bold uppercase">
-        
-        <div className="flex-1 hidden md:flex items-center">
+    <header className="fixed top-0 left-0 w-full z-[100] h-14 md:h-16 bg-white border-b border-zinc-100 flex items-center px-4">
+      <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
+        <div className="hidden md:flex flex-1">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={14} />
-            <input 
-              type="text" 
-              placeholder="Cari..." 
-              value={searchTerm} 
-              onChange={(e) => setSearchTerm(e.target.value)} 
-              className="bg-zinc-50 border-none rounded-full pl-9 pr-4 py-1.5 text-xs w-40 focus:w-60 focus:bg-white transition-all outline-none text-black font-bold" 
-            />
+            <input type="text" placeholder="Cari Koleksi..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="bg-zinc-50 border-none rounded-full pl-9 pr-4 py-1.5 text-xs w-48 focus:w-60 transition-all outline-none font-bold" />
           </div>
         </div>
-
-        <div className="flex-1 flex justify-start md:justify-center">
-          <div className="text-center cursor-pointer" onClick={() => setView('shop')}>
-            <h1 className="text-sm md:text-xl font-serif tracking-[0.2em] font-bold text-black uppercase leading-none whitespace-nowrap">
-              DEVI<span className="text-[#D4AF37]">_OFFICIAL</span>
-            </h1>
-          </div>
+        <div className="flex-1 text-center cursor-pointer" onClick={() => setView('shop')}>
+          <h1 className="text-sm md:text-xl font-serif tracking-[0.2em] font-bold text-black uppercase leading-none">DEVI<span className="text-[#D4AF37]">_OFFICIAL</span></h1>
         </div>
-
-        <div className="flex-1 flex justify-end gap-3 md:gap-4 items-center">
-           <button onClick={() => setView('cart')} className="relative p-2 hover:bg-zinc-50 rounded-full transition-all bg-transparent border-none cursor-pointer outline-none flex items-center justify-center">
-             <BagIcon size={22} className="text-black" />
-             {cartCount > 0 && <span className="absolute top-0 right-0 bg-[#D4AF37] text-white text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-bold border border-white">{cartCount}</span>}
-           </button>
-           
-           <div className="flex items-center gap-1">
-              {isAdmin ? (
-                <button onClick={() => setView('admin')} className="p-2 bg-black text-[#D4AF37] rounded-full transition-all border-none cursor-pointer outline-none">
-                  <LayoutDashboard size={18} />
-                </button>
-              ) : (
-                <button onClick={() => setView('login')} className="p-2 bg-zinc-50 rounded-full hover:bg-black hover:text-white transition-all border-none cursor-pointer outline-none shadow-none">
-                  <Key size={18} className="text-zinc-600" />
-                </button>
-              )}
-           </div>
+        <div className="flex-1 flex justify-end gap-4 items-center">
+           <button onClick={() => setView('cart')} className="relative p-2 bg-transparent border-none cursor-pointer"><BagIcon size={22}/></button>
+           {isAdmin ? <button onClick={() => setView('admin')} className="p-2 bg-black text-[#D4AF37] rounded-full border-none cursor-pointer"><LayoutDashboard size={18}/></button> : <button onClick={() => setView('login')} className="p-2 bg-zinc-50 rounded-full border-none cursor-pointer"><Key size={18}/></button>}
         </div>
       </div>
     </header>
@@ -472,146 +356,50 @@ function Header({ cartCount, isAdmin, setView, setCategoryFilter, searchTerm, se
 
 function HeroSection({ onExplore }) {
   return (
-    <section className="relative h-[45vh] md:h-[80vh] flex items-center justify-center overflow-hidden bg-[#070707] text-white">
-      <img src="https://images.unsplash.com/photo-1549439602-43ebcb232811?q=80&w=2070&auto=format&fit=crop" className="absolute inset-0 w-full h-full object-cover opacity-50" alt="Hero" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
-      
-      <div className="relative z-10 text-center px-6 max-w-4xl space-y-3">
-        <div className="space-y-1 font-bold uppercase">
-           <p className="text-[9px] uppercase tracking-[0.6em] font-bold text-[#D4AF37]">Pure Excellence</p>
-           <h2 className="text-2xl md:text-6xl font-serif italic font-bold uppercase leading-tight text-white">
-             Keanggunan Abadi
-           </h2>
-        </div>
-        <p className="text-zinc-300 text-[10px] md:text-lg max-w-xs md:max-w-lg mx-auto font-medium tracking-wide leading-snug font-bold uppercase italic opacity-80">
-          Kurasi kemewahan material premium terpilih untuk gaya Anda.
-        </p>
-        <button onClick={onExplore} className="mt-2 px-8 py-2.5 bg-[#D4AF37] text-black text-[10px] font-bold uppercase tracking-widest rounded-full border-none cursor-pointer outline-none active:scale-95 shadow-xl">
-          Belanja Sekarang
-        </button>
+    <section className="relative h-[45vh] md:h-[70vh] flex items-center justify-center overflow-hidden bg-black font-bold uppercase">
+      <img src="https://images.unsplash.com/photo-1549439602-43ebcb232811?q=80&w=2070&auto=format&fit=crop" className="absolute inset-0 w-full h-full object-cover opacity-60" alt="" />
+      <div className="relative z-10 text-center text-white px-6">
+        <p className="text-[9px] tracking-[0.6em] text-[#D4AF37] mb-2">Luxury Boutique</p>
+        <h2 className="text-3xl md:text-6xl font-serif italic mb-4">Helenaraya Collection</h2>
+        <button onClick={onExplore} className="px-8 py-3 bg-[#D4AF37] text-black text-[10px] font-bold tracking-widest rounded-full border-none cursor-pointer">Explore Now</button>
       </div>
     </section>
   );
 }
 
-function CraftsmanshipSection() {
+function ProductGrid({ products, onView }) {
   return (
-    <section className="bg-white py-8 md:py-20 border-y border-zinc-50 px-6 font-bold uppercase">
-       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-10">
-         {[
-           { icon: <Scissors size={20} />, title: "Precision Cut", desc: "Dikerjakan manual oleh penjahit master." },
-           { icon: <Palette size={20} />, title: "Elite Textiles", desc: "Material premium standar global." },
-           { icon: <Crown size={20} />, title: "Seal of Royalty", desc: "Sentuhan akhir elegan kristal tangan." }
-         ].map((item, idx) => (
-           <div key={idx} className="flex flex-col items-center text-center space-y-2 text-black font-bold">
-              <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center text-[#D4AF37]">
-                 {item.icon}
-              </div>
-              <div>
-                 <h4 className="text-[10px] font-bold uppercase tracking-widest text-zinc-900">{item.title}</h4>
-                 <p className="text-zinc-400 text-[9px] leading-relaxed max-w-[180px] mx-auto font-bold">{item.desc}</p>
-              </div>
-           </div>
-         ))}
-       </div>
+    <section className="max-w-7xl mx-auto px-4 py-10 grid grid-cols-2 lg:grid-cols-4 gap-6 font-bold uppercase">
+      {products.map(p => (
+        <div key={p.id} className="cursor-pointer group flex flex-col items-center" onClick={() => onView(p)}>
+          <div className="aspect-[3/4] w-full rounded-2xl overflow-hidden bg-zinc-50 mb-3 shadow-sm group-hover:shadow-lg transition-all">
+            <img src={p.imageURLs?.[0] || p.imageURL} className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700" alt=""/>
+          </div>
+          <div className="text-center space-y-1">
+            <h3 className="text-[10px] font-serif tracking-wide text-zinc-500">{String(p.name)}</h3>
+            <p className="text-sm font-bold">{formatIDR(p.price)}</p>
+          </div>
+        </div>
+      ))}
     </section>
   );
 }
 
 function MembershipBanner() {
   return (
-    <section className="max-w-7xl mx-auto px-4 py-8 md:py-20 text-black font-bold uppercase">
-       <div className="bg-[#0D0D0D] rounded-2xl md:rounded-[3rem] p-6 md:p-16 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6 border border-white/5">
-         <div className="relative z-10 space-y-4 max-w-lg text-center md:text-left flex-1 text-white">
-            <h2 className="text-xl md:text-4xl font-serif font-bold italic tracking-tight uppercase leading-tight">Privilege <span className="text-[#D4AF37]">Member</span></h2>
-            <p className="text-zinc-500 text-[10px] md:text-base leading-relaxed font-bold">Akses eksklusif koleksi terbaru dan penawaran spesial Maison.</p>
-            <button className="px-6 py-2 bg-white text-black text-[9px] font-bold uppercase tracking-widest rounded-full border-none cursor-pointer outline-none active:scale-95">Gabung Sekarang</button>
-         </div>
-         <div className="relative z-10 w-full md:w-56 aspect-[3/4] rounded-xl overflow-hidden border border-white/10 shadow-lg flex-shrink-0">
-            <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1020&auto=format&fit=crop" className="w-full h-full object-cover" alt="Promo" />
-         </div>
-       </div>
-    </section>
-  );
-}
-
-function TrendingSelection({ products, onView }) {
-  return (
-    <section className="py-8 md:py-20 bg-[#080808] text-white px-4 border-t border-[#D4AF37]/10 font-bold uppercase">
-       <div className="max-w-7xl mx-auto space-y-6">
-         <div className="text-center md:text-left">
-            <div className="flex items-center gap-2 justify-center md:justify-start mb-1"><TrendingUp className="text-[#D4AF37]" size={14} /><span className="text-[9px] font-bold uppercase tracking-widest text-[#D4AF37]">Seasonal Trends</span></div>
-            <h2 className="text-xl md:text-5xl font-serif font-bold italic tracking-tight uppercase leading-none text-white">The <span className="text-[#D4AF37]">Vanguard</span></h2>
-         </div>
-         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {products.map(p => (
-              <div key={p.id} onClick={() => onView(p)} className="cursor-pointer space-y-3 group">
-                 <div className="relative aspect-[3/4.2] rounded-xl overflow-hidden border border-white/5">
-                    <img src={p.imageURLs?.[0] || p.imageURL} className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500" alt=""/>
-                 </div>
-                 <div className="text-center space-y-0.5">
-                    <h4 className="text-[9px] font-bold uppercase tracking-widest text-zinc-400 truncate font-bold">{String(p.name)}</h4>
-                    <p className="text-xs font-serif font-bold italic text-white">{formatIDR(p.price)}</p>
-                 </div>
-              </div>
-            ))}
-         </div>
-       </div>
-    </section>
-  );
-}
-
-function SustainabilityReport() {
-  return (
-    <section className="py-10 md:py-24 bg-white border-t border-zinc-50 px-6 overflow-hidden text-black font-bold uppercase">
-       <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-8 md:gap-24">
-          <div className="flex-1 space-y-4 text-center lg:text-left">
-             <div className="flex items-center gap-3 justify-center lg:justify-start"><div className="w-8 h-[1px] bg-[#D4AF37]"></div><span className="text-[9px] font-bold uppercase tracking-[0.4em] text-[#D4AF37]">Ethics</span></div>
-             <h2 className="text-xl md:text-6xl font-serif font-bold italic tracking-tighter uppercase leading-tight text-zinc-950">Maison <span className="text-zinc-300">DNA</span></h2>
-             <p className="text-zinc-500 text-[10px] md:text-lg leading-relaxed italic border-l-2 border-[#D4AF37]/30 pl-4 font-bold">Kemewahan abadi berawal dari tanggung jawab sosial dalam setiap produksi.</p>
-             <button className="px-8 py-2.5 border border-zinc-200 rounded-full text-[9px] font-bold uppercase tracking-widest text-zinc-800 outline-none hover:bg-black hover:text-white transition-all border-none cursor-pointer">Selengkapnya</button>
-          </div>
-       </div>
-    </section>
-  );
-}
-
-function ProductGrid({ products, onView }) {
-  if (!products || products.length === 0) return (
-    <div className="py-16 text-center flex flex-col items-center gap-3 text-black">
-      <Loader2 className="animate-spin text-[#D4AF37]" size={24} />
-      <p className="text-zinc-400 font-bold uppercase text-[8px] tracking-widest">Memuat Koleksi...</p>
-    </div>
-  );
-  
-  return (
-    <section className="max-w-7xl mx-auto px-4 py-6 md:py-20 text-black font-bold uppercase">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 md:gap-x-10 gap-y-8 md:gap-y-16">
-        {products.map((p) => (
-          <div key={p.id} className="group cursor-pointer flex flex-col items-center" onClick={() => onView(p)}>
-            <div className="relative aspect-[3/4.4] w-full overflow-hidden rounded-xl md:rounded-[2.5rem] bg-zinc-50 shadow-sm transition-transform duration-500 group-hover:-translate-y-1">
-              <img src={p.imageURLs?.[0] || p.imageURL} className="w-full h-full object-cover group-hover:scale-105 transition-transform" alt={p.name} />
-              <div className="absolute bottom-2 right-2 bg-black/80 text-[#D4AF37] px-2.5 py-1 rounded-full text-[7px] md:text-[9px] font-bold tracking-widest uppercase shadow-md">
-                {String(p.category)}
-              </div>
-            </div>
-            <div className="text-center mt-3 space-y-0.5 w-full px-1">
-              <h3 className="text-[9px] md:text-xs font-serif font-medium tracking-wide text-zinc-500 uppercase truncate font-bold text-black font-bold uppercase">
-                {String(p.name)}
-              </h3>
-              <p className="text-sm md:text-xl font-bold text-black font-serif italic">
-                {formatIDR(p.price)}
-              </p>
-            </div>
-          </div>
-        ))}
+    <section className="max-w-7xl mx-auto px-4 pb-20 font-bold uppercase">
+      <div className="bg-[#0D0D0D] rounded-3xl p-10 md:p-20 text-center text-white border border-white/5 shadow-2xl">
+        <h2 className="text-2xl md:text-5xl font-serif italic mb-4">Privilege <span className="text-[#D4AF37]">Maison</span> Member</h2>
+        <p className="text-zinc-500 text-xs md:text-sm tracking-widest max-w-lg mx-auto mb-8 leading-relaxed">Nikmati akses eksklusif untuk koleksi terbatas dan penawaran khusus dari Maison Devi.</p>
+        <button className="px-10 py-3 bg-white text-black text-[9px] font-bold tracking-widest rounded-full border-none cursor-pointer hover:bg-[#D4AF37] transition-all">GABUNG SEKARANG</button>
       </div>
     </section>
   );
 }
 
 function ProductDetailView({ product, onBack, onBuy, onAddToCart, notify }) {
-  const [selectedSize, setSelectedSize] = useState('');
+  const [selectedSize, setSelectedSize] = useState('All Size');
+  const [selectedAge, setSelectedAge] = useState('1-2 Thn');
   const [currentPrice, setCurrentPrice] = useState(Number(product.price));
   const [activeImg, setActiveImg] = useState(0);
 
@@ -629,94 +417,53 @@ function ProductDetailView({ product, onBack, onBuy, onAddToCart, notify }) {
     }
   }, [selectedSize, product]);
 
-  const nextImg = (e) => {
-    e?.stopPropagation();
-    setActiveImg((prev) => (prev + 1) % images.length);
-  };
-  const prevImg = (e) => {
-    e?.stopPropagation();
-    setActiveImg((prev) => (prev - 1 + images.length) % images.length);
-  };
-
   return (
-    <div className="max-w-7xl mx-auto px-4 py-4 md:py-12 animate-in fade-in duration-500 text-black font-bold uppercase">
-      <button onClick={onBack} className="flex items-center gap-1.5 text-zinc-400 mb-4 text-[10px] font-bold uppercase tracking-widest bg-transparent border-none cursor-pointer outline-none hover:text-black">
-        <ChevronLeft size={16} /> Kembali
-      </button>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-16 items-start">
-        <div className="relative w-full aspect-[4/5] bg-zinc-50 rounded-xl overflow-hidden shadow-lg border border-zinc-100 group">
-          <img 
-            key={`${product.id}-${activeImg}`} 
-            src={images[activeImg]} 
-            className="w-full h-full object-cover transition-opacity duration-300 animate-in fade-in" 
-            alt={product.name} 
-          />
-          
-          {images.length > 1 && (
-            <>
-              <button onClick={prevImg} className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center shadow-md z-10 outline-none border-none cursor-pointer hover:bg-white active:scale-90">
-                <ChevronLeft size={20} className="text-black" />
-              </button>
-              <button onClick={nextImg} className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center shadow-md z-10 outline-none border-none cursor-pointer hover:bg-white active:scale-90">
-                <ChevronRight size={20} className="text-black" />
-              </button>
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-                {images.map((_, idx) => (
-                  <div key={idx} className={`w-1.5 h-1.5 rounded-full transition-all ${activeImg === idx ? 'bg-[#D4AF37] w-4' : 'bg-white/50'}`}></div>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-
-        <div className="flex flex-col space-y-6">
-          <div className="space-y-2 text-black font-bold uppercase">
-            <p className="text-[#D4AF37] text-[9px] font-bold uppercase tracking-widest border-l-2 border-[#D4AF37] pl-3 uppercase">
-              {String(product.category).toUpperCase()}
-            </p>
-            <h2 className="text-xl md:text-4xl font-serif font-bold uppercase tracking-tight leading-tight text-black font-bold">{String(product.name)}</h2>
-            <p className="text-2xl md:text-5xl font-bold text-black font-serif italic font-bold">{formatIDR(currentPrice)}</p>
+    <div className="max-w-7xl mx-auto px-4 py-8 font-bold uppercase">
+      <button onClick={onBack} className="flex items-center gap-2 text-zinc-400 mb-6 text-[10px] bg-transparent border-none cursor-pointer uppercase"><ChevronLeft size={16}/> Kembali</button>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div className="space-y-4">
+          <div className="aspect-[4/5] bg-zinc-50 rounded-3xl overflow-hidden shadow-md border border-zinc-100">
+            <img src={images[activeImg]} className="w-full h-full object-cover" alt="" />
           </div>
-
-          <div className="bg-zinc-50 p-4 md:p-8 rounded-xl border border-zinc-100">
-             <span className="text-[8px] font-bold uppercase tracking-widest text-black border-b border-zinc-200 block mb-3 pb-1 uppercase font-bold">Bahan & Material</span>
-             <p className="text-zinc-700 leading-relaxed text-[11px] md:text-base italic font-serif whitespace-pre-wrap font-bold">
-                {String(product.description || "Kemewahan yang dipersonalisasi. Setiap jahitan mencerminkan dedikasi butik kami.")}
-             </p>
+          <div className="flex gap-3 overflow-x-auto no-scrollbar">
+            {images.map((img, i) => (
+              <div key={i} onClick={() => setActiveImg(i)} className={`w-16 h-16 rounded-xl overflow-hidden cursor-pointer border-2 transition-all ${activeImg === i ? 'border-[#D4AF37]' : 'border-transparent'}`}><img src={img} className="w-full h-full object-cover" /></div>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-8">
+          <div>
+            <h2 className="text-2xl md:text-4xl font-serif mb-2">{product.name}</h2>
+            <div className="flex items-center gap-2 mb-4"><Star className="text-yellow-400 fill-yellow-400" size={14}/> <Star className="text-yellow-400 fill-yellow-400" size={14}/> <Star className="text-yellow-400 fill-yellow-400" size={14}/> <Star className="text-yellow-400 fill-yellow-400" size={14}/> <Star className="text-yellow-400 fill-yellow-400" size={14}/> <span className="text-xs text-zinc-400">(2)</span></div>
+            <p className="text-3xl font-bold text-[#D4AF37]">{formatIDR(currentPrice)}</p>
+          </div>
+          
+          <div className="space-y-4">
+            <label className="text-[10px] text-zinc-400 font-bold tracking-widest">PILIH UMUR</label>
+            <div className="flex flex-wrap gap-2">
+              {AGE_OPTIONS.map(age => (
+                <button key={age} onClick={() => setSelectedAge(age)} className={`px-4 py-2 text-[10px] border rounded-lg transition-all cursor-pointer ${selectedAge === age ? 'bg-black text-[#D4AF37] border-black' : 'bg-white border-zinc-100 text-zinc-500 hover:border-zinc-300'}`}>{age}</button>
+              ))}
+            </div>
           </div>
 
           <div className="space-y-4">
-            <h4 className="text-[9px] font-bold uppercase tracking-widest text-black flex items-center gap-2 uppercase font-bold">
-              <LayersIcon size={14} className="text-[#D4AF37]" /> Pilih Ukuran
-            </h4>
+            <label className="text-[10px] text-zinc-400 font-bold tracking-widest">PILIH UKURAN</label>
             <div className="flex flex-wrap gap-2">
-               {(product.sizes || SIZE_OPTIONS).map(s => (
-                 <button 
-                   key={s}
-                   onClick={() => setSelectedSize(s)} 
-                   className={`w-10 h-10 md:w-14 md:h-14 rounded-lg flex items-center justify-center font-bold text-xs border transition-all cursor-pointer outline-none ${selectedSize === s ? 'bg-black text-[#D4AF37] border-black scale-105 shadow-md font-bold' : 'bg-white border-zinc-100 text-zinc-400 hover:border-zinc-300 font-bold'}`}
-                 >
-                   {String(s)}
-                 </button>
-               ))}
+              {SIZE_OPTIONS.map(sz => (
+                <button key={sz} onClick={() => setSelectedSize(sz)} className={`w-12 h-12 text-[10px] border rounded-lg transition-all cursor-pointer ${selectedSize === sz ? 'bg-black text-[#D4AF37] border-black' : 'bg-white border-zinc-100 text-zinc-500'}`}>{sz}</button>
+              ))}
             </div>
+          </div>
 
-            <div className="flex flex-col gap-2.5 pt-4">
-              <button 
-                onClick={() => { if(!selectedSize) return notify("Pilih ukuran mewah Anda.", "error"); onBuy(selectedSize, currentPrice); }} 
-                className="w-full bg-black text-[#D4AF37] py-3.5 md:py-5 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-lg border-none cursor-pointer active:scale-95 transition-all"
-              >
-                CHECKOUT SEKARANG <ArrowRight size={16} />
-              </button>
-              
-              <button 
-                onClick={() => { if(!selectedSize) return notify("Pilih ukuran terlebih dahulu!", "error"); onAddToCart({...product, chosenSize: selectedSize, chosenPrice: currentPrice}); }}
-                className="w-full bg-zinc-50 border border-zinc-200 py-3 rounded-full text-[9px] font-bold uppercase tracking-widest text-zinc-800 cursor-pointer outline-none active:scale-95 transition-all font-bold uppercase"
-              >
-                Tambah ke Bag
-              </button>
-            </div>
+          <div className="flex flex-col gap-3 pt-4">
+            <button onClick={() => onBuy(selectedSize, selectedAge, currentPrice)} className="bg-[#10b981] text-white py-4 rounded-xl font-bold text-[11px] border-none cursor-pointer shadow-lg active:scale-95 transition-all">BELI SEKARANG</button>
+            <button onClick={() => onAddToCart({...product, chosenSize: selectedSize, chosenAge: selectedAge, chosenPrice: currentPrice})} className="bg-white border border-zinc-200 py-3 rounded-xl font-bold text-[10px] cursor-pointer hover:bg-zinc-50 transition-all">TAMBAH KE KERANJANG</button>
+          </div>
+
+          <div className="p-6 bg-zinc-50 rounded-2xl border border-zinc-100 space-y-4">
+            <h4 className="text-xs font-bold border-b border-zinc-200 pb-2">MATERIAL :</h4>
+            <p className="text-xs text-zinc-600 leading-relaxed font-serif italic whitespace-pre-wrap">{product.description || "Baby doll premium mix Januari. Teksturnya lembut adem, ringan dan jatuh, nyaman di pakai sehari-hari."}</p>
           </div>
         </div>
       </div>
@@ -724,141 +471,149 @@ function ProductDetailView({ product, onBack, onBuy, onAddToCart, notify }) {
   );
 }
 
-function CheckoutView({ product, rekening, onComplete, onBack, notify }) {
+function CheckoutWizard({ product, rekening, onComplete, onBack, notify }) {
   const [step, setStep] = useState(1);
   const [sending, setSending] = useState(false);
-  const [localProofBase64, setLocalProofBase64] = useState(null); // MENYIMPAN BASE64 UNTUK FIREBASE
-  const [shipping, setShipping] = useState({ name: '', address: '', phone: '', dropship: false });
-  const [payment, setPayment] = useState({ 
-    invoice: `INV-DEVI-${Math.floor(Date.now() / 1000).toString().slice(-6)}`,
-    transferTo: '', originBank: '', senderName: '', amount: Number(product.chosenPrice || product.price), proofImage: '', status: 'pending'
-  });
+  const [localProofBase64, setLocalProofBase64] = useState(null);
+  const [shipping, setShipping] = useState({ email: '', newsletter: true, name: '', city: '', address: '', postalCode: '', phone: '', dropship: false });
+  const [selectedCourier, setSelectedCourier] = useState(SHIPPING_METHODS[0]);
+  const [payment, setPayment] = useState({ invoice: `INV-DEVI-${Math.floor(Date.now() / 1000).toString().slice(-6)}`, transferTo: '', bankAsal: '', senderName: '', status: 'Belum Dibayar' });
 
-  // FUNGSI UPLOAD INSTAN (MENGGUNAKAN BASE64)
+  const subtotal = Number(product.chosenPrice || product.price);
+  const total = subtotal + selectedCourier.price;
+
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 1024 * 1024) { // Limit 1MB agar Firestore aman
-        return notify("Ukuran foto terlalu besar (Max 1MB).", "error");
-      }
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setLocalProofBase64(reader.result); // HASIL BASE64
-        notify("Bukti TF berhasil dipilih!", "success");
+      reader.onload = (ev) => {
+        setLocalProofBase64(ev.target.result);
+        notify("Bukti TF Siap!", "success");
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const submitFinalOrder = async () => {
-    if (!payment.senderName || !payment.originBank || !shipping.name || !shipping.address || !shipping.phone) return notify("Form belum lengkap.", "error");
-    if (!localProofBase64) return notify("Upload bukti TF!", "error");
-    
+  const submitOrder = async () => {
+    if(!payment.transferTo || !payment.bankAsal || !payment.senderName || !localProofBase64) return notify("Lengkapi form pembayaran!", "error");
     setSending(true);
     try {
-      // LOGIKA: Simpan langsung ke database sebagai Base64 (INSTAN & PASTI MASUK)
       const orderRef = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
-      await addDoc(orderRef, { 
-        ...payment, 
-        proofImage: localProofBase64, // SIMPAN TEKS BASE64 LANGSUNG
-        shipping, 
-        productName: String(product.name), 
-        productSize: String(product.chosenSize), 
-        createdAt: serverTimestamp() 
+      await addDoc(orderRef, {
+        ...payment, ...shipping,
+        productName: product.name, productSize: product.chosenSize, productAge: product.chosenAge,
+        subtotal, courier: selectedCourier.name, shippingFee: selectedCourier.price, total,
+        proofImage: localProofBase64, createdAt: serverTimestamp()
       });
-
-      setStep(4);
-      notify("Pesanan berhasil dikirim.", "success");
-    } catch (e) { 
-      console.error("Order delivery failed:", e);
-      notify("Gagal mengirim pesanan. Coba lagi.", "error");
-    } finally {
-      setSending(false);
-    }
+      setStep(5);
+    } catch(e) { notify("Gagal mengirim pesanan.", "error"); }
+    finally { setSending(false); }
   };
 
   return (
-    <div className="max-w-md mx-auto py-6 px-4 font-bold uppercase text-black font-bold">
-       <div className="bg-white rounded-2xl shadow-xl border border-zinc-100 overflow-hidden relative font-bold uppercase">
-          <button onClick={onBack} className="absolute top-4 right-4 p-2 text-zinc-300 bg-transparent border-none cursor-pointer z-50 outline-none"><X size={20} /></button>
-          
+    <div className="max-w-7xl mx-auto px-4 py-8 md:py-16 font-bold uppercase">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
+        <div className="lg:col-span-2 space-y-8">
+          <div className="flex gap-4 text-[10px] text-zinc-400 mb-8 font-bold uppercase">
+            <span className={step >= 1 ? 'text-black' : ''}>Info Pembeli</span> <ChevronRight size={14}/>
+            <span className={step >= 2 ? 'text-black' : ''}>Kurir</span> <ChevronRight size={14}/>
+            <span className={step >= 3 ? 'text-black' : ''}>Bayar</span>
+          </div>
+
           {step === 1 && (
-            <div className="p-6 space-y-6 animate-in fade-in font-bold uppercase">
-               <h3 className="text-base font-serif italic border-b border-zinc-50 pb-2 text-black font-bold uppercase">Informasi Client</h3>
-               <div className="space-y-4">
-                  <div className="border-b border-zinc-100 focus-within:border-[#D4AF37] pb-1 font-bold uppercase">
-                    <label className="text-[8px] text-zinc-400 tracking-widest font-bold uppercase">Nama Lengkap</label>
-                    <input className="w-full py-1.5 text-xs font-bold border-none outline-none bg-transparent text-black font-bold uppercase" placeholder="Nama..." value={shipping.name} onChange={e=>setShipping({...shipping, name:e.target.value})}/>
-                  </div>
-                  <div className="border-b border-zinc-100 focus-within:border-[#D4AF37] pb-1 font-bold uppercase">
-                    <label className="text-[8px] text-zinc-400 tracking-widest font-bold uppercase">Nomor HP</label>
-                    <input className="w-full py-1.5 text-xs font-bold border-none outline-none bg-transparent text-black font-bold uppercase" placeholder="08..." value={shipping.phone} onChange={e=>setShipping({...shipping, phone:e.target.value})}/>
-                  </div>
-                  <div className="border-b border-zinc-100 focus-within:border-[#D4AF37] pb-1 font-bold uppercase">
-                    <label className="text-[8px] text-zinc-400 tracking-widest font-bold uppercase font-bold">Alamat Pengiriman</label>
-                    <textarea className="w-full py-1.5 text-xs font-bold border-none outline-none bg-transparent h-16 resize-none text-black font-bold uppercase" placeholder="Alamat..." value={shipping.address} onChange={e=>setShipping({...shipping, address:e.target.value})}/>
-                  </div>
-               </div>
-               <button onClick={()=>setStep(2)} className="w-full bg-[#3b82f6] text-white py-3 rounded-full text-[9px] font-bold border-none cursor-pointer shadow-lg active:scale-95 transition-all uppercase font-bold uppercase">LANJUT PEMBAYARAN</button>
+            <div className="space-y-6 animate-in slide-in-from-left">
+              <input className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl outline-none" placeholder="Email" value={shipping.email} onChange={e=>setShipping({...shipping, email:e.target.value})}/>
+              <input className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl outline-none" placeholder="Nama Lengkap" value={shipping.name} onChange={e=>setShipping({...shipping, name:e.target.value})}/>
+              <input className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl outline-none" placeholder="Kota" value={shipping.city} onChange={e=>setShipping({...shipping, city:e.target.value})}/>
+              <textarea className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl outline-none h-24" placeholder="Alamat Lengkap" value={shipping.address} onChange={e=>setShipping({...shipping, address:e.target.value})}/>
+              <div className="grid grid-cols-2 gap-4">
+                <input className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl outline-none" placeholder="Kode Pos" value={shipping.postalCode} onChange={e=>setShipping({...shipping, postalCode:e.target.value})}/>
+                <input className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl outline-none" placeholder="Telepon" value={shipping.phone} onChange={e=>setShipping({...shipping, phone:e.target.value})}/>
+              </div>
+              <button onClick={()=>setStep(2)} className="w-full md:w-auto bg-black text-[#D4AF37] px-12 py-4 rounded-xl font-bold">LANJUTKAN</button>
             </div>
           )}
 
           {step === 2 && (
-            <div className="p-6 space-y-6 animate-in slide-in-from-right font-bold uppercase">
-               <div className="text-center text-black font-bold uppercase font-bold uppercase"><h3 className="text-base font-serif italic uppercase font-bold">Pilih Bank / E-Wallet</h3></div>
-               <div className="grid grid-cols-2 gap-3 max-h-[400px] overflow-y-auto no-scrollbar pr-1 font-bold uppercase">
-                  {rekening.map(rek => (
-                    <div key={rek.id} onClick={()=>{ setPayment({...payment, transferTo: `${rek.bankName} - ${rek.accountNumber} - ${rek.accountHolder}`}); setStep(3); }} className="p-3 border border-zinc-100 rounded-xl hover:border-[#D4AF37] cursor-pointer transition-all flex flex-col items-center text-center bg-zinc-50/50 group shadow-sm active:scale-95">
-                       <img src={BANK_LOGOS[rek.bankName]} className="h-6 object-contain mb-2" alt=""/>
-                       <p className="text-[7px] text-zinc-400 uppercase leading-tight mb-1 font-bold uppercase font-bold uppercase">{rek.bankName}</p>
-                       <p className="text-[10px] font-mono tracking-tighter text-black font-bold uppercase">{String(rek.accountNumber)}</p>
-                    </div>
-                  ))}
-               </div>
+            <div className="space-y-4 animate-in slide-in-from-left">
+              <h3 className="text-xl font-serif">Pilih Kurir</h3>
+              {SHIPPING_METHODS.map(m => (
+                <div key={m.id} onClick={()=>setSelectedCourier(m)} className={`p-5 rounded-2xl border-2 cursor-pointer flex justify-between items-center ${selectedCourier.id === m.id ? 'border-black bg-zinc-50' : 'border-zinc-100'}`}>
+                  <div className="flex items-center gap-4"><img src={m.logo} className="h-8 w-12 object-contain" /><span>{m.name}</span></div>
+                  <span>{formatIDR(m.price)}</span>
+                </div>
+              ))}
+              <div className="flex gap-2">
+                <button onClick={()=>setStep(1)} className="px-8 py-4 bg-zinc-100 rounded-xl font-bold">KEMBALI</button>
+                <button onClick={()=>setStep(3)} className="flex-1 bg-black text-[#D4AF37] py-4 rounded-xl font-bold">LANJUTKAN</button>
+              </div>
             </div>
           )}
 
           {step === 3 && (
-            <div className="p-6 space-y-6 animate-in slide-in-from-right text-black font-bold uppercase font-bold uppercase">
-               <h3 className="text-center text-lg font-serif italic border-b border-zinc-50 pb-2 uppercase leading-none text-black font-bold uppercase">Konfirmasi Pembayaran</h3>
-               <div className="space-y-4">
-                  <div className="p-3 bg-zinc-900 rounded-lg text-[9px] text-[#D4AF37] tracking-widest uppercase text-center border border-[#D4AF37]/20 font-bold uppercase uppercase">{String(payment.transferTo)}</div>
-                  <input className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] outline-none text-black font-bold uppercase uppercase font-bold uppercase" placeholder="Bank Asal" value={payment.originBank} onChange={e=>setPayment({...payment, originBank:e.target.value})}/>
-                  <input className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] outline-none text-black font-bold uppercase uppercase font-bold uppercase" placeholder="Nama Pengirim" value={payment.senderName} onChange={e=>setPayment({...payment, senderName:e.target.value})}/>
-                  
-                  <div onClick={()=>document.getElementById('uPf').click()} className="w-full aspect-video border-2 border-dashed border-zinc-100 rounded-xl bg-zinc-50 flex items-center justify-center cursor-pointer overflow-hidden relative shadow-inner group transition-all hover:bg-zinc-100 font-bold uppercase">
-                    {localProofBase64 ? (
-                      <img src={localProofBase64} className="w-full h-full object-cover animate-in zoom-in" alt="Bukti TF"/>
-                    ) : (
-                      <div className="text-center text-zinc-300 font-bold uppercase">
-                        <Upload size={24} className="mx-auto mb-1 opacity-50 font-bold uppercase" />
-                        <p className="text-[8px] uppercase tracking-widest font-bold uppercase uppercase font-bold uppercase">Pilih Gambar Bukti TF</p>
-                      </div>
-                    )}
-                    <input type="file" id="uPf" className="hidden" accept="image/*" onChange={handleFileSelect}/>
+            <div className="space-y-8 animate-in zoom-in">
+              <div className="bg-zinc-50 p-6 rounded-3xl border border-zinc-100 space-y-4">
+                <h3 className="text-xl font-serif">Invoice #{payment.invoice}</h3>
+                <div className="flex justify-between border-t pt-4"><span>Total Tagihan</span><span className="text-xl font-bold">{formatIDR(total)}</span></div>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {rekening.map(rek => (
+                  <div key={rek.id} onClick={()=>setPayment({...payment, transferTo: `${rek.bankName} - ${rek.accountNumber} - ${rek.accountHolder}`})} className={`p-4 rounded-xl border-2 cursor-pointer flex flex-col items-center gap-2 ${payment.transferTo.includes(rek.accountNumber) ? 'border-black bg-zinc-100' : 'border-zinc-100'}`}>
+                    <img src={BANK_LOGOS[rek.bankName]} className="h-6 object-contain" />
+                    <p className="text-[8px] text-center font-bold">{rek.bankName}</p>
+                    <p className="text-[10px] font-mono">{rek.accountNumber}</p>
                   </div>
-               </div>
-               <button 
-                 onClick={submitFinalOrder} 
-                 className={`w-full bg-black text-[#D4AF37] py-3.5 rounded-full text-[9px] font-bold border-none cursor-pointer shadow-lg active:scale-95 flex items-center justify-center gap-2 font-bold uppercase font-bold uppercase ${sending ? 'opacity-50' : ''}`}
-                 disabled={sending}
-               >
-                 {sending ? 'MENGIRIM PESANAN...' : 'KONFIRMASI SEKARANG'}
-               </button>
+                ))}
+              </div>
+              <button onClick={()=>setStep(4)} className="w-full bg-[#10b981] text-white py-5 rounded-2xl font-bold">KONFIRMASI PEMBAYARAN</button>
             </div>
           )}
 
           {step === 4 && (
-            <div className="p-10 text-center space-y-6 animate-in zoom-in duration-700 font-bold uppercase text-black font-bold uppercase">
-               <div className="w-12 h-12 bg-green-500 text-white rounded-full flex items-center justify-center mx-auto shadow-lg font-bold uppercase"><SuccessIcon size={24}/></div>
-               <div className="space-y-2 font-bold uppercase">
-                  <h3 className="text-xl font-serif leading-tight text-black font-bold uppercase font-bold uppercase font-bold uppercase">Berhasil Terkirim</h3>
-                  <p className="text-[9px] text-zinc-400 tracking-widest uppercase font-bold uppercase font-bold uppercase font-bold uppercase">Maison telah menerima pesanan Anda.</p>
-               </div>
-               <button onClick={onComplete} className="w-full bg-black text-[#D4AF37] py-3 rounded-full text-[9px] font-bold border-none outline-none cursor-pointer active:scale-95 transition-all uppercase font-bold uppercase font-bold uppercase font-bold uppercase">Kembali ke Home</button>
+            <div className="space-y-6 max-w-lg mx-auto bg-white p-8 rounded-3xl border shadow-xl">
+              <h3 className="text-2xl font-serif text-center">Konfirmasi Transfer</h3>
+              <input className="w-full p-4 bg-zinc-50 rounded-xl border-none" placeholder="Bank Asal (BCA/DANA/dll)" value={payment.bankAsal} onChange={e=>setPayment({...payment, bankAsal: e.target.value})}/>
+              <input className="w-full p-4 bg-zinc-50 rounded-xl border-none" placeholder="Nama Pemilik Rekening" value={payment.senderName} onChange={e=>setPayment({...payment, senderName: e.target.value})}/>
+              <div onClick={()=>document.getElementById('uPf').click()} className="w-full h-32 border-2 border-dashed rounded-2xl flex items-center justify-center cursor-pointer overflow-hidden">
+                {localProofBase64 ? <img src={localProofBase64} className="w-full h-full object-cover"/> : <span>Upload Bukti TF</span>}
+                <input type="file" id="uPf" className="hidden" accept="image/*" onChange={handleFileSelect}/>
+              </div>
+              <button onClick={submitOrder} disabled={sending} className="w-full bg-black text-[#D4AF37] py-5 rounded-2xl font-bold flex items-center justify-center gap-2">
+                {sending ? <Loader2 className="animate-spin" /> : 'KIRIM PESANAN SEKARANG'}
+              </button>
             </div>
           )}
-       </div>
+
+          {step === 5 && (
+            <div className="text-center py-20 animate-in zoom-in">
+              <div className="w-20 h-20 bg-green-500 text-white rounded-full flex items-center justify-center mx-auto mb-6"><SuccessIcon size={40}/></div>
+              <h3 className="text-3xl font-serif">Terima Kasih</h3>
+              <p className="text-zinc-500 mb-8">Pesanan Anda telah kami terima.</p>
+              <button onClick={onComplete} className="px-12 py-4 bg-black text-[#D4AF37] rounded-full font-bold">KEMBALI KE TOKO</button>
+            </div>
+          )}
+        </div>
+
+        {step < 5 && (
+          <aside className="bg-white border rounded-3xl p-6 shadow-sm sticky top-24">
+            <h4 className="text-xs font-bold mb-4 uppercase">Ringkasan Bag</h4>
+            <div className="flex gap-4 mb-4">
+              <img src={product.imageURLs?.[0] || product.imageURL} className="w-16 h-20 rounded-xl object-cover" />
+              <div className="text-[10px] space-y-1">
+                <p className="font-bold">{product.name}</p>
+                <p className="text-zinc-400">Umur: {product.chosenAge}</p>
+                <p className="text-zinc-400">Size: {product.chosenSize}</p>
+                <p className="font-bold">{formatIDR(subtotal)}</p>
+              </div>
+            </div>
+            <div className="border-t pt-4 text-[10px] space-y-2 uppercase">
+              <div className="flex justify-between"><span>Subtotal</span><span>{formatIDR(subtotal)}</span></div>
+              <div className="flex justify-between"><span>Kirim</span><span>{formatIDR(selectedCourier.price)}</span></div>
+              <div className="flex justify-between text-lg font-bold pt-2 border-t"><span>TOTAL</span><span>{formatIDR(total)}</span></div>
+            </div>
+          </aside>
+        )}
+      </div>
     </div>
   );
 }
@@ -874,58 +629,28 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
   const [newCreds, setNewCreds] = useState({ username: creds?.username || '', password: creds?.password || '' });
   const [selectedOrder, setSelectedOrder] = useState(null);
 
-  const publishProduct = async () => {
-    const validImages = formData.imageURLs.filter(url => url && url.trim() !== '');
-    if (!formData.name.trim() || !formData.price || validImages.length === 0) return notify("Form Belum Lengkap!", "error");
-    
-    setSaving(true);
-    try {
-      const dataToSend = { ...formData, imageURLs: validImages, price: Number(formData.price), updatedAt: serverTimestamp() };
-      if (editingId) {
-        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', editingId), dataToSend);
-        notify("Berhasil Update.", "success");
-      } else {
-        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), { ...dataToSend, createdAt: serverTimestamp() });
-        notify("Berhasil Publish.", "success");
-      }
-      resetForm();
-    } catch (e) { 
-      notify(e.message, "error"); 
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const resetForm = () => {
     setEditingId(null);
     setFormData({ imageURLs: ['', '', '', '', ''], name: '', price: '', category: 'Baju', description: '', sizes: SIZE_OPTIONS, sizePrices: {} });
     setInstaUrls(['', '', '', '', '']);
   };
 
-  const handleEdit = (p) => {
-    setEditingId(p.id);
-    const urls = ['', '', '', '', ''];
-    if (p.imageURLs) p.imageURLs.forEach((url, i) => { urls[i] = url; });
-    setInstaUrls(urls);
-    setFormData({ ...p, imageURLs: urls });
-    setTab('inventory');
-    window.scrollTo(0, 0);
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm("Hapus Katalog ini?")) return;
+  const publishProduct = async () => {
+    const validImages = formData.imageURLs.filter(url => url && url.trim() !== '');
+    if (!formData.name.trim() || !formData.price || validImages.length === 0) return notify("Lengkapi Form Katalog!", "error");
+    setSaving(true);
     try {
-      await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', id));
-      notify("Terhapus.", "success");
-    } catch (e) { notify(e.message, "error"); }
-  };
-
-  const handleDeleteOrder = async (id) => {
-    if (!window.confirm("Hapus Order?")) return;
-    try {
-      await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', id));
-      notify("Order Dihapus.", "success");
-    } catch (e) { notify(e.message, "error"); }
+      const data = { ...formData, imageURLs: validImages, price: Number(formData.price), updatedAt: serverTimestamp() };
+      if (editingId) {
+        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', editingId), data);
+        notify("Katalog Terupdate.", "success");
+      } else {
+        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), { ...data, createdAt: serverTimestamp() });
+        notify("Katalog Berhasil Publish.", "success");
+      }
+      resetForm();
+    } catch(e) { notify(e.message, "error"); }
+    finally { setSaving(false); }
   };
 
   const handleFetchImage = (url, index) => {
@@ -935,274 +660,213 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
     const newImages = [...formData.imageURLs];
     newImages[index] = finalUrl;
     setFormData({ ...formData, imageURLs: newImages });
-    notify(`Foto ${index+1} Oke.`);
+    notify(`Foto ${index+1} OK.`);
   };
 
   const updateAdminAuth = async () => {
-    if (!newCreds.username || !newCreds.password) return notify("Isi lengkap!", "error");
+    if (!newCreds.username || !newCreds.password) return notify("Username & Password wajib diisi!", "error");
     try {
       await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'admin_settings', 'main'), newCreds);
-      notify("Akses Diperbarui.", "success");
-    } catch (e) { notify(e.message, "error"); }
+      notify("Data Akses Diperbarui.", "success");
+    } catch(e) { notify("Gagal update profil.", "error"); }
   };
 
   const [bankForm, setBankForm] = useState({ bankName: 'Bank Central Asia (BCA)', accountNumber: '', accountHolder: '' });
   const addBank = async () => {
-    if (!bankForm.accountNumber || !bankForm.accountHolder) return notify("Data bank kosong!", "error");
+    if (!bankForm.accountNumber || !bankForm.accountHolder) return notify("Lengkapi data banking!", "error");
     try {
       await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'rekening'), bankForm);
       setBankForm({ bankName: 'Bank Central Asia (BCA)', accountNumber: '', accountHolder: '' });
-      notify("Metode Ditambahkan.", "success");
-    } catch (e) { notify(e.message, "error"); }
+      notify("Metode Bayar Ditambahkan.", "success");
+    } catch(e) { notify(e.message, "error"); }
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col md:flex-row gap-6 font-bold uppercase text-black relative font-bold uppercase font-bold">
-      
-      {/* MODAL INFORMASI PEMBELI & BUKTI TF */}
+    <div className="max-w-7xl mx-auto px-4 py-8 flex flex-col md:flex-row gap-8 font-bold uppercase">
       {selectedOrder && (
         <div className="fixed inset-0 z-[6000] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-           <div className="bg-white w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in duration-300">
-              <div className="p-4 bg-zinc-900 text-[#D4AF37] flex justify-between items-center">
-                 <h3 className="text-[10px] font-serif tracking-[0.2em] font-bold uppercase font-bold uppercase">INFORMASI PEMBELI</h3>
-                 <button onClick={()=>setSelectedOrder(null)} className="p-1.5 bg-white/10 rounded-full hover:bg-white/20 transition-all cursor-pointer border-none outline-none text-white"><X size={20}/></button>
+          <div className="bg-white w-full max-w-xl rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in">
+            <div className="p-5 bg-zinc-950 text-[#D4AF37] flex justify-between items-center">
+              <h3 className="text-[10px] tracking-widest font-black uppercase">DETAIL PESANAN</h3>
+              <button onClick={()=>setSelectedOrder(null)} className="p-2 bg-white/10 rounded-full text-white border-none cursor-pointer"><X size={20}/></button>
+            </div>
+            <div className="p-8 space-y-6 max-h-[85vh] overflow-y-auto no-scrollbar text-black uppercase">
+              <div className="grid grid-cols-2 gap-4 text-[10px] border-b pb-4">
+                <div><p className="text-zinc-400">Pembeli</p><p className="font-bold">{selectedOrder.name}</p></div>
+                <div><p className="text-zinc-400">Item</p><p className="font-bold">{selectedOrder.productName}</p></div>
               </div>
-              <div className="p-6 space-y-6 max-h-[85vh] overflow-y-auto no-scrollbar font-bold uppercase text-black">
-                 <div className="grid grid-cols-2 gap-4 border-b border-zinc-100 pb-4 text-black uppercase font-bold uppercase font-bold uppercase">
-                    <div className="space-y-1">
-                       <p className="text-[8px] text-zinc-400 font-bold uppercase tracking-widest uppercase font-bold uppercase font-bold uppercase">Nama Pembeli</p>
-                       <p className="text-[11px] font-bold uppercase font-bold uppercase font-bold uppercase">{selectedOrder.shipping?.name}</p>
-                    </div>
-                    <div className="space-y-1 font-bold">
-                       <p className="text-[8px] text-zinc-400 font-bold uppercase tracking-widest uppercase font-bold uppercase font-bold uppercase">Nomor HP</p>
-                       <p className="text-[11px] font-bold font-bold uppercase font-bold uppercase font-bold uppercase">{selectedOrder.shipping?.phone}</p>
-                    </div>
-                 </div>
-                 
-                 <div className="space-y-1 border-b border-zinc-100 pb-4 text-black uppercase font-bold uppercase font-bold uppercase font-bold">
-                    <p className="text-[8px] text-zinc-400 font-bold uppercase tracking-widest uppercase font-bold uppercase font-bold uppercase font-bold">Alamat Lengkap Pengiriman</p>
-                    <p className="text-[10px] font-medium leading-relaxed bg-zinc-50 p-3 rounded-xl border border-zinc-100 shadow-inner font-bold uppercase font-bold uppercase font-bold uppercase">{selectedOrder.shipping?.address}</p>
-                 </div>
-
-                 <div className="grid grid-cols-2 gap-4 border-b border-zinc-100 pb-4 text-black uppercase font-bold uppercase font-bold uppercase font-bold">
-                    <div className="space-y-1 font-bold">
-                       <p className="text-[8px] text-zinc-400 font-bold uppercase tracking-widest uppercase font-bold uppercase font-bold uppercase font-bold">Item Pesanan</p>
-                       <p className="text-[11px] font-bold uppercase font-bold uppercase font-bold uppercase font-bold">{selectedOrder.productName}</p>
-                       <span className="text-[9px] px-2 py-0.5 bg-zinc-100 rounded-full font-bold font-bold uppercase font-bold uppercase font-bold uppercase font-bold uppercase font-bold uppercase">SIZE: {selectedOrder.productSize}</span>
-                    </div>
-                    <div className="space-y-1 text-right font-bold">
-                       <p className="text-[8px] text-zinc-400 font-bold uppercase tracking-widest uppercase font-bold uppercase font-bold uppercase font-bold uppercase">Total Transfer</p>
-                       <p className="text-sm font-bold text-black font-bold uppercase font-bold uppercase font-bold uppercase font-bold uppercase">{formatIDR(selectedOrder.amount)}</p>
-                    </div>
-                 </div>
-
-                 <div className="space-y-2 text-black font-bold uppercase font-bold uppercase font-bold uppercase font-bold">
-                    <p className="text-[8px] text-zinc-400 font-bold uppercase tracking-widest uppercase font-bold uppercase font-bold uppercase font-bold uppercase font-bold uppercase">Gambar Bukti Transfer</p>
-                    <div className="border border-zinc-100 rounded-2xl overflow-hidden bg-zinc-50 flex items-center justify-center p-2 shadow-inner font-bold uppercase font-bold uppercase font-bold uppercase font-bold">
-                       {selectedOrder.proofImage ? (
-                         <img 
-                           src={selectedOrder.proofImage} 
-                           className="w-full max-h-[450px] object-contain rounded-xl cursor-pointer shadow-md" 
-                           onClick={()=>window.open(selectedOrder.proofImage, '_blank')}
-                           alt="Bukti Transfer"
-                         />
-                       ) : (
-                         <p className="text-[10px] text-zinc-300 py-10 italic uppercase font-bold uppercase font-bold uppercase font-bold uppercase font-bold">Gambar Bukti Tidak Ditemukan</p>
-                       )}
-                    </div>
-                    <p className="text-[7px] text-zinc-400 italic text-center font-bold uppercase font-bold uppercase font-bold uppercase font-bold">Klik gambar untuk melihat resolusi penuh (HD)</p>
-                 </div>
-
-                 <div className="pt-4 flex gap-2 font-bold uppercase font-bold uppercase font-bold">
-                    {selectedOrder.status === 'pending' && (
-                       <button 
-                         onClick={async()=>{
-                           await updateDoc(doc(db,'artifacts',appId,'public','data','orders',selectedOrder.id), {status:'confirmed'});
-                           setSelectedOrder(null);
-                           notify("Order Berhasil Dikonfirmasi.", "success");
-                         }} 
-                         className="flex-1 bg-green-600 text-white py-3 rounded-xl text-[10px] font-bold shadow-lg border-none cursor-pointer uppercase font-bold uppercase font-bold"
-                       >
-                         KONFIRMASI SEKARANG
-                       </button>
-                    )}
-                    <button onClick={()=>setSelectedOrder(null)} className="flex-1 bg-zinc-100 py-3 rounded-xl text-[10px] text-zinc-500 font-bold uppercase border-none cursor-pointer uppercase font-bold uppercase font-bold">Tutup</button>
-                 </div>
+              <div className="text-[10px] bg-zinc-50 p-4 rounded-xl">
+                <p className="text-zinc-400 mb-1">Alamat</p>
+                <p className="font-bold leading-relaxed">{selectedOrder.address}, {selectedOrder.city}</p>
               </div>
-           </div>
+              <div>
+                <p className="text-[8px] text-zinc-400 mb-2">Bukti Bayar</p>
+                <img src={selectedOrder.proofImage} className="w-full rounded-2xl shadow-md cursor-pointer" onClick={()=>window.open(selectedOrder.proofImage, '_blank')} />
+              </div>
+              <div className="flex gap-2">
+                {selectedOrder.status === 'Belum Dibayar' && (
+                  <button onClick={async()=>{ await updateDoc(doc(db,'artifacts',appId,'public','data','orders',selectedOrder.id), {status:'Terkonfirmasi'}); setSelectedOrder(null); notify("Order Terkonfirmasi!"); }} className="flex-1 bg-green-600 text-white py-4 rounded-xl text-[10px] font-bold">KONFIRMASI</button>
+                )}
+                <button onClick={()=>setSelectedOrder(null)} className="flex-1 bg-zinc-100 py-4 rounded-xl text-[10px] font-bold">TUTUP</button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
-      <aside className="md:w-56 space-y-3 font-bold uppercase font-bold uppercase">
-         <div className="bg-zinc-950 p-5 rounded-2xl text-white border border-white/5 relative overflow-hidden font-bold uppercase font-bold">
-           <Crown className="text-[#D4AF37] mb-1.5 relative z-10" size={24} />
-           <h2 className="text-base font-serif italic relative z-10 leading-none uppercase font-bold font-bold">Maison Admin</h2>
-         </div>
-         <div className="bg-white p-3 rounded-xl border border-zinc-100 flex flex-col gap-1.5 shadow-sm text-black font-bold uppercase font-bold">
-            {['inventory', 'orders', 'banking', 'settings'].map(t => (
-              <button key={t} onClick={()=>setTab(t)} className={`text-left px-5 py-2.5 rounded-lg text-[9px] tracking-widest border-none cursor-pointer transition-all ${tab === t ? 'bg-black text-[#D4AF37]' : 'text-zinc-400 bg-transparent hover:bg-zinc-50 font-bold uppercase font-bold font-bold'}`}>{t.toUpperCase()}</button>
-            ))}
-            <button onClick={onLogout} className="text-left px-5 py-2.5 rounded-lg text-[9px] text-red-500 border-none bg-transparent cursor-pointer hover:bg-red-50 tracking-widest mt-1 font-bold uppercase font-bold font-bold">LOGOUT</button>
-         </div>
+      <aside className="md:w-60 space-y-4">
+        <div className="bg-zinc-950 p-6 rounded-3xl text-white shadow-xl flex items-center gap-3">
+          <Crown className="text-[#D4AF37]" size={28}/> <h2 className="text-sm font-serif italic">Maison Admin</h2>
+        </div>
+        <div className="bg-white p-3 rounded-2xl border flex flex-col gap-1 shadow-sm">
+          {['inventory', 'orders', 'banking', 'settings'].map(t => (
+            <button key={t} onClick={()=>setTab(t)} className={`text-left px-5 py-3 rounded-xl text-[9px] tracking-widest ${tab === t ? 'bg-black text-[#D4AF37]' : 'text-zinc-400 bg-transparent'}`}>{t.toUpperCase()}</button>
+          ))}
+          <button onClick={onLogout} className="text-left px-5 py-3 rounded-xl text-[9px] text-red-500 bg-transparent font-bold">LOGOUT</button>
+        </div>
       </aside>
 
-      <div className="flex-1 bg-white p-4 md:p-10 rounded-2xl border border-zinc-100 min-h-[60vh] shadow-sm text-black font-bold uppercase font-bold uppercase">
-         {tab === 'inventory' && (
-           <div className="space-y-12 font-bold">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-12 border-b border-zinc-100 animate-in slide-in-from-top duration-500 font-bold uppercase">
-                 <div className="space-y-4 font-bold uppercase">
-                    <div className="aspect-[3/4] bg-zinc-50 rounded-xl border-2 border-dashed border-zinc-100 overflow-hidden relative flex flex-col items-center justify-center gap-2 font-bold uppercase">
-                       {formData.imageURLs[0] ? <img src={formData.imageURLs[0]} className="w-full h-full object-cover"/> : <Instagram size={32} className="text-zinc-200" />}
-                       <p className="text-[7px] text-zinc-300 uppercase uppercase font-bold">Preview Utama</p>
+      <div className="flex-1 bg-white p-6 rounded-3xl border min-h-[60vh] shadow-sm">
+        {tab === 'inventory' && (
+          <div className="space-y-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 border-b pb-10">
+              <div className="space-y-4">
+                <div className="aspect-[3/4] bg-zinc-50 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center overflow-hidden">
+                  {formData.imageURLs[0] ? <img src={formData.imageURLs[0]} className="w-full h-full object-cover"/> : <Instagram size={32} className="text-zinc-200" />}
+                </div>
+                <div className="space-y-2">
+                  <p className="text-[9px] font-bold tracking-widest text-zinc-400">Fetch Gambar Instagram</p>
+                  {instaUrls.map((url, idx) => (
+                    <div key={idx} className="flex gap-2 items-center">
+                      <input className="flex-1 bg-zinc-50 p-3 rounded-xl border-none text-[8px]" placeholder={`Link IG Foto ${idx+1}`} value={url} onChange={e=>{const nu=[...instaUrls];nu[idx]=e.target.value;setInstaUrls(nu);}}/>
+                      <button onClick={()=>handleFetchImage(instaUrls[idx], idx)} className="bg-black text-[#D4AF37] px-3 py-2 rounded-xl text-[7px] font-bold">FETCH</button>
                     </div>
-                    <div className="space-y-2 font-bold uppercase">
-                       <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest uppercase font-bold">Link Instagram (1-5)</p>
-                       {instaUrls.map((url, idx) => (
-                         <div key={idx} className="flex gap-1.5 items-center font-bold">
-                            <span className={`text-[8px] w-4 font-bold ${idx === 0 ? 'text-[#D4AF37]' : 'text-zinc-300'} font-bold`}>{idx+1}</span>
-                            <input className="flex-1 bg-zinc-50 p-2.5 rounded-lg border-none text-[8px] outline-none shadow-inner text-black font-bold font-bold uppercase font-bold uppercase" placeholder={`Link IG Foto ${idx + 1}...`} value={url} onChange={e => {
-                              const nu = [...instaUrls]; nu[idx] = e.target.value; setInstaUrls(nu);
-                            }}/>
-                            <button onClick={() => handleFetchImage(instaUrls[idx], idx)} className="bg-black text-[#D4AF37] px-2.5 py-1.5 rounded-lg text-[7px] border-none cursor-pointer active:scale-90 font-bold uppercase font-bold font-bold">FETCH</button>
-                            {formData.imageURLs[idx] && <button onClick={() => { const ni = [...formData.imageURLs]; ni[idx] = ''; setFormData({...formData, imageURLs: ni}); }} className="p-1.5 bg-red-50 text-red-400 rounded-lg outline-none border-none cursor-pointer font-bold uppercase font-bold"><X size={12}/></button>}
-                         </div>
-                       ))}
-                    </div>
-                 </div>
-                 
-                 <div className="space-y-3 font-bold uppercase font-bold font-bold">
-                    <div className="flex justify-between items-center font-bold uppercase font-bold">
-                       <h3 className="text-xs font-serif uppercase tracking-widest font-bold uppercase font-bold">Publikasi Katalog</h3>
-                       {editingId && <button onClick={resetForm} className="text-[8px] bg-zinc-100 px-3 py-1 rounded-full cursor-pointer border-none font-bold uppercase uppercase font-bold">Batal</button>}
-                    </div>
-                    <input className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] font-bold outline-none text-black uppercase uppercase font-bold uppercase font-bold uppercase" placeholder="Judul Katalog" value={formData.name} onChange={e=>setFormData({...formData, name:e.target.value})}/>
-                    <input type="number" className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] font-bold outline-none text-black uppercase font-bold uppercase font-bold uppercase" placeholder="Harga Default" value={formData.price} onChange={e=>setFormData({...formData, price:e.target.value})}/>
-                    
-                    <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-100 font-bold uppercase font-bold">
-                       <p className="text-[8px] mb-2 font-bold uppercase tracking-widest uppercase font-bold uppercase font-bold uppercase">Pricing per Ukuran</p>
-                       <div className="grid grid-cols-4 gap-1.5 font-bold">
-                          {SIZE_OPTIONS.map(sz => (
-                            <div key={sz} className="space-y-0.5 font-bold">
-                               <p className="text-[7px] text-zinc-400 font-bold uppercase uppercase uppercase font-bold uppercase font-bold">{sz}</p>
-                               <input type="number" className="w-full bg-white border border-zinc-200 p-1 text-[8px] rounded outline-none text-black font-bold uppercase uppercase font-bold uppercase" value={formData.sizePrices[sz] || ''} placeholder="IDR" onChange={(e)=>setFormData({...formData, sizePrices: {...formData.sizePrices, [sz]: e.target.value}})}/>
-                            </div>
-                          ))}
-                       </div>
-                    </div>
-
-                    <div className="space-y-1 font-bold uppercase font-bold">
-                      <p className="text-[8px] text-zinc-400 font-bold uppercase tracking-widest uppercase font-bold uppercase font-bold uppercase">Pilih Kategori</p>
-                      <select className="w-full bg-zinc-50 p-2.5 rounded-lg border-none text-[9px] outline-none cursor-pointer font-bold text-black uppercase uppercase uppercase font-bold uppercase" value={formData.category} onChange={e=>setFormData({...formData, category:e.target.value})}>
-                        {CATEGORIES.map(c=><option key={c} value={c}>{c.toUpperCase()}</option>)}
-                      </select>
-                    </div>
-
-                    <textarea className="w-full bg-zinc-50 p-3 rounded-lg border-none text-[10px] italic h-24 outline-none resize-none text-black font-bold uppercase font-bold uppercase font-bold uppercase" placeholder="Material Story..." value={formData.description} onChange={e=>setFormData({...formData, description:e.target.value})}/>
-                    <button onClick={publishProduct} className="w-full bg-black text-[#D4AF37] py-3.5 rounded-full text-[9px] font-bold tracking-widest border-none cursor-pointer active:scale-95 shadow-lg uppercase font-bold uppercase font-bold uppercase">
-                       PUBLISH / UPDATE MAISON
-                    </button>
-                 </div>
+                  ))}
+                </div>
               </div>
-
-              <div className="space-y-4 font-bold uppercase font-bold font-bold">
-                 <h3 className="text-xs font-serif tracking-widest border-b border-zinc-50 pb-2 uppercase text-black font-bold uppercase font-bold uppercase font-bold uppercase">DAFTAR KATALOG AKTIF</h3>
-                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 font-bold">
-                    {products.map(p => (
-                      <div key={p.id} className="bg-white border border-zinc-100 rounded-xl overflow-hidden group shadow-sm relative transition-all hover:shadow-md font-bold uppercase font-bold">
-                         <div className="aspect-[3/4.2] relative font-bold uppercase font-bold">
-                            <img src={p.imageURLs?.[0] || p.imageURL} className="w-full h-full object-cover" alt=""/>
-                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-4 font-bold uppercase font-bold">
-                               <button onClick={() => handleEdit(p)} className="p-2.5 bg-white rounded-full text-black cursor-pointer shadow-xl active:scale-90 border-none outline-none font-bold uppercase font-bold font-bold"><Edit size={16}/></button>
-                               <button onClick={() => handleDelete(p.id)} className="p-2.5 bg-red-500 rounded-full text-white cursor-pointer shadow-xl active:scale-90 border-none outline-none font-bold uppercase font-bold font-bold"><Trash2 size={16}/></button>
-                            </div>
-                         </div>
-                         <div className="p-2.5 text-black font-bold uppercase font-bold font-bold">
-                            <p className="text-[9px] font-bold truncate leading-none mb-1 uppercase font-bold uppercase font-bold uppercase">{p.name}</p>
-                            <p className="text-[9px] text-[#D4AF37] font-serif italic font-bold font-bold uppercase font-bold uppercase">{formatIDR(p.price)}</p>
-                         </div>
-                      </div>
-                    ))}
-                 </div>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center"><h3 className="text-xs font-serif italic">Publikasi Katalog</h3> {editingId && <button onClick={resetForm} className="text-[8px] bg-zinc-100 px-3 py-1 rounded-full">Batal Edit</button>}</div>
+                <input className="w-full bg-zinc-50 p-4 rounded-xl text-[10px] font-bold outline-none" placeholder="Judul Katalog" value={formData.name} onChange={e=>setFormData({...formData, name:e.target.value})}/>
+                <input type="number" className="w-full bg-zinc-50 p-4 rounded-xl text-[10px] font-bold outline-none" placeholder="Harga Dasar (IDR)" value={formData.price} onChange={e=>setFormData({...formData, price:e.target.value})}/>
+                <div className="p-4 bg-zinc-50 rounded-xl space-y-3">
+                   <p className="text-[8px] font-bold text-zinc-500">Harga Per Ukuran (Opsional)</p>
+                   <div className="grid grid-cols-2 gap-2">
+                      {SIZE_OPTIONS.map(sz => (
+                        <div key={sz} className="flex items-center gap-2">
+                           <span className="text-[8px] w-12">{sz}</span>
+                           <input type="number" className="flex-1 p-2 bg-white rounded-lg text-[8px]" placeholder="IDR" value={formData.sizePrices[sz] || ''} onChange={e=>setFormData({...formData, sizePrices: {...formData.sizePrices, [sz]:e.target.value}})}/>
+                        </div>
+                      ))}
+                   </div>
+                </div>
+                <textarea className="w-full bg-zinc-50 p-4 rounded-xl text-[10px] font-bold h-24 outline-none resize-none" placeholder="Deskripsi Material..." value={formData.description} onChange={e=>setFormData({...formData, description:e.target.value})}/>
+                <button onClick={publishProduct} disabled={saving} className="w-full bg-black text-[#D4AF37] py-5 rounded-2xl font-bold text-[10px] shadow-lg tracking-widest">{saving ? 'PUBLISHING...' : 'SIMPAN KE MAISON'}</button>
               </div>
-           </div>
-         )}
-         
-         {tab === 'orders' && (
-           <div className="space-y-4 animate-in fade-in font-bold uppercase font-bold font-bold">
-              <h3 className="text-xs font-serif tracking-widest uppercase text-black font-bold border-b border-zinc-50 pb-2 uppercase uppercase font-bold font-bold uppercase">LIST ORDER MASUK</h3>
-              <div className="space-y-3 font-bold uppercase font-bold">
-                {orders.map(o => (
-                  <div key={o.id} onClick={()=>setSelectedOrder(o)} className="p-3 bg-zinc-50 rounded-xl flex items-center justify-between border border-zinc-100 shadow-sm cursor-pointer hover:bg-zinc-100 transition-all active:scale-[0.98] font-bold uppercase font-bold">
-                     <div className="flex items-center gap-4 flex-1 font-bold uppercase font-bold">
-                        <div className="w-10 h-14 bg-white border border-zinc-100 rounded-lg overflow-hidden shadow-sm flex items-center justify-center flex-shrink-0 text-zinc-300 font-bold uppercase font-bold">
-                           {o.proofImage ? <img src={o.proofImage} className="w-full h-full object-cover"/> : <CreditCard size={16} />}
-                        </div>
-                        <div className="space-y-0.5 text-black font-bold font-bold uppercase font-bold font-bold">
-                           <span className={`text-[6px] font-bold px-1.5 py-0.5 rounded-full uppercase border ${o.status === 'pending' ? 'bg-yellow-50 text-yellow-600 border-yellow-100' : 'bg-green-50 text-green-600 border-green-100'} font-bold uppercase font-bold font-bold font-bold`}>{String(o.status)}</span>
-                           <h4 className="text-[10px] font-serif italic font-bold uppercase font-bold uppercase font-bold font-bold">{String(o.shipping?.name)}</h4>
-                           <p className="text-[9px] text-[#D4AF37] font-bold font-bold uppercase font-bold font-bold">{formatIDR(o.amount)}</p>
-                           <p className="text-[7px] text-zinc-400 font-bold uppercase uppercase font-bold uppercase font-bold uppercase font-bold">Klik Untuk Informasi Pembeli</p>
-                        </div>
-                     </div>
-                     <div className="flex items-center gap-4 font-bold uppercase font-bold">
-                        <div className="text-right hidden sm:block text-black font-bold font-bold uppercase font-bold font-bold">
-                           <p className="text-[8px] text-zinc-400 truncate max-w-[100px] uppercase font-bold uppercase font-bold uppercase font-bold uppercase">{o.productName}</p>
-                           <p className="text-[7px] font-bold uppercase uppercase font-bold uppercase font-bold uppercase font-bold">SIZE: {o.productSize}</p>
-                        </div>
-                        <button onClick={(e)=>{ e.stopPropagation(); handleDeleteOrder(o.id); }} className="p-2 text-zinc-300 hover:text-red-500 transition-all border-none bg-transparent cursor-pointer active:scale-90 font-bold uppercase font-bold"><Trash2 size={16}/></button>
-                     </div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {products.map(p => (
+                <div key={p.id} className="border rounded-xl overflow-hidden relative group">
+                  <img src={p.imageURLs?.[0] || p.imageURL} className="aspect-[3/4] w-full object-cover" />
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-4">
+                    <button onClick={()=>{setEditingId(p.id); setFormData({...p, imageURLs: p.imageURLs || [p.imageURL, '', '', '', '']}); setTab('inventory');}} className="p-2 bg-white rounded-full"><Edit size={16}/></button>
+                    <button onClick={async()=>{if(confirm('Hapus?')) await deleteDoc(doc(db,'artifacts',appId,'public','data','products',p.id));}} className="p-2 bg-red-500 text-white rounded-full"><Trash2 size={16}/></button>
                   </div>
-                ))}
-                {orders.length === 0 && <p className="text-center py-20 text-zinc-300 text-[10px] uppercase font-bold tracking-widest animate-pulse uppercase font-bold uppercase font-bold uppercase font-bold">Belum ada pesanan masuk</p>}
-              </div>
-           </div>
-         )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-         {tab === 'banking' && (
-           <div className="space-y-6 animate-in fade-in font-bold uppercase font-bold font-bold">
-              <h3 className="text-xs font-serif uppercase tracking-widest text-black font-bold uppercase font-bold uppercase font-bold uppercase">SETUP PAYMENT SYSTEM</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-bold uppercase font-bold font-bold">
-                 <div className="space-y-3 bg-zinc-50 p-5 rounded-2xl border border-zinc-100 shadow-inner font-bold uppercase font-bold font-bold">
-                    <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest uppercase font-bold uppercase font-bold uppercase">Input Rekening</p>
-                    <select className="w-full p-2.5 text-[9px] rounded-lg border-zinc-200 outline-none bg-white font-bold text-black uppercase uppercase font-bold uppercase font-bold uppercase" value={bankForm.bankName} onChange={e=>setBankForm({...bankForm, bankName: e.target.value})}>
-                       {Object.keys(BANK_LOGOS).map(name => <option key={name} value={name}>{name}</option>)}
-                    </select>
-                    <input className="w-full p-2.5 text-[9px] rounded-lg border-zinc-100 outline-none bg-white font-bold text-black uppercase uppercase font-bold uppercase font-bold uppercase" placeholder="Nomor Rekening / ID" value={bankForm.accountNumber} onChange={e=>setBankForm({...bankForm, accountNumber: e.target.value})}/>
-                    <input className="w-full p-2.5 text-[9px] rounded-lg border-zinc-100 outline-none bg-white font-bold text-black uppercase uppercase font-bold uppercase font-bold uppercase" placeholder="Nama Pemilik" value={bankForm.accountHolder} onChange={e=>setBankForm({...bankForm, accountHolder: e.target.value})}/>
-                    <button onClick={addBank} className="w-full bg-zinc-900 text-[#D4AF37] py-2.5 rounded-lg text-[9px] font-bold shadow-lg border-none active:scale-95 transition-all cursor-pointer uppercase font-bold font-bold uppercase font-bold uppercase">Save Banking</button>
-                 </div>
-                 <div className="grid grid-cols-2 gap-3 max-h-[350px] overflow-y-auto no-scrollbar pr-1 font-bold uppercase font-bold font-bold">
-                    {rekening.map(rek => (
-                      <div key={rek.id} className="p-3 bg-white border border-zinc-100 rounded-xl relative group flex flex-col items-center justify-center text-center shadow-sm hover:shadow-md transition-all font-bold uppercase font-bold">
-                         <img src={BANK_LOGOS[rek.bankName]} className="h-4 object-contain mb-1.5" alt=""/>
-                         <p className="text-[8px] font-bold truncate w-full leading-none text-black uppercase uppercase font-bold uppercase font-bold uppercase font-bold uppercase">{rek.accountNumber}</p>
-                         <p className="text-[6px] text-zinc-400 italic uppercase font-bold uppercase font-bold uppercase font-bold uppercase">A.N {rek.accountHolder}</p>
-                         <button onClick={async()=>await deleteDoc(doc(db,'artifacts',appId,'public','data','rekening',rek.id))} className="absolute top-1 right-1 p-1 text-red-300 opacity-0 group-hover:opacity-100 transition-all cursor-pointer border-none bg-transparent outline-none shadow-none font-bold uppercase font-bold"><Trash2 size={10}/></button>
-                      </div>
-                    ))}
-                 </div>
+        {tab === 'orders' && (
+          <div className="space-y-4">
+            <h3 className="text-xs font-serif italic border-b pb-2">LIST PESANAN</h3>
+            {orders.map(o => (
+              <div key={o.id} onClick={()=>setSelectedOrder(o)} className="p-4 bg-zinc-50 rounded-2xl flex justify-between items-center cursor-pointer hover:bg-zinc-100">
+                <div className="flex items-center gap-4">
+                   <img src={o.proofImage} className="w-10 h-14 rounded-lg object-cover" />
+                   <div>
+                     <span className={`text-[7px] px-2 py-0.5 rounded-full ${o.status === 'Belum Dibayar' ? 'bg-yellow-50 text-yellow-600' : 'bg-green-50 text-green-600'}`}>{o.status}</span>
+                     <p className="text-[10px] font-bold">{o.name}</p>
+                     <p className="text-[9px] text-[#D4AF37]">{formatIDR(o.total)}</p>
+                   </div>
+                </div>
+                <button onClick={async(e)=>{e.stopPropagation(); if(confirm('Hapus?')) await deleteDoc(doc(db,'artifacts',appId,'public','data','orders',o.id));}} className="text-zinc-300 hover:text-red-500"><Trash2 size={16}/></button>
               </div>
-           </div>
-         )}
+            ))}
+          </div>
+        )}
 
-         {tab === 'settings' && (
-           <div className="max-w-sm space-y-4 animate-in fade-in text-black font-bold font-bold uppercase font-bold">
-              <h3 className="text-xs font-serif tracking-widest uppercase font-bold uppercase font-bold uppercase font-bold uppercase">Akses Admin</h3>
-              <div className="space-y-4 p-6 bg-zinc-50 rounded-2xl border border-zinc-100 shadow-inner font-bold uppercase font-bold font-bold">
-                 <div className="space-y-1.5 font-bold uppercase font-bold font-bold">
-                    <label className="text-[9px] text-zinc-400 font-bold uppercase tracking-widest font-bold uppercase font-bold uppercase font-bold uppercase">Username Baru</label>
-                    <input className="w-full p-3 text-[10px] rounded-xl border-none shadow-sm outline-none font-bold text-black uppercase font-bold uppercase font-bold uppercase" value={newCreds.username} onChange={e=>setNewCreds({...newCreds, username: e.target.value})}/>
-                 </div>
-                 <div className="space-y-1.5 font-bold uppercase font-bold font-bold">
-                    <label className="text-[9px] text-zinc-400 font-bold uppercase tracking-widest font-bold uppercase font-bold uppercase font-bold uppercase">Password Baru</label>
-                    <input className="w-full p-3 text-[10px] rounded-xl border-none shadow-sm outline-none font-bold text-black uppercase font-bold uppercase font-bold uppercase" type="password" value={newCreds.password} onChange={e=>setNewCreds({...newCreds, password: e.target.value})}/>
-                 </div>
-                 <button onClick={updateAdminAuth} className="w-full bg-zinc-900 text-[#D4AF37] py-3 rounded-xl text-[9px] font-bold shadow-xl transition-all active:scale-95 border-none cursor-pointer uppercase font-bold font-bold uppercase font-bold uppercase">
-                    Update Security Portal
-                 </button>
+        {tab === 'banking' && (
+          <div className="space-y-8">
+            <div className="bg-zinc-50 p-6 rounded-3xl space-y-4">
+              <h3 className="text-xs font-serif italic">TAMBAH REKENING / E-WALLET</h3>
+              <select className="w-full p-4 bg-white rounded-xl text-[10px]" value={bankForm.bankName} onChange={e=>setBankForm({...bankForm, bankName:e.target.value})}>
+                {Object.keys(BANK_LOGOS).map(n => <option key={n} value={n}>{n}</option>)}
+              </select>
+              <input className="w-full p-4 bg-white rounded-xl text-[10px]" placeholder="Nomor Rekening / Nomor HP" value={bankForm.accountNumber} onChange={e=>setBankForm({...bankForm, accountNumber:e.target.value})}/>
+              <input className="w-full p-4 bg-white rounded-xl text-[10px]" placeholder="Nama Pemilik Akun" value={bankForm.accountHolder} onChange={e=>setBankForm({...bankForm, accountHolder:e.target.value})}/>
+              <button onClick={addBank} className="w-full bg-black text-[#D4AF37] py-4 rounded-xl font-bold text-[9px]">SIMPAN METODE BAYAR</button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {rekening.map(rek => (
+                <div key={rek.id} className="p-4 border rounded-2xl flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <img src={BANK_LOGOS[rek.bankName]} className="h-4 w-10 object-contain"/>
+                    <div className="text-[9px]">
+                      <p className="font-bold">{rek.accountNumber}</p>
+                      <p className="text-zinc-400">A.N {rek.accountHolder}</p>
+                    </div>
+                  </div>
+                  <button onClick={async()=>await deleteDoc(doc(db,'artifacts',appId,'public','data','rekening',rek.id))} className="text-red-500"><Trash2 size={14}/></button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {tab === 'settings' && (
+          <div className="max-w-md space-y-6">
+            <h3 className="text-xs font-serif italic border-b pb-2">PENGATURAN AKSES ADMIN</h3>
+            <div className="bg-zinc-50 p-8 rounded-3xl space-y-6">
+              <div className="space-y-1">
+                <label className="text-[9px] text-zinc-400 font-bold uppercase">Admin Username Baru</label>
+                <input className="w-full p-4 rounded-xl border-none text-[10px] font-bold" value={newCreds.username} onChange={e=>setNewCreds({...newCreds, username:e.target.value})}/>
               </div>
-           </div>
-         )}
+              <div className="space-y-1">
+                <label className="text-[9px] text-zinc-400 font-bold uppercase">Admin Password Baru</label>
+                <input className="w-full p-4 rounded-xl border-none text-[10px] font-bold" type="password" value={newCreds.password} onChange={e=>setNewCreds({...newCreds, password:e.target.value})}/>
+              </div>
+              <button onClick={updateAdminAuth} className="w-full bg-black text-[#D4AF37] py-4 rounded-xl font-bold text-[9px] shadow-lg">UPDATE SECURITY AKSES</button>
+              <p className="text-[8px] text-zinc-400 italic text-center">Data ini digunakan untuk login di portal Admin Maison.</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function AdminLogin({ creds, onLoginSuccess, onBack, notify }) {
+  const [u, setU] = useState(''); const [p, setP] = useState('');
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (u.trim().toLowerCase() === (creds?.username || 'admin').toLowerCase() && p === (creds?.password || 'admin123')) {
+      onLoginSuccess(); notify("Akses Berhasil.", "success");
+    } else { notify("Akses Ditolak.", "error"); }
+  };
+  return (
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 bg-black/95 backdrop-blur-xl animate-in zoom-in font-bold uppercase">
+      <div className="bg-white w-full max-w-sm rounded-[3rem] p-12 relative shadow-2xl border border-[#D4AF37]/20">
+        <button onClick={onBack} className="absolute top-8 right-8 text-zinc-300 bg-transparent border-none cursor-pointer"><X size={24}/></button>
+        <div className="text-center mb-10 space-y-4">
+          <div className="w-16 h-16 bg-zinc-50 rounded-2xl flex items-center justify-center mx-auto text-[#D4AF37] shadow-inner"><Lock size={32}/></div>
+          <h3 className="text-xl font-serif font-bold uppercase tracking-widest">Maison Portal</h3>
+        </div>
+        <form onSubmit={handleLogin} className="space-y-4">
+          <input placeholder="Admin ID" value={u} onChange={e=>setU(e.target.value)} className="w-full bg-zinc-50 p-4 rounded-xl border-none text-[11px] font-bold"/>
+          <input type="password" placeholder="Pass-Key" value={p} onChange={e=>setP(e.target.value)} className="w-full bg-zinc-50 p-4 rounded-xl border-none text-[11px] font-bold"/>
+          <button type="submit" className="w-full bg-black text-[#D4AF37] py-4 rounded-full font-bold uppercase text-[10px] tracking-widest shadow-2xl">AUTHORIZE ACCESS</button>
+        </form>
       </div>
     </div>
   );
@@ -1211,81 +875,9 @@ function AdminDashboard({ products, orders, rekening, appId, onLogout, notify, c
 function NotificationItem({ notification }) {
   const { message, type } = notification;
   return (
-    <div className={`p-3.5 rounded-xl shadow-xl border animate-in slide-in-from-top-5 duration-500 backdrop-blur-md flex items-center gap-3 pointer-events-auto ${
-      type === 'success' ? 'bg-green-50/95 border-green-100 text-green-950 font-bold uppercase' : 
-      type === 'error' ? 'bg-red-50/95 border-red-100 text-red-950 font-bold uppercase' : 'bg-white/95 border-zinc-100 text-black shadow-2xl font-bold uppercase'
-    }`}>
-      <div className={`p-2 rounded-lg shadow-sm ${type === 'success' ? 'bg-green-400 text-white' : 'bg-zinc-900 text-[#D4AF37]'}`}>
-        {type === 'success' ? <SuccessIcon size={14} /> : <Bell size={14} />}
-      </div>
-      <p className="text-[10px] font-bold uppercase tracking-widest text-black uppercase font-bold">{String(message)}</p>
-    </div>
-  );
-}
-
-function Footer({ setView }) {
-  return (
-    <footer className="bg-[#030303] text-white pt-12 md:pt-24 pb-10 px-6 border-t-[3px] border-[#D4AF37] relative font-bold uppercase font-bold uppercase font-bold uppercase">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-10 font-bold uppercase">
-        <div className="space-y-4 text-center md:text-left font-bold uppercase">
-           <h2 className="text-2xl md:text-5xl font-serif font-bold italic tracking-widest text-[#D4AF37] leading-none uppercase uppercase uppercase font-bold font-bold uppercase">DEVI OFFICIAL</h2>
-           <p className="text-zinc-500 text-[10px] leading-relaxed italic border-l border-zinc-900 pl-4 uppercase opacity-60 font-bold uppercase font-bold uppercase font-bold uppercase">Elevating modest fashion to a global standard of absolute luxury.</p>
-        </div>
-        <div className="space-y-4 hidden md:block font-bold uppercase">
-           <h4 className="text-[10px] font-bold uppercase tracking-widest text-zinc-100 border-b border-zinc-900 pb-1.5 italic text-zinc-100 uppercase uppercase uppercase font-bold font-bold uppercase">Maison Bank</h4>
-           <div className="flex gap-4 opacity-20 grayscale hover:opacity-100 transition-all duration-[2s] cursor-pointer font-bold uppercase">
-              {Object.values(BANK_LOGOS).slice(0,3).map((l, i) => <img key={i} src={l} className="h-4 object-contain shadow-none" alt="" />)}
-           </div>
-        </div>
-        <div className="space-y-4 text-center md:text-left font-bold uppercase">
-           <h4 className="text-[10px] font-bold uppercase tracking-widest text-zinc-100 border-b border-zinc-900 pb-1.5 italic text-zinc-100 uppercase uppercase uppercase font-bold font-bold uppercase">Concierge</h4>
-           <div className="text-[9px] text-zinc-500 tracking-widest space-y-1 uppercase italic leading-none font-bold uppercase font-bold uppercase font-bold uppercase">
-              <p>Jakarta, Indonesia</p>
-              <p>+62 812 9988 7766</p>
-           </div>
-        </div>
-      </div>
-      <div className="max-w-7xl mx-auto mt-12 pt-6 border-t border-zinc-900 flex flex-col md:flex-row justify-between items-center gap-6 text-zinc-800 font-bold uppercase">
-         <div className="text-[8px] uppercase tracking-[0.4em] italic font-bold opacity-50 font-bold uppercase font-bold uppercase font-bold uppercase">© 2024 DEVI_OFFICIAL LUXURY GROUP</div>
-         <button onClick={() => setView('login')} className="flex items-center gap-1.5 text-zinc-700 text-[9px] tracking-widest hover:text-[#D4AF37] transition-all border border-zinc-900 px-6 py-2 rounded-full bg-transparent cursor-pointer active:scale-95 shadow-inner outline-none font-bold uppercase font-bold uppercase font-bold uppercase">
-            <ShieldAlert size={16} /> <span>ADMIN ACCESS</span>
-         </button>
-      </div>
-    </footer>
-  );
-}
-
-function AdminLogin({ creds, onLoginSuccess, onBack, notify }) {
-  const [u, setU] = useState(''); const [p, setP] = useState('');
-
-  const handleLogin = (e) => {
-    e.preventDefault();
-    setTimeout(() => {
-      if (u.trim().toLowerCase() === (creds?.username || 'admin').toLowerCase() && p === (creds?.password || 'admin123')) {
-        onLoginSuccess();
-        notify("Access Granted.", "success");
-      } else { notify("Access Denied.", "error"); }
-    }, 500);
-  };
-
-  return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 bg-black/95 backdrop-blur-xl animate-in zoom-in duration-500 font-bold uppercase text-black font-bold font-bold uppercase font-bold uppercase">
-      <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-10 md:p-16 relative shadow-[0_50px_100px_rgba(0,0,0,0.5)] border border-[#D4AF37]/20 overflow-hidden font-bold uppercase">
-        <button onClick={onBack} className="absolute top-8 right-8 text-zinc-300 hover:text-black transition-all border-none bg-transparent cursor-pointer outline-none font-bold uppercase"><X size={24} /></button>
-        <div className="text-center mb-12 space-y-4 font-bold uppercase">
-          <div className="w-16 h-16 bg-zinc-50 rounded-2xl flex items-center justify-center mx-auto text-[#D4AF37] shadow-inner border border-[#D4AF37]/10 animate-pulse font-bold uppercase">
-            <Lock size={32} />
-          </div>
-          <h3 className="text-xl font-serif font-bold uppercase leading-none tracking-tighter text-black uppercase font-bold uppercase font-bold uppercase font-bold uppercase">Security Portal</h3>
-        </div>
-        <form onSubmit={handleLogin} className="space-y-5 font-bold uppercase">
-          <input placeholder="Admin ID" value={u} onChange={e=>setU(e.target.value)} className="w-full bg-zinc-50 p-4 rounded-xl border-none text-[11px] font-bold uppercase shadow-inner text-black font-bold uppercase font-bold uppercase font-bold uppercase"/>
-          <input type="password" placeholder="Pass-Key" value={p} onChange={e=>setP(e.target.value)} className="w-full bg-zinc-50 p-4 rounded-xl border-none text-[11px] font-bold outline-none shadow-inner text-black font-bold uppercase font-bold uppercase font-bold uppercase"/>
-          <button type="submit" className="w-full bg-black text-[#D4AF37] py-4 rounded-full font-bold uppercase text-[10px] tracking-widest shadow-2xl active:scale-95 transition-all outline-none border-none cursor-pointer uppercase font-bold font-bold uppercase font-bold uppercase">
-             Authorize Access
-          </button>
-        </form>
-      </div>
+    <div className={`p-4 rounded-2xl shadow-2xl border animate-in slide-in-from-top-5 backdrop-blur-md flex items-center gap-3 font-bold uppercase pointer-events-auto ${type === 'success' ? 'bg-green-50/95 border-green-100 text-green-950' : type === 'error' ? 'bg-red-50/95 border-red-100 text-red-950' : 'bg-white/95 border-zinc-100 text-black'}`}>
+      <div className={`p-2 rounded-lg shadow-sm ${type === 'success' ? 'bg-green-400 text-white' : 'bg-zinc-900 text-[#D4AF37]'}`}>{type === 'success' ? <CheckIcon size={14}/> : <Bell size={14}/>}</div>
+      <p className="text-[10px] font-black tracking-widest uppercase">{message}</p>
     </div>
   );
 }
@@ -1293,42 +885,73 @@ function AdminLogin({ creds, onLoginSuccess, onBack, notify }) {
 function CartView({ items, onRemove, onCheckout }) {
   const total = items.reduce((s, i) => s + Number(i.chosenPrice || i.price), 0);
   return (
-    <div className="max-w-2xl mx-auto py-12 md:py-32 px-4 font-bold uppercase text-black font-bold font-bold uppercase font-bold uppercase">
-       <div className="text-center mb-14 space-y-2 animate-in slide-in-from-bottom duration-500 font-bold uppercase">
-          <h2 className="text-3xl md:text-5xl font-serif font-bold italic tracking-tighter uppercase text-zinc-950 leading-none text-black uppercase font-bold uppercase font-bold font-bold uppercase font-bold uppercase">Shopping <span className="text-[#D4AF37]">Bag</span></h2>
-          <div className="w-12 h-[2px] bg-[#D4AF37] mx-auto opacity-40 animate-pulse shadow-[0_0_10px_rgba(212,175,55,1)] font-bold uppercase"></div>
+    <div className="max-w-3xl mx-auto py-16 px-4 font-bold uppercase">
+       <div className="text-center mb-12 space-y-2 animate-in slide-in-from-bottom font-bold uppercase">
+          <h2 className="text-4xl font-serif italic uppercase">Maison <span className="text-[#D4AF37]">Bag</span></h2>
+          <div className="w-12 h-[2px] bg-[#D4AF37] mx-auto opacity-40"></div>
        </div>
        {items.length === 0 ? (
-         <div className="text-center py-28 border-2 border-dashed border-zinc-100 rounded-3xl bg-white opacity-60 flex flex-col items-center font-bold uppercase">
-            <BagIcon size={64} className="text-zinc-100 mb-6 font-bold uppercase" />
-            <p className="text-zinc-300 font-bold uppercase text-[10px] tracking-widest text-zinc-400 font-bold uppercase font-bold uppercase font-bold uppercase">Tas Belanja Kosong</p>
+         <div className="text-center py-32 border-2 border-dashed border-zinc-100 rounded-[2.5rem] bg-zinc-50/30 flex flex-col items-center">
+            <ShoppingBag size={64} className="text-zinc-100 mb-6" />
+            <p className="text-zinc-300 font-bold text-[10px] tracking-widest uppercase">Tas Belanja Kosong</p>
          </div>
        ) : (
          <div className="space-y-6 font-bold uppercase">
             {items.map((item, idx) => (
-              <div key={idx} className="p-4 bg-white border border-zinc-100 rounded-2xl flex items-center justify-between gap-4 shadow-sm relative overflow-hidden transition-all hover:shadow-lg font-bold uppercase">
-                 <div className="flex items-center gap-5 flex-1 text-black font-bold font-bold uppercase font-bold">
-                    <img src={item.imageURLs?.[0] || item.imageURL} className="w-16 h-20 rounded-xl object-cover border border-zinc-50 shadow-md font-bold uppercase"/>
-                    <div className="space-y-1.5 flex-1 text-black uppercase font-bold font-bold uppercase font-bold uppercase">
-                       <h4 className="text-[11px] font-serif font-bold uppercase tracking-tight text-zinc-800 truncate max-w-[150px] font-bold uppercase uppercase uppercase font-bold font-bold uppercase">{String(item.name)}</h4>
-                       <span className="text-[7px] font-bold px-3 py-1 bg-[#D4AF37]/5 text-[#D4AF37] rounded-full border border-[#D4AF37]/10 uppercase tracking-widest font-bold uppercase font-bold uppercase font-bold uppercase">Size {String(item.chosenSize || "Default")}</span>
-                       <p className="text-xs font-serif font-bold italic text-zinc-900 leading-none font-bold uppercase uppercase uppercase font-bold font-bold uppercase">{formatIDR(item.chosenPrice || item.price)}</p>
+              <div key={idx} className="p-4 bg-white border border-zinc-100 rounded-3xl flex items-center justify-between gap-6 shadow-sm">
+                 <div className="flex items-center gap-5 flex-1 font-bold">
+                    <img src={item.imageURLs?.[0] || item.imageURL} className="w-20 h-24 rounded-2xl object-cover shadow-md border border-zinc-50"/>
+                    <div className="space-y-1.5 flex-1 font-bold">
+                       <h4 className="text-[11px] font-serif font-bold uppercase tracking-tight text-zinc-800">{String(item.name)}</h4>
+                       <div className="flex gap-2 font-bold"><span className="text-[7px] font-black px-2 py-0.5 bg-zinc-100 rounded-full border border-zinc-200">Umur {String(item.chosenAge)}</span><span className="text-[7px] font-black px-2 py-0.5 bg-zinc-100 rounded-full border border-zinc-200">Size {String(item.chosenSize)}</span></div>
+                       <p className="text-xs font-bold text-black italic">{formatIDR(item.chosenPrice || item.price)}</p>
                     </div>
                  </div>
-                 <button onClick={()=>onRemove(idx)} className="p-3 text-red-100 hover:text-red-500 transition-all border-none bg-zinc-50 rounded-xl cursor-pointer active:scale-90 outline-none font-bold uppercase"><Trash2 size={18}/></button>
+                 <button onClick={()=>onRemove(idx)} className="p-3 text-zinc-300 hover:text-red-500 bg-zinc-50 rounded-2xl border-none cursor-pointer"><Trash2 size={18}/></button>
               </div>
             ))}
-            <div className="pt-10 border-t border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-10 text-black font-bold uppercase font-bold font-bold uppercase font-bold uppercase">
-               <div className="text-center md:text-left space-y-0.5 font-bold uppercase">
-                  <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest font-bold uppercase uppercase font-bold font-bold uppercase font-bold uppercase">Total Invoiced</p>
-                  <p className="text-4xl md:text-6xl font-serif font-bold italic tracking-tighter text-zinc-950 leading-none text-black font-bold uppercase uppercase font-bold font-bold uppercase font-bold uppercase">{formatIDR(total)}</p>
+            <div className="pt-10 border-t border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-10">
+               <div className="text-center md:text-left space-y-0.5">
+                  <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Grand Total</p>
+                  <p className="text-4xl md:text-6xl font-serif font-black italic tracking-tighter text-zinc-950">{formatIDR(total)}</p>
                </div>
-               <button onClick={onCheckout} className="w-full md:w-auto bg-black text-[#D4AF37] px-14 py-5 rounded-full font-bold uppercase text-[11px] tracking-widest shadow-[0_20px_40px_rgba(0,0,0,0.2)] border-none cursor-pointer hover:bg-zinc-800 transition-all active:scale-95 flex items-center justify-center gap-4 outline-none font-bold uppercase uppercase font-bold font-bold uppercase font-bold uppercase">
-                 Checkout Sekarang <ArrowRight size={20} />
-               </button>
+               <button onClick={onCheckout} className="w-full md:w-auto bg-black text-[#D4AF37] px-16 py-6 rounded-full font-bold uppercase text-[11px] tracking-widest shadow-2xl border-none cursor-pointer flex items-center justify-center gap-4">Checkout Sekarang <ArrowRight size={20} /></button>
             </div>
          </div>
        )}
     </div>
+  );
+}
+
+function Footer({ setView }) {
+  return (
+    <footer className="bg-[#030303] text-white pt-20 pb-10 px-6 border-t-[4px] border-[#D4AF37] font-bold uppercase">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 font-bold uppercase">
+        <div className="space-y-6 text-center md:text-left">
+           <h2 className="text-2xl md:text-4xl font-serif font-bold italic tracking-widest text-[#D4AF37] leading-none">DEVI OFFICIAL</h2>
+           <p className="text-zinc-500 text-[10px] leading-relaxed italic opacity-70">Elevating modest fashion to a global standard of absolute luxury. Kemewahan abadi berawal dari tanggung jawab sosial dalam setiap produksi.</p>
+        </div>
+        <div className="space-y-6 hidden md:block">
+           <h4 className="text-[10px] font-bold uppercase tracking-[0.4em] text-zinc-100 border-b border-white/5 pb-2">Concierge</h4>
+           <div className="text-[9px] text-zinc-500 tracking-widest space-y-2 italic leading-none">
+              <p className="flex items-center gap-2"><MapPin size={14} className="text-[#D4AF37]"/> Jakarta, Indonesia</p>
+              <p className="flex items-center gap-2"><Phone size={14} className="text-[#D4AF37]"/> +62 852-2444-4164</p>
+              <p className="flex items-center gap-2"><Mail size={14} className="text-[#D4AF37]"/> boutique@devi-official.com</p>
+           </div>
+        </div>
+        <div className="space-y-6 text-center md:text-left">
+           <h4 className="text-[10px] font-bold uppercase tracking-[0.4em] text-zinc-100 border-b border-white/5 pb-2">Maison Bank</h4>
+           <div className="flex flex-wrap gap-4 opacity-30 grayscale hover:opacity-100 transition-all cursor-pointer">
+              {Object.values(BANK_LOGOS).slice(0, 4).map((l, i) => <img key={i} src={l} className="h-4 object-contain" alt="" />)}
+           </div>
+        </div>
+      </div>
+      <div className="max-w-7xl mx-auto mt-16 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
+         <div className="text-[8px] uppercase tracking-[0.4em] italic opacity-30">© 2024 DEVI_OFFICIAL LUXURY GROUP INC. ALL RIGHTS RESERVED.</div>
+         <button onClick={() => setView('login')} className="flex items-center gap-2 text-zinc-700 text-[9px] tracking-widest hover:text-[#D4AF37] transition-all border border-white/5 px-6 py-2 rounded-full bg-zinc-950 cursor-pointer shadow-inner">
+            <ShieldAlert size={16} /> <span>ADMIN ACCESS</span>
+         </button>
+      </div>
+    </footer>
   );
 }
