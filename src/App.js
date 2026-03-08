@@ -131,7 +131,7 @@ import {
 /**
  * ==========================================================================================
  * --- DEVI OFFICIAL LUXURY BOUTIQUE ECOSYSTEM ---
- * VERSION: 34.0.0 (5 GAL SLOTS, NO CATEGORIES, FAST UPLOAD)
+ * VERSION: 35.0.0 (CUSTOM BRI LOGO & PERFORMANCE OPTIMIZATION)
  * ==========================================================================================
  */
 
@@ -161,7 +161,8 @@ const DEFAULT_SHIPPING = [
 const BANK_LOGOS = {
   "Bank Central Asia (BCA)": "https://upload.wikimedia.org/wikipedia/commons/5/5c/Bank_Central_Asia.svg",
   "Bank Mandiri": "https://upload.wikimedia.org/wikipedia/commons/a/ad/Bank_Mandiri_logo_2016.svg",
-  "Bank Rakyat Indonesia (BRI)": "https://upload.wikimedia.org/wikipedia/commons/2/2e/BRI_Logo.svg",
+  // Update: Menggunakan file lokal bri.png dari folder public
+  "Bank Rakyat Indonesia (BRI)": "/bri.png",
   "Bank Negara Indonesia (BNI)": "https://upload.wikimedia.org/wikipedia/id/5/55/BNI_logo.svg",
   "Bank CIMB Niaga": "https://upload.wikimedia.org/wikipedia/commons/5/5e/CIMB_Niaga_logo.svg",
   "Bank Danamon": "https://upload.wikimedia.org/wikipedia/commons/e/ec/Danamon_logo.svg",
@@ -393,7 +394,7 @@ function ProductGrid({ products, onView }) {
           <div className="aspect-[3/4] w-full rounded-2xl overflow-hidden bg-zinc-50 mb-3 shadow-sm group-hover:shadow-lg transition-all">
             <img src={p.imageURLs?.[0] || p.imageURL} className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700" alt=""/>
           </div>
-          <div className="text-center space-y-1 w-full">
+          <div className="text-center space-y-1 w-full font-bold">
             <h3 className="text-[10px] font-serif tracking-wide text-zinc-500 truncate font-bold uppercase">{String(p.name)}</h3>
             <p className="text-sm font-bold text-black font-bold">{formatIDR(p.price)}</p>
           </div>
@@ -483,7 +484,7 @@ function ProductDetailView({ product, onBack, onBuy, onAddToCart, notify }) {
 
           <div className="p-6 bg-zinc-50 rounded-2xl border border-zinc-100 space-y-4 font-bold uppercase">
             <h4 className="text-xs font-bold border-b border-zinc-200 pb-2 font-bold uppercase">MATERIAL :</h4>
-            <p className="text-xs text-zinc-600 leading-relaxed font-serif italic whitespace-pre-wrap font-bold">{product.description || "Baby doll premium mix Januari. Teksturnya lembut adem, ringan dan jatuh, nyaman di pakai sehari-hari."}</p>
+            <p className="text-xs text-zinc-600 leading-relaxed font-serif italic whitespace-pre-wrap font-bold uppercase">{product.description || "Baby doll premium mix Januari. Teksturnya lembut adem, ringan dan jatuh, nyaman di pakai sehari-hari."}</p>
           </div>
         </div>
       </div>
@@ -507,7 +508,6 @@ function CheckoutWizard({ product, rekening, shippingMethods, onComplete, onBack
     if (file) {
       if (file.size > 8 * 1024 * 1024) return notify("Maksimal file 8MB!", "error");
       
-      // Gunakan helper kompresi untuk upload kilat (Fix Loading Lama)
       const compressed = await compressImage(file, 1024);
       setLocalProofBase64(compressed);
       notify("Bukti TF Siap!", "success");
@@ -560,7 +560,7 @@ function CheckoutWizard({ product, rekening, shippingMethods, onComplete, onBack
               {shippingMethods.map(m => (
                 <div key={m.id} onClick={()=>setSelectedCourier(m)} className={`p-5 rounded-2xl border-2 cursor-pointer flex justify-between items-center transition-all font-bold ${selectedCourier?.id === m.id ? 'border-black bg-zinc-50 shadow-sm' : 'border-zinc-100 hover:border-zinc-300'}`}>
                   <div className="flex items-center gap-4 font-bold uppercase">
-                    <div className="w-16 h-12 bg-white p-1 rounded-lg border border-zinc-100 flex items-center justify-center overflow-hidden">
+                    <div className="w-16 h-12 bg-white p-1 rounded-lg border border-zinc-100 flex items-center justify-center overflow-hidden font-bold">
                       <img src={m.logo} className="w-full h-full object-contain" alt={m.name} onError={(e) => { e.target.src = 'https://via.placeholder.com/150x100?text=LOGO'; }} />
                     </div>
                     <span className="font-bold uppercase text-xs font-bold">{m.name}</span>
@@ -579,13 +579,13 @@ function CheckoutWizard({ product, rekening, shippingMethods, onComplete, onBack
             <div className="space-y-8 animate-in zoom-in font-bold uppercase">
               <div className="bg-zinc-50 p-6 rounded-3xl border border-zinc-100 space-y-4 font-bold uppercase">
                 <h3 className="text-xl font-serif uppercase font-bold">Invoice #{payment.invoice}</h3>
-                <div className="flex justify-between border-t pt-4 font-bold uppercase"><span>Total Tagihan</span><span className="text-xl font-bold">{formatIDR(total)}</span></div>
+                <div className="flex justify-between border-t pt-4 font-bold uppercase font-bold"><span>Total Tagihan</span><span className="text-xl font-bold">{formatIDR(total)}</span></div>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 font-bold uppercase">
                 {rekening.map(rek => (
                   <div key={rek.id} onClick={()=>setPayment({...payment, transferTo: `${rek.bankName} - ${rek.accountNumber} - ${rek.accountHolder}`})} className={`p-4 rounded-xl border-2 cursor-pointer flex flex-col items-center gap-2 transition-all font-bold uppercase ${payment.transferTo.includes(rek.accountNumber) ? 'border-black bg-zinc-100' : 'border-zinc-100'}`}>
                     <img src={BANK_LOGOS[rek.bankName]} className="h-6 object-contain font-bold" />
-                    <p className="text-[8px] text-center font-bold uppercase">{rek.bankName}</p>
+                    <p className="text-[8px] text-center font-bold uppercase font-bold">{rek.bankName}</p>
                     <p className="text-[10px] font-mono font-bold">{rek.accountNumber}</p>
                   </div>
                 ))}
@@ -604,7 +604,7 @@ function CheckoutWizard({ product, rekening, shippingMethods, onComplete, onBack
                 <input type="file" id="uPf" className="hidden" accept="image/*" onChange={handleFileSelect}/>
               </div>
               <button onClick={submitOrder} disabled={sending} className="w-full bg-black text-[#D4AF37] py-5 rounded-2xl font-bold flex items-center justify-center gap-2 uppercase shadow-xl active:scale-95 transition-all font-bold">
-                {sending ? <Loader2 className="animate-spin font-bold" /> : 'KIRIM PESANAN SEKARANG'}
+                {sending ? <Loader2 className="animate-spin" /> : 'KIRIM PESANAN SEKARANG'}
               </button>
             </div>
           )}
@@ -648,7 +648,6 @@ function AdminDashboard({ products, orders, rekening, shippingMethods, appId, on
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [instaUrls, setInstaUrls] = useState(['', '', '', '', '']);
-  // Upgrade Galeri menjadi 5 slot
   const [galleryImages, setGalleryImages] = useState([null, null, null, null, null]);
   const [formData, setFormData] = useState({ 
     imageURLs: [], name: '', price: '', description: '', sizes: SIZE_OPTIONS, sizePrices: {}, showAgeSelection: true
@@ -668,7 +667,6 @@ function AdminDashboard({ products, orders, rekening, shippingMethods, appId, on
     const file = e.target.files[0];
     if (file) {
       notify(`Mengolah foto ${index + 1}...`);
-      // Helper kompresi (Fix Loading Lama)
       const compressed = await compressImage(file, 1024);
       const newList = [...galleryImages];
       newList[index] = compressed;
@@ -748,7 +746,7 @@ function AdminDashboard({ products, orders, rekening, shippingMethods, appId, on
           <div className="bg-white w-full max-w-xl rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in font-bold uppercase">
             <div className="p-5 bg-zinc-950 text-[#D4AF37] flex justify-between items-center font-bold uppercase">
               <h3 className="text-[10px] tracking-widest uppercase font-bold">DETAIL PESANAN</h3>
-              <button onClick={()=>setSelectedOrder(null)} className="p-2 bg-white/10 rounded-full text-white border-none cursor-pointer font-bold"><X size={20}/></button>
+              <button onClick={()=>setSelectedOrder(null)} className="p-2 bg-white/10 rounded-full text-white border-none cursor-pointer font-bold uppercase font-bold"><X size={20}/></button>
             </div>
             <div className="p-8 space-y-6 max-h-[85vh] overflow-y-auto no-scrollbar text-black uppercase font-bold">
               <div className="grid grid-cols-2 gap-4 text-[10px] border-b pb-4 font-bold">
@@ -787,8 +785,8 @@ function AdminDashboard({ products, orders, rekening, shippingMethods, appId, on
         {tab === 'inventory' && (
           <div className="space-y-10 font-bold uppercase">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 border-b pb-10 font-bold uppercase">
-              <div className="space-y-6 font-bold uppercase">
-                <div className="space-y-3 font-bold uppercase">
+              <div className="space-y-6 font-bold uppercase font-bold">
+                <div className="space-y-3 font-bold uppercase font-bold">
                   <h4 className="text-[10px] font-black tracking-widest text-[#D4AF37] flex items-center gap-2 uppercase font-bold">
                     <ImageIcon size={14}/> GALERI HP (5 SLOT)
                   </h4>
@@ -809,7 +807,7 @@ function AdminDashboard({ products, orders, rekening, shippingMethods, appId, on
                   </div>
                 </div>
 
-                <div className="space-y-3 font-bold uppercase">
+                <div className="space-y-3 font-bold uppercase font-bold">
                   <h4 className="text-[10px] font-black tracking-widest text-zinc-400 flex items-center gap-2 uppercase font-bold">
                     <Instagram size={14}/> LINK INSTAGRAM
                   </h4>
@@ -860,7 +858,7 @@ function AdminDashboard({ products, orders, rekening, shippingMethods, appId, on
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 font-bold uppercase">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 font-bold uppercase font-bold">
               {products.map(p => (
                 <div key={p.id} className="border rounded-xl overflow-hidden relative group font-bold uppercase">
                   <img src={p.imageURLs?.[0] || p.imageURL} className="aspect-[3/4] w-full object-cover font-bold" />
@@ -932,7 +930,7 @@ function AdminDashboard({ products, orders, rekening, shippingMethods, appId, on
         {tab === 'shipping' && (
           <div className="space-y-6 font-bold uppercase">
              <h3 className="text-xs font-serif italic border-b pb-2 uppercase font-bold">Ubah Tarif Ongkir</h3>
-             <div className="bg-zinc-50 p-8 rounded-3xl space-y-4 font-bold uppercase">
+             <div className="bg-zinc-50 p-8 rounded-3xl space-y-4 font-bold uppercase font-bold">
                 {localShipping.map((m, idx) => (
                   <div key={m.id} className="flex items-center gap-4 bg-white p-4 rounded-xl shadow-sm border font-bold uppercase">
                      <div className="w-16 h-10 bg-white p-1 rounded-lg border border-zinc-100 flex items-center justify-center overflow-hidden font-bold">
@@ -992,7 +990,7 @@ function AdminLogin({ creds, onLoginSuccess, onBack, notify }) {
     } else { notify("Akses ditolak!", "error"); }
   };
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 bg-black/95 backdrop-blur-xl animate-in zoom-in font-bold uppercase text-black">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 bg-black/95 backdrop-blur-xl animate-in zoom-in font-bold uppercase text-black font-bold">
       <div className="bg-white w-full max-w-sm rounded-[3rem] p-12 relative shadow-2xl border border-[#D4AF37]/20 font-bold uppercase">
         <button onClick={onBack} className="absolute top-8 right-8 text-zinc-300 bg-transparent border-none cursor-pointer font-bold uppercase"><X size={24}/></button>
         <div className="text-center mb-10 space-y-4 font-bold uppercase font-bold">
