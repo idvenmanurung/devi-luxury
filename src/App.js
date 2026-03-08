@@ -131,7 +131,7 @@ import {
 /**
  * ==========================================================================================
  * --- DEVI OFFICIAL LUXURY BOUTIQUE ECOSYSTEM ---
- * VERSION: 38.0.0 (BIG BANK TEXT & FIXED LOGO PATHS)
+ * VERSION: 38.1.0 (FIXED CART BADGE & BIG BANK TEXT)
  * ==========================================================================================
  */
 
@@ -150,7 +150,6 @@ const appId = "devi-official-premium-production-v1";
 const SIZE_OPTIONS = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'All Size'];
 const AGE_OPTIONS = ['1-2 Thn', '3-4 Thn', '5-6 Thn', '7-8 Thn', '9-10 Thn', '11-12 Thn'];
 
-// Path fail kustom folder public
 const DEFAULT_SHIPPING = [
   { id: 'jne_reg', name: 'JNE - REG', price: 10000, logo: '/logo1.png' },
   { id: 'jnt_reg', name: 'J&T EXPRESS', price: 11000, logo: '/logo2.png' },
@@ -162,7 +161,7 @@ const DEFAULT_SHIPPING = [
 const BANK_LOGOS = {
   "Bank Central Asia (BCA)": "https://upload.wikimedia.org/wikipedia/commons/5/5c/Bank_Central_Asia.svg",
   "Bank Mandiri": "https://upload.wikimedia.org/wikipedia/commons/a/ad/Bank_Mandiri_logo_2016.svg",
-  "Bank Rakyat Indonesia (BRI)": "/12.png", // Menggunakan fail 12.png anda
+  "Bank Rakyat Indonesia (BRI)": "/12.png",
   "Bank Negara Indonesia (BNI)": "https://upload.wikimedia.org/wikipedia/id/5/55/BNI_logo.svg",
   "Bank CIMB Niaga": "https://upload.wikimedia.org/wikipedia/commons/5/5e/CIMB_Niaga_logo.svg",
   "Bank Danamon": "https://upload.wikimedia.org/wikipedia/commons/e/ec/Danamon_logo.svg",
@@ -181,7 +180,6 @@ const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
 const db = initializeFirestore(firebaseApp, { experimentalForceLongPolling: true });
 
-// Kompresi Imej untuk muat naik pantas
 const compressImage = (file, maxWidth = 1024) => {
   return new Promise((resolve) => {
     const reader = new FileReader();
@@ -365,8 +363,16 @@ function Header({ cartCount, isAdmin, setView, searchTerm, setSearchTerm }) {
           <h1 className="text-sm md:text-xl font-serif tracking-[0.2em] font-black text-black uppercase leading-none">DEVI<span className="text-[#D4AF37]">_OFFICIAL</span></h1>
         </div>
         <div className="flex-1 flex justify-end gap-4 items-center">
-           <button onClick={() => setView('cart')} className="relative p-2 bg-transparent border-none cursor-pointer"><BagIcon size={22}/></button>
-           {isAdmin ? <button onClick={() => setView('admin')} className="p-2 bg-black text-[#D4AF37] rounded-full border-none cursor-pointer"><LayoutDashboard size={18}/></button> : <button onClick={() => setView('login')} className="p-2 bg-zinc-50 rounded-full border-none cursor-pointer"><Key size={18}/></button>}
+            <button onClick={() => setView('cart')} className="relative p-2 bg-transparent border-none cursor-pointer">
+                <BagIcon size={22}/>
+                {/* LENCANA ANGKA KERANJANG - BARU DI SINI */}
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-[#D4AF37] text-black text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-black animate-in zoom-in">
+                    {cartCount}
+                  </span>
+                )}
+            </button>
+            {isAdmin ? <button onClick={() => setView('admin')} className="p-2 bg-black text-[#D4AF37] rounded-full border-none cursor-pointer"><LayoutDashboard size={18}/></button> : <button onClick={() => setView('login')} className="p-2 bg-zinc-50 rounded-full border-none cursor-pointer"><Key size={18}/></button>}
         </div>
       </div>
     </header>
@@ -583,7 +589,6 @@ function CheckoutWizard({ product, rekening, shippingMethods, onComplete, onBack
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 font-bold uppercase font-bold uppercase">
                 {rekening.map(rek => (
                   <div key={rek.id} onClick={()=>setPayment({...payment, transferTo: `${rek.bankName} - ${rek.accountNumber} - ${rek.accountHolder}`})} className={`p-4 rounded-xl border-2 cursor-pointer flex flex-col items-center gap-2 transition-all font-bold uppercase ${payment.transferTo.includes(rek.accountNumber) ? 'border-black bg-zinc-100' : 'border-zinc-100'}`}>
-                    {/* Menggunakan BANK_LOGOS dengan path /12.png untuk BRI */}
                     <img 
                         src={BANK_LOGOS[rek.bankName]} 
                         className="h-8 object-contain font-bold uppercase" 
