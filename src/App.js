@@ -124,13 +124,15 @@ import {
   Diamond,
   Briefcase,
   Layers as LayersMenu,
-  Image as ImageIcon
+  Image as ImageIcon,
+  ToggleLeft,
+  ToggleRight
 } from 'lucide-react';
 
 /**
  * ==========================================================================================
  * --- DEVI OFFICIAL LUXURY BOUTIQUE ECOSYSTEM ---
- * VERSION: 28.1.0 (FIXED IMAGE VALIDATION & HYBRID UPLOAD)
+ * VERSION: 29.0.0 (CONDITIONAL AGE SELECTION & FLEXIBLE UPLOADS)
  * ==========================================================================================
  */
 
@@ -450,14 +452,17 @@ function ProductDetailView({ product, onBack, onBuy, onAddToCart, notify }) {
             <p className="text-3xl font-bold text-[#D4AF37]">{formatIDR(currentPrice)}</p>
           </div>
           
-          <div className="space-y-4 font-bold uppercase">
-            <label className="text-[10px] text-zinc-400 font-bold tracking-widest">PILIH UMUR</label>
-            <div className="flex flex-wrap gap-2">
-              {AGE_OPTIONS.map(age => (
-                <button key={age} onClick={() => setSelectedAge(age)} className={`px-4 py-2 text-[10px] border rounded-lg transition-all cursor-pointer ${selectedAge === age ? 'bg-black text-[#D4AF37] border-black' : 'bg-white border-zinc-100 text-zinc-500 hover:border-zinc-300'}`}>{age}</button>
-              ))}
+          {/* PILIHAN UMUR KONDISIONAL BERDASARKAN TOGGLE ADMIN */}
+          {product.showAgeSelection !== false && (
+            <div className="space-y-4 font-bold uppercase">
+              <label className="text-[10px] text-zinc-400 font-bold tracking-widest">PILIH UMUR</label>
+              <div className="flex flex-wrap gap-2">
+                {AGE_OPTIONS.map(age => (
+                  <button key={age} onClick={() => setSelectedAge(age)} className={`px-4 py-2 text-[10px] border rounded-lg transition-all cursor-pointer ${selectedAge === age ? 'bg-black text-[#D4AF37] border-black' : 'bg-white border-zinc-100 text-zinc-500 hover:border-zinc-300'}`}>{age}</button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="space-y-4 font-bold uppercase">
             <label className="text-[10px] text-zinc-400 font-bold tracking-widest">PILIH UKURAN</label>
@@ -533,7 +538,7 @@ function CheckoutWizard({ product, rekening, shippingMethods, onComplete, onBack
           </div>
 
           {step === 1 && (
-            <div className="space-y-6 animate-in slide-in-from-left">
+            <div className="space-y-6 animate-in slide-in-from-left font-bold">
               <input className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl outline-none font-bold uppercase" placeholder="Email" value={shipping.email} onChange={e=>setShipping({...shipping, email:e.target.value})}/>
               <input className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl outline-none font-bold uppercase" placeholder="Nama Lengkap" value={shipping.name} onChange={e=>setShipping({...shipping, name:e.target.value})}/>
               <input className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl outline-none font-bold uppercase" placeholder="Kota" value={shipping.city} onChange={e=>setShipping({...shipping, city:e.target.value})}/>
@@ -551,7 +556,7 @@ function CheckoutWizard({ product, rekening, shippingMethods, onComplete, onBack
               <h3 className="text-xl font-serif uppercase">Pilih Kurir</h3>
               {shippingMethods.map(m => (
                 <div key={m.id} onClick={()=>setSelectedCourier(m)} className={`p-5 rounded-2xl border-2 cursor-pointer flex justify-between items-center transition-all ${selectedCourier?.id === m.id ? 'border-black bg-zinc-50' : 'border-zinc-100'}`}>
-                  <div className="flex items-center gap-4"><img src={m.logo} className="h-8 w-12 object-contain" /><span className="font-bold uppercase">{m.name}</span></div>
+                  <div className="flex items-center gap-4 font-bold uppercase"><img src={m.logo} className="h-8 w-12 object-contain" /><span className="font-bold uppercase">{m.name}</span></div>
                   <span className="font-bold">{formatIDR(m.price)}</span>
                 </div>
               ))}
@@ -611,7 +616,7 @@ function CheckoutWizard({ product, rekening, shippingMethods, onComplete, onBack
             <h4 className="text-xs font-bold mb-4 uppercase">Ringkasan Bag</h4>
             <div className="flex gap-4 mb-4">
               <img src={product.imageURLs?.[0] || product.imageURL} className="w-16 h-20 rounded-xl object-cover" />
-              <div className="text-[10px] space-y-1">
+              <div className="text-[10px] space-y-1 font-bold uppercase">
                 <p className="font-bold uppercase">{product.name}</p>
                 <p className="text-zinc-400 uppercase">Umur: {product.chosenAge}</p>
                 <p className="text-zinc-400 uppercase">Size: {product.chosenSize}</p>
@@ -637,7 +642,7 @@ function AdminDashboard({ products, orders, rekening, shippingMethods, appId, on
   const [instaUrls, setInstaUrls] = useState(['', '', '', '', '']);
   const [galleryImages, setGalleryImages] = useState([null, null, null]);
   const [formData, setFormData] = useState({ 
-    imageURLs: [], name: '', price: '', category: 'Baju', description: '', sizes: SIZE_OPTIONS, sizePrices: {} 
+    imageURLs: [], name: '', price: '', category: 'Baju', description: '', sizes: SIZE_OPTIONS, sizePrices: {}, showAgeSelection: true
   });
   const [newCreds, setNewCreds] = useState({ username: creds?.username || '', password: creds?.password || '' });
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -645,7 +650,7 @@ function AdminDashboard({ products, orders, rekening, shippingMethods, appId, on
   
   const resetForm = () => {
     setEditingId(null);
-    setFormData({ imageURLs: [], name: '', price: '', category: 'Baju', description: '', sizes: SIZE_OPTIONS, sizePrices: {} });
+    setFormData({ imageURLs: [], name: '', price: '', category: 'Baju', description: '', sizes: SIZE_OPTIONS, sizePrices: {}, showAgeSelection: true });
     setInstaUrls(['', '', '', '', '']);
     setGalleryImages([null, null, null]);
   };
@@ -665,17 +670,13 @@ function AdminDashboard({ products, orders, rekening, shippingMethods, appId, on
   };
 
   const publishProduct = async () => {
-    // Gabungkan Instagram URLs yang valid (bukan string kosong)
     const validInsta = instaUrls.filter(url => url && url.trim() !== '');
-    // Gabungkan Gallery Images (Base64) yang ada (bukan null)
     const validGallery = galleryImages.filter(img => img !== null);
-    
-    // Total koleksi foto dari kedua sumber
     const allImages = [...validInsta, ...validGallery];
 
-    // VALIDASI UTAMA: Harus ada Nama, Harga, dan Minimal 1 Foto
-    if (!formData.name.trim()) return notify("Masukkan Nama Katalog!", "error");
-    if (!formData.price) return notify("Masukkan Harga Katalog!", "error");
+    // VALIDASI: Minimal Nama, Harga, dan 1 Foto (Galeri atau IG)
+    if (!formData.name.trim()) return notify("Nama Produk wajib diisi!", "error");
+    if (!formData.price) return notify("Harga Dasar wajib diisi!", "error");
     if (allImages.length === 0) return notify("Upload minimal 1 foto (Galeri atau Instagram)!", "error");
     
     setSaving(true);
@@ -696,7 +697,7 @@ function AdminDashboard({ products, orders, rekening, shippingMethods, appId, on
       }
       resetForm();
     } catch(e) { 
-      notify("Gagal menyimpan: " + e.message, "error"); 
+      notify("Gagal: " + e.message, "error"); 
     } finally { 
       setSaving(false); 
     }
@@ -713,11 +714,11 @@ function AdminDashboard({ products, orders, rekening, shippingMethods, appId, on
   };
 
   const updateAdminAuth = async () => {
-    if (!newCreds.username || !newCreds.password) return notify("Lengkapi data!", "error");
+    if (!newCreds.username || !newCreds.password) return notify("Isi data akses!", "error");
     try {
       await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'admin_settings', 'main'), newCreds);
-      notify("Akses Diperbarui.", "success");
-    } catch(e) { notify("Gagal update.", "error"); }
+      notify("Akses Profil Terupdate.", "success");
+    } catch(e) { notify("Gagal update profil.", "error"); }
   };
 
   const [bankForm, setBankForm] = useState({ bankName: 'Bank Central Asia (BCA)', accountNumber: '', accountHolder: '' });
@@ -812,15 +813,33 @@ function AdminDashboard({ products, orders, rekening, shippingMethods, appId, on
               </div>
 
               <div className="space-y-4 font-bold uppercase">
-                <div className="flex justify-between items-center"><h3 className="text-xs font-serif italic uppercase">Informasi Produk</h3> {editingId && <button onClick={resetForm} className="text-[8px] bg-zinc-100 px-3 py-1 rounded-full uppercase">Batal Edit</button>}</div>
+                <div className="flex justify-between items-center font-bold uppercase">
+                  <h3 className="text-xs font-serif italic uppercase">Informasi Produk</h3> 
+                  {editingId && <button onClick={resetForm} className="text-[8px] bg-zinc-100 px-3 py-1 rounded-full uppercase">Batal Edit</button>}
+                </div>
+                
                 <input className="w-full bg-zinc-50 p-4 rounded-xl text-[10px] font-bold outline-none uppercase" placeholder="Judul Katalog" value={formData.name} onChange={e=>setFormData({...formData, name:e.target.value})}/>
                 <input type="number" className="w-full bg-zinc-50 p-4 rounded-xl text-[10px] font-bold outline-none uppercase" placeholder="Harga Dasar (IDR)" value={formData.price} onChange={e=>setFormData({...formData, price:e.target.value})}/>
                 
-                <div className="space-y-1">
+                <div className="space-y-1 font-bold">
                    <p className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest">Pilih Kategori</p>
                    <select className="w-full bg-zinc-50 p-3 rounded-xl text-[10px] font-bold uppercase" value={formData.category} onChange={e=>setFormData({...formData, category: e.target.value})}>
                       {CATEGORIES.map(c => <option key={c} value={c}>{c.toUpperCase()}</option>)}
                    </select>
+                </div>
+
+                {/* TOGGLE Pilihan Umur */}
+                <div className="flex items-center justify-between p-4 bg-zinc-50 rounded-xl border border-zinc-100 font-bold uppercase">
+                  <div>
+                    <h4 className="text-[10px] font-black uppercase">Pilihan Umur</h4>
+                    <p className="text-[8px] text-zinc-400 uppercase">Aktifkan untuk baju anak-anak</p>
+                  </div>
+                  <button 
+                    onClick={() => setFormData({...formData, showAgeSelection: !formData.showAgeSelection})}
+                    className={`p-1 rounded-full transition-all border-none cursor-pointer ${formData.showAgeSelection ? 'text-green-500' : 'text-zinc-300'}`}
+                  >
+                    {formData.showAgeSelection ? <ToggleRight size={32}/> : <ToggleLeft size={32}/>}
+                  </button>
                 </div>
 
                 <div className="p-4 bg-zinc-50 rounded-xl space-y-3 font-bold uppercase">
@@ -828,8 +847,8 @@ function AdminDashboard({ products, orders, rekening, shippingMethods, appId, on
                    <div className="grid grid-cols-2 gap-2">
                       {SIZE_OPTIONS.map(sz => (
                         <div key={sz} className="flex items-center gap-2">
-                           <span className="text-[8px] w-12 font-bold">{sz}</span>
-                           <input type="number" className="flex-1 p-2 bg-white rounded-lg text-[8px] font-bold" placeholder="IDR" value={formData.sizePrices[sz] || ''} onChange={e=>setFormData({...formData, sizePrices: {...formData.sizePrices, [sz]:e.target.value}})}/>
+                           <span className="text-[8px] w-12 font-bold uppercase">{sz}</span>
+                           <input type="number" className="flex-1 p-2 bg-white rounded-lg text-[8px] font-bold uppercase" placeholder="IDR" value={formData.sizePrices[sz] || ''} onChange={e=>setFormData({...formData, sizePrices: {...formData.sizePrices, [sz]:e.target.value}})}/>
                         </div>
                       ))}
                    </div>
@@ -846,13 +865,13 @@ function AdminDashboard({ products, orders, rekening, shippingMethods, appId, on
                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-4">
                     <button onClick={()=>{
                       setEditingId(p.id); 
-                      setFormData({...p});
+                      setFormData({...p, showAgeSelection: p.showAgeSelection ?? true});
                       setTab('inventory'); 
                       window.scrollTo(0,0);
                     }} className="p-2 bg-white rounded-full text-black"><Edit size={16}/></button>
                     <button onClick={async()=>{if(confirm('Hapus Katalog?')) await deleteDoc(doc(db,'artifacts',appId,'public', 'data', 'products',p.id));}} className="p-2 bg-red-500 text-white rounded-full"><Trash2 size={16}/></button>
                   </div>
-                  <div className="p-2 bg-white"><p className="text-[8px] font-bold truncate uppercase">{p.name}</p></div>
+                  <div className="p-2 bg-white font-bold uppercase"><p className="text-[8px] font-bold truncate uppercase">{p.name}</p></div>
                 </div>
               ))}
             </div>
@@ -872,7 +891,7 @@ function AdminDashboard({ products, orders, rekening, shippingMethods, appId, on
                      <p className="text-[9px] text-[#D4AF37] font-bold">{formatIDR(o.total)}</p>
                    </div>
                 </div>
-                <button onClick={async(e)=>{e.stopPropagation(); if(confirm('Hapus Order?')) await deleteDoc(doc(db,'artifacts',appId,'public','data','orders',o.id));}} className="text-zinc-300 hover:text-red-500 bg-transparent border-none cursor-pointer"><Trash2 size={16}/></button>
+                <button onClick={async(e)=>{e.stopPropagation(); if(confirm('Hapus Order?')) await deleteDoc(doc(db,'artifacts',appId,'public','data','orders',o.id));}} className="text-zinc-300 hover:text-red-500 bg-transparent border-none cursor-pointer font-bold uppercase"><Trash2 size={16}/></button>
               </div>
             ))}
           </div>
@@ -887,19 +906,19 @@ function AdminDashboard({ products, orders, rekening, shippingMethods, appId, on
               </select>
               <input className="w-full p-4 bg-white rounded-xl text-[10px] font-bold uppercase" placeholder="Nomor Rekening / HP" onChange={e=>setBankForm({...bankForm, accountNumber:e.target.value})}/>
               <input className="w-full p-4 bg-white rounded-xl text-[10px] font-bold uppercase" placeholder="Nama Pemilik" onChange={e=>setBankForm({...bankForm, accountHolder:e.target.value})}/>
-              <button onClick={addBank} className="w-full bg-black text-[#D4AF37] py-4 rounded-xl font-bold text-[9px] uppercase">Simpan Metode Bayar</button>
+              <button onClick={addBank} className="w-full bg-black text-[#D4AF37] py-4 rounded-xl font-bold text-[9px] uppercase font-bold uppercase">Simpan Metode Bayar</button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 font-bold uppercase">
               {rekening.map(rek => (
                 <div key={rek.id} className="p-4 border rounded-2xl flex justify-between items-center shadow-sm font-bold uppercase">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 font-bold uppercase">
                     <img src={BANK_LOGOS[rek.bankName]} className="h-4 w-10 object-contain"/>
                     <div className="text-[9px] font-bold uppercase">
                       <p>{rek.accountNumber}</p>
-                      <p className="text-zinc-400 uppercase">A.N {rek.accountHolder}</p>
+                      <p className="text-zinc-400 uppercase font-bold">A.N {rek.accountHolder}</p>
                     </div>
                   </div>
-                  <button onClick={async()=>await deleteDoc(doc(db,'artifacts',appId,'public','data','rekening',rek.id))} className="text-red-500 border-none bg-transparent cursor-pointer"><Trash2 size={14}/></button>
+                  <button onClick={async()=>await deleteDoc(doc(db,'artifacts',appId,'public','data','rekening',rek.id))} className="text-red-500 border-none bg-transparent cursor-pointer font-bold uppercase"><Trash2 size={14}/></button>
                 </div>
               ))}
             </div>
@@ -914,7 +933,7 @@ function AdminDashboard({ products, orders, rekening, shippingMethods, appId, on
                   <div key={m.id} className="flex items-center gap-4 bg-white p-4 rounded-xl shadow-sm border font-bold uppercase">
                      <img src={m.logo} className="w-12 h-8 object-contain" />
                      <span className="flex-1 text-[10px] font-bold uppercase">{m.name}</span>
-                     <div className="flex items-center gap-2 font-bold">
+                     <div className="flex items-center gap-2 font-bold uppercase">
                         <span className="text-[9px] text-zinc-400 uppercase">Rp</span>
                         <input 
                           type="number" 
@@ -932,7 +951,7 @@ function AdminDashboard({ products, orders, rekening, shippingMethods, appId, on
                 <button onClick={async()=>{
                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'shipping_config', 'methods'), { list: localShipping });
                    notify("Harga Ongkir Terupdate.", "success");
-                }} className="w-full bg-black text-[#D4AF37] py-4 rounded-xl font-bold text-[9px] mt-4 shadow-xl uppercase">Update Harga Ongkir</button>
+                }} className="w-full bg-black text-[#D4AF37] py-4 rounded-xl font-bold text-[9px] mt-4 shadow-xl uppercase font-bold uppercase">Update Harga Ongkir</button>
              </div>
           </div>
         )}
@@ -943,13 +962,13 @@ function AdminDashboard({ products, orders, rekening, shippingMethods, appId, on
             <div className="bg-zinc-50 p-8 rounded-3xl space-y-6 shadow-inner font-bold uppercase">
               <div className="space-y-1 font-bold uppercase">
                 <label className="text-[9px] text-zinc-400 uppercase">Admin Username Baru</label>
-                <input className="w-full p-4 rounded-xl border-none text-[10px] font-bold uppercase" value={newCreds.username} onChange={e=>setNewCreds({...newCreds, username:e.target.value})}/>
+                <input className="w-full p-4 rounded-xl border-none text-[10px] font-bold uppercase font-bold" value={newCreds.username} onChange={e=>setNewCreds({...newCreds, username:e.target.value})}/>
               </div>
               <div className="space-y-1 font-bold uppercase">
                 <label className="text-[9px] text-zinc-400 uppercase">Admin Password Baru</label>
-                <input className="w-full p-4 rounded-xl border-none text-[10px] font-bold uppercase" type="password" value={newCreds.password} onChange={e=>setNewCreds({...newCreds, password:e.target.value})}/>
+                <input className="w-full p-4 rounded-xl border-none text-[10px] font-bold uppercase font-bold" type="password" value={newCreds.password} onChange={e=>setNewCreds({...newCreds, password:e.target.value})}/>
               </div>
-              <button onClick={updateAdminAuth} className="w-full bg-black text-[#D4AF37] py-4 rounded-xl font-bold text-[9px] shadow-lg uppercase">Update Security Akses</button>
+              <button onClick={updateAdminAuth} className="w-full bg-black text-[#D4AF37] py-4 rounded-xl font-bold text-[9px] shadow-lg uppercase font-bold uppercase">Update Security Akses</button>
             </div>
           </div>
         )}
@@ -969,15 +988,15 @@ function AdminLogin({ creds, onLoginSuccess, onBack, notify }) {
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 bg-black/95 backdrop-blur-xl animate-in zoom-in font-bold uppercase text-black">
       <div className="bg-white w-full max-w-sm rounded-[3rem] p-12 relative shadow-2xl border border-[#D4AF37]/20 font-bold uppercase">
-        <button onClick={onBack} className="absolute top-8 right-8 text-zinc-300 bg-transparent border-none cursor-pointer"><X size={24}/></button>
+        <button onClick={onBack} className="absolute top-8 right-8 text-zinc-300 bg-transparent border-none cursor-pointer font-bold uppercase"><X size={24}/></button>
         <div className="text-center mb-10 space-y-4 font-bold uppercase">
-          <div className="w-16 h-16 bg-zinc-50 rounded-2xl flex items-center justify-center mx-auto text-[#D4AF37] shadow-inner"><Lock size={32}/></div>
-          <h3 className="text-xl font-serif font-bold uppercase tracking-widest">Maison Portal</h3>
+          <div className="w-16 h-16 bg-zinc-50 rounded-2xl flex items-center justify-center mx-auto text-[#D4AF37] shadow-inner font-bold uppercase"><Lock size={32}/></div>
+          <h3 className="text-xl font-serif font-bold uppercase tracking-widest font-bold uppercase">Maison Portal</h3>
         </div>
         <form onSubmit={handleLogin} className="space-y-4 font-bold uppercase">
-          <input placeholder="Admin ID" value={u} onChange={e=>setU(e.target.value)} className="w-full bg-zinc-50 p-4 rounded-xl border-none text-[11px] font-bold uppercase"/>
-          <input type="password" placeholder="Pass-Key" value={p} onChange={e=>setP(e.target.value)} className="w-full bg-zinc-50 p-4 rounded-xl border-none text-[11px] font-bold uppercase"/>
-          <button type="submit" className="w-full bg-black text-[#D4AF37] py-4 rounded-full font-bold uppercase text-[10px] tracking-widest shadow-2xl uppercase">AUTHORIZE ACCESS</button>
+          <input placeholder="Admin ID" value={u} onChange={e=>setU(e.target.value)} className="w-full bg-zinc-50 p-4 rounded-xl border-none text-[11px] font-bold uppercase font-bold"/>
+          <input type="password" placeholder="Pass-Key" value={p} onChange={e=>setP(e.target.value)} className="w-full bg-zinc-50 p-4 rounded-xl border-none text-[11px] font-bold uppercase font-bold"/>
+          <button type="submit" className="w-full bg-black text-[#D4AF37] py-4 rounded-full font-bold uppercase text-[10px] tracking-widest shadow-2xl font-bold uppercase font-bold uppercase">AUTHORIZE ACCESS</button>
         </form>
       </div>
     </div>
@@ -987,9 +1006,9 @@ function AdminLogin({ creds, onLoginSuccess, onBack, notify }) {
 function NotificationItem({ notification }) {
   const { message, type } = notification;
   return (
-    <div className={`p-4 rounded-2xl shadow-2xl border animate-in slide-in-from-top-5 backdrop-blur-md flex items-center gap-3 font-bold uppercase pointer-events-auto ${type === 'success' ? 'bg-green-50/95 border-green-100 text-green-950' : type === 'error' ? 'bg-red-50/95 border-red-100 text-red-950' : 'bg-white/95 border-zinc-100 text-black'}`}>
-      <div className={`p-2 rounded-lg shadow-sm ${type === 'success' ? 'bg-green-400 text-white' : 'bg-zinc-900 text-[#D4AF37]'}`}>{type === 'success' ? <CheckIcon size={14}/> : <Bell size={14}/>}</div>
-      <p className="text-[10px] font-black tracking-widest uppercase">{message}</p>
+    <div className={`p-4 rounded-2xl shadow-2xl border animate-in slide-in-from-top-5 backdrop-blur-md flex items-center gap-3 font-bold uppercase pointer-events-auto font-bold uppercase ${type === 'success' ? 'bg-green-50/95 border-green-100 text-green-950' : type === 'error' ? 'bg-red-50/95 border-red-100 text-red-950' : 'bg-white/95 border-zinc-100 text-black'}`}>
+      <div className={`p-2 rounded-lg shadow-sm font-bold uppercase ${type === 'success' ? 'bg-green-400 text-white' : 'bg-zinc-900 text-[#D4AF37]'}`}>{type === 'success' ? <CheckIcon size={14}/> : <Bell size={14}/>}</div>
+      <p className="text-[10px] font-black tracking-widest uppercase font-bold uppercase">{message}</p>
     </div>
   );
 }
@@ -997,37 +1016,37 @@ function NotificationItem({ notification }) {
 function CartView({ items, onRemove, onCheckout }) {
   const total = items.reduce((s, i) => s + Number(i.chosenPrice || i.price), 0);
   return (
-    <div className="max-w-3xl mx-auto py-16 px-4 font-bold uppercase text-black">
+    <div className="max-w-3xl mx-auto py-16 px-4 font-bold uppercase text-black font-bold uppercase">
        <div className="text-center mb-12 space-y-2 animate-in slide-in-from-bottom font-bold uppercase">
           <h2 className="text-4xl font-serif italic uppercase font-bold uppercase">Maison <span className="text-[#D4AF37]">Bag</span></h2>
-          <div className="w-12 h-[2px] bg-[#D4AF37] mx-auto opacity-40"></div>
+          <div className="w-12 h-[2px] bg-[#D4AF37] mx-auto opacity-40 font-bold uppercase"></div>
        </div>
        {items.length === 0 ? (
          <div className="text-center py-32 border-2 border-dashed border-zinc-100 rounded-[2.5rem] bg-zinc-50/30 flex flex-col items-center font-bold uppercase">
-            <ShoppingBag size={64} className="text-zinc-100 mb-6" />
-            <p className="text-zinc-300 font-bold text-[10px] tracking-widest uppercase">Tas Belanja Kosong</p>
+            <ShoppingBag size={64} className="text-zinc-100 mb-6 font-bold uppercase" />
+            <p className="text-zinc-300 font-bold text-[10px] tracking-widest uppercase font-bold uppercase">Tas Belanja Kosong</p>
          </div>
        ) : (
          <div className="space-y-6 font-bold uppercase">
             {items.map((item, idx) => (
               <div key={idx} className="p-4 bg-white border border-zinc-100 rounded-3xl flex items-center justify-between gap-6 shadow-sm font-bold uppercase">
                  <div className="flex items-center gap-5 flex-1 font-bold uppercase">
-                    <img src={item.imageURLs?.[0] || item.imageURL} className="w-20 h-24 rounded-2xl object-cover shadow-md border border-zinc-50"/>
+                    <img src={item.imageURLs?.[0] || item.imageURL} className="w-20 h-24 rounded-2xl object-cover shadow-md border border-zinc-50 font-bold uppercase"/>
                     <div className="space-y-1.5 flex-1 font-bold uppercase">
-                       <h4 className="text-[11px] font-serif font-bold uppercase tracking-tight text-zinc-800">{String(item.name).toUpperCase()}</h4>
-                       <div className="flex gap-2 font-bold uppercase"><span className="text-[7px] font-black px-2 py-0.5 bg-zinc-100 rounded-full border border-zinc-200 uppercase">Umur {String(item.chosenAge)}</span><span className="text-[7px] font-black px-2 py-0.5 bg-zinc-100 rounded-full border border-zinc-200 uppercase">Size {String(item.chosenSize)}</span></div>
+                       <h4 className="text-[11px] font-serif font-bold uppercase tracking-tight text-zinc-800 font-bold uppercase">{String(item.name).toUpperCase()}</h4>
+                       <div className="flex gap-2 font-bold uppercase"><span className="text-[7px] font-black px-2 py-0.5 bg-zinc-100 rounded-full border border-zinc-200 uppercase font-bold uppercase">Umur {String(item.chosenAge)}</span><span className="text-[7px] font-black px-2 py-0.5 bg-zinc-100 rounded-full border border-zinc-200 uppercase font-bold uppercase">Size {String(item.chosenSize)}</span></div>
                        <p className="text-xs font-bold text-black italic font-bold uppercase">{formatIDR(item.chosenPrice || item.price)}</p>
                     </div>
                  </div>
-                 <button onClick={()=>onRemove(idx)} className="p-3 text-zinc-300 hover:text-red-500 bg-zinc-50 rounded-2xl border-none cursor-pointer font-bold uppercase"><Trash2 size={18}/></button>
+                 <button onClick={()=>onRemove(idx)} className="p-3 text-zinc-300 hover:text-red-500 bg-zinc-50 rounded-2xl border-none cursor-pointer font-bold uppercase font-bold uppercase"><Trash2 size={18}/></button>
               </div>
             ))}
-            <div className="pt-10 border-t border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-10 font-bold uppercase">
+            <div className="pt-10 border-t border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-10 font-bold uppercase font-bold uppercase">
                <div className="text-center md:text-left space-y-0.5 font-bold uppercase">
-                  <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest uppercase">Grand Total</p>
-                  <p className="text-4xl md:text-6xl font-serif font-black italic tracking-tighter text-zinc-950 uppercase">{formatIDR(total)}</p>
+                  <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest uppercase font-bold uppercase">Grand Total</p>
+                  <p className="text-4xl md:text-6xl font-serif font-black italic tracking-tighter text-zinc-950 uppercase font-bold uppercase">{formatIDR(total)}</p>
                </div>
-               <button onClick={onCheckout} className="w-full md:w-auto bg-black text-[#D4AF37] px-16 py-6 rounded-full font-bold uppercase text-[11px] tracking-widest shadow-2xl border-none cursor-pointer flex items-center justify-center gap-4 uppercase">Checkout Sekarang <ArrowRight size={20} /></button>
+               <button onClick={onCheckout} className="w-full md:w-auto bg-black text-[#D4AF37] px-16 py-6 rounded-full font-bold uppercase text-[11px] tracking-widest shadow-2xl border-none cursor-pointer flex items-center justify-center gap-4 uppercase font-bold uppercase">Checkout Sekarang <ArrowRight size={20} /></button>
             </div>
          </div>
        )}
@@ -1040,27 +1059,27 @@ function Footer({ setView }) {
     <footer className="bg-[#030303] text-white pt-20 pb-10 px-6 border-t-[4px] border-[#D4AF37] font-bold uppercase">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 font-bold uppercase">
         <div className="space-y-6 text-center md:text-left font-bold uppercase">
-           <h2 className="text-2xl md:text-4xl font-serif font-bold italic tracking-widest text-[#D4AF37] leading-none uppercase">DEVI OFFICIAL</h2>
+           <h2 className="text-2xl md:text-4xl font-serif font-bold italic tracking-widest text-[#D4AF37] leading-none uppercase font-bold uppercase">DEVI OFFICIAL</h2>
            <p className="text-zinc-500 text-[10px] leading-relaxed italic opacity-70 font-bold uppercase">Elevating modest fashion to a global standard of absolute luxury. Kemewahan abadi berawal dari tanggung jawab sosial dalam setiap produksi.</p>
         </div>
         <div className="space-y-6 hidden md:block font-bold uppercase">
-           <h4 className="text-[10px] font-bold uppercase tracking-[0.4em] text-zinc-100 border-b border-white/5 pb-2 uppercase">Concierge</h4>
+           <h4 className="text-[10px] font-bold uppercase tracking-[0.4em] text-zinc-100 border-b border-white/5 pb-2 uppercase font-bold uppercase">Concierge</h4>
            <div className="text-[9px] text-zinc-500 tracking-widest space-y-2 italic leading-none font-bold uppercase">
-              <p className="flex items-center gap-2 uppercase"><MapPin size={14} className="text-[#D4AF37]"/> Jakarta, Indonesia</p>
-              <p className="flex items-center gap-2 uppercase"><Phone size={14} className="text-[#D4AF37]"/> +62 852-2444-4164</p>
-              <p className="flex items-center gap-2 uppercase"><Mail size={14} className="text-[#D4AF37]"/> boutique@devi-official.com</p>
+              <p className="flex items-center gap-2 uppercase font-bold uppercase font-bold uppercase"><MapPin size={14} className="text-[#D4AF37]"/> Jakarta, Indonesia</p>
+              <p className="flex items-center gap-2 uppercase font-bold uppercase font-bold uppercase"><Phone size={14} className="text-[#D4AF37]"/> +62 852-2444-4164</p>
+              <p className="flex items-center gap-2 uppercase font-bold uppercase font-bold uppercase"><Mail size={14} className="text-[#D4AF37]"/> boutique@devi-official.com</p>
            </div>
         </div>
         <div className="space-y-6 text-center md:text-left font-bold uppercase">
-           <h4 className="text-[10px] font-bold uppercase tracking-[0.4em] text-zinc-100 border-b border-white/5 pb-2 uppercase">Maison Bank</h4>
+           <h4 className="text-[10px] font-bold uppercase tracking-[0.4em] text-zinc-100 border-b border-white/5 pb-2 uppercase font-bold uppercase">Maison Bank</h4>
            <div className="flex flex-wrap gap-4 opacity-30 grayscale hover:opacity-100 transition-all cursor-pointer font-bold uppercase">
               {Object.values(BANK_LOGOS).slice(0, 4).map((l, i) => <img key={i} src={l} className="h-4 object-contain" alt="" />)}
            </div>
         </div>
       </div>
       <div className="max-w-7xl mx-auto mt-16 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 font-bold uppercase">
-         <div className="text-[8px] uppercase tracking-[0.4em] italic opacity-30 font-bold">© 2024 DEVI_OFFICIAL LUXURY GROUP INC. ALL RIGHTS RESERVED.</div>
-         <button onClick={() => setView('login')} className="flex items-center gap-2 text-zinc-700 text-[9px] tracking-widest hover:text-[#D4AF37] transition-all border border-white/5 px-6 py-2 rounded-full bg-zinc-950 cursor-pointer shadow-inner uppercase font-bold">
+         <div className="text-[8px] uppercase tracking-[0.4em] italic opacity-30 font-bold font-bold uppercase">© 2024 DEVI_OFFICIAL LUXURY GROUP INC. ALL RIGHTS RESERVED.</div>
+         <button onClick={() => setView('login')} className="flex items-center gap-2 text-zinc-700 text-[9px] tracking-widest hover:text-[#D4AF37] transition-all border border-white/5 px-6 py-2 rounded-full bg-zinc-950 cursor-pointer shadow-inner uppercase font-bold font-bold uppercase font-bold uppercase">
             <ShieldAlert size={16} /> <span>ADMIN ACCESS</span>
          </button>
       </div>
