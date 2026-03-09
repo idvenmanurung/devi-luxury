@@ -131,7 +131,7 @@ import {
 /**
  * ==========================================================================================
  * --- DEVI OFFICIAL LUXURY BOUTIQUE ECOSYSTEM ---
- * VERSION: 38.3.0 (INDONESIAN LANGUAGE UPDATE)
+ * VERSION: 38.4.0 (FIXED SHIPPING ADDRESS POSITION)
  * ==========================================================================================
  */
 
@@ -599,6 +599,22 @@ function CheckoutWizard({ product, rekening, shippingMethods, onComplete, onBack
                 ))}
               </div>
               <button onClick={()=>setStep(4)} className="w-full bg-[#10b981] text-white py-5 rounded-2xl font-black uppercase shadow-xl active:scale-95 transition-all">KONFIRMASI PEMBAYARAN</button>
+
+              {/* RINGKASAN ALAMAT DI BAWAH TOMBOL HIJAU - SESUAI PERMINTAAN */}
+              <div className="bg-zinc-50 p-8 rounded-[2.5rem] border border-zinc-100 space-y-4 animate-in fade-in duration-500">
+                <h4 className="text-[10px] text-zinc-400 font-black tracking-[0.2em] uppercase">Kirim ke :</h4>
+                <div className="space-y-1.5">
+                  <p className="font-black text-zinc-950 text-base uppercase leading-none">{shipping.name}</p>
+                  <p className="text-[11px] text-zinc-500 font-bold uppercase leading-relaxed">{shipping.address}</p>
+                  <p className="text-[11px] text-zinc-500 font-bold uppercase">{shipping.city}, {shipping.postalCode}</p>
+                  <p className="text-[11px] text-zinc-500 font-bold">{shipping.phone}</p>
+                  <div className="pt-3 border-t border-zinc-200 mt-3 flex items-center gap-2">
+                    <Truck size={12} className="text-[#D4AF37]" />
+                    <p className="text-[10px] text-zinc-900 font-black italic uppercase tracking-wider">{selectedCourier?.name}</p>
+                  </div>
+                  <p className="text-[10px] text-zinc-300 italic pt-2 font-bold">Menunggu Untuk Dikirim</p>
+                </div>
+              </div>
             </div>
           )}
 
