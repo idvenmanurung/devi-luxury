@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { initializeApp } from 'firebase/app';
 import { 
   getAuth, 
-  onAuthStateChanged,
-  signInAnonymously,
-  signInWithCustomToken,
-  signOut
+  onAuthStateChanged, 
+  signInAnonymously, 
+  signInWithCustomToken, 
+  signOut 
 } from 'firebase/auth';
 import { 
   getFirestore, 
@@ -131,7 +131,7 @@ import {
 /**
  * ==========================================================================================
  * --- DEVI OFFICIAL LUXURY BOUTIQUE ECOSYSTEM ---
- * VERSION: 38.1.0 (FIXED CART BADGE & BIG BANK TEXT)
+ * VERSION: 38.2.0 (FIXED EDIT IMAGE PERSISTENCE)
  * ==========================================================================================
  */
 
@@ -365,7 +365,6 @@ function Header({ cartCount, isAdmin, setView, searchTerm, setSearchTerm }) {
         <div className="flex-1 flex justify-end gap-4 items-center">
             <button onClick={() => setView('cart')} className="relative p-2 bg-transparent border-none cursor-pointer">
                 <BagIcon size={22}/>
-                {/* LENCANA ANGKA KERANJANG - BARU DI SINI */}
                 {cartCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-[#D4AF37] text-black text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-black animate-in zoom-in">
                     {cartCount}
@@ -875,6 +874,25 @@ function AdminDashboard({ products, orders, rekening, shippingMethods, appId, on
                     <button onClick={()=>{
                       setEditingId(p.id); 
                       setFormData({...p, showAgeSelection: p.showAgeSelection ?? true});
+                      
+                      // FIX: MENGEMBALIKAN FOTO LAMA KE DALAM INPUT BOX
+                      const existingImages = p.imageURLs || [];
+                      const newInsta = ['', '', '', '', ''];
+                      const newGallery = [null, null, null, null, null];
+                      let gIdx = 0; let iIdx = 0;
+                      
+                      existingImages.forEach(url => {
+                        if (url.startsWith('data:image')) {
+                          if (gIdx < 5) newGallery[gIdx++] = url;
+                        } else {
+                          if (iIdx < 5) newInsta[iIdx++] = url;
+                        }
+                      });
+                      
+                      setInstaUrls(newInsta);
+                      setGalleryImages(newGallery);
+                      // END FIX
+
                       setTab('inventory'); 
                       window.scrollTo(0,0);
                     }} className="p-2 bg-white rounded-full text-black font-black uppercase font-bold uppercase"><Edit size={16}/></button>
