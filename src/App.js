@@ -131,7 +131,7 @@ import {
 /**
  * ==========================================================================================
  * --- DEVI OFFICIAL LUXURY BOUTIQUE ECOSYSTEM ---
- * VERSION: 38.4.0 (FIXED SHIPPING ADDRESS POSITION)
+ * VERSION: 38.5.0 (NEW FOOTER DESIGN)
  * ==========================================================================================
  */
 
@@ -600,7 +600,6 @@ function CheckoutWizard({ product, rekening, shippingMethods, onComplete, onBack
               </div>
               <button onClick={()=>setStep(4)} className="w-full bg-[#10b981] text-white py-5 rounded-2xl font-black uppercase shadow-xl active:scale-95 transition-all">KONFIRMASI PEMBAYARAN</button>
 
-              {/* RINGKASAN ALAMAT DI BAWAH TOMBOL HIJAU - SESUAI PERMINTAAN */}
               <div className="bg-zinc-50 p-8 rounded-[2.5rem] border border-zinc-100 space-y-4 animate-in fade-in duration-500">
                 <h4 className="text-[10px] text-zinc-400 font-black tracking-[0.2em] uppercase">Kirim ke :</h4>
                 <div className="space-y-1.5">
@@ -1101,30 +1100,44 @@ function CartView({ items, onRemove, onCheckout }) {
 
 function Footer({ setView }) {
   return (
-    <footer className="bg-[#030303] text-white pt-20 pb-10 px-6 border-t-[4px] border-[#D4AF37] font-bold uppercase font-bold uppercase font-bold uppercase">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 font-bold uppercase font-bold uppercase font-bold uppercase font-bold">
-        <div className="space-y-6 text-center md:text-left font-bold uppercase font-bold uppercase font-bold font-bold">
-           <h2 className="text-2xl md:text-4xl font-serif font-black italic tracking-widest text-[#D4AF37] leading-none uppercase font-black uppercase">DEVI OFFICIAL</h2>
-           <p className="text-zinc-500 text-[10px] leading-relaxed italic opacity-70 font-black uppercase font-bold uppercase font-bold uppercase">Mengangkat standar fashion modest ke level kemewahan mutlak. Kemewahan abadi berawal dari tanggung jawab sosial dalam setiap produksi.</p>
+    <footer className="bg-[#030303] text-white pt-20 pb-10 px-6 border-t-[4px] border-[#D4AF37] font-bold uppercase">
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start gap-12">
+        {/* KOLOM KIRI: LOGO & DESKRIPSI (TAMBAHAN UNTUK BRADING) */}
+        <div className="md:w-1/3 space-y-6">
+           <h2 className="text-2xl font-serif font-black italic tracking-widest text-[#D4AF37] leading-none uppercase">DEVI OFFICIAL</h2>
+           <p className="text-zinc-500 text-[10px] leading-relaxed italic opacity-70 font-black uppercase">Mengangkat standar fashion modest ke level kemewahan mutlak. Kemewahan abadi berawal dari tanggung jawab sosial dalam setiap produksi.</p>
         </div>
-        <div className="space-y-6 hidden md:block font-bold uppercase font-bold uppercase font-bold uppercase font-bold">
-           <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-100 border-b border-white/5 pb-2 uppercase font-black font-bold uppercase font-bold">Concierge</h4>
-           <div className="text-[9px] text-zinc-500 tracking-widest space-y-2 italic leading-none font-black uppercase font-bold uppercase font-bold uppercase font-bold">
-              <p className="flex items-center gap-2 uppercase font-black font-bold uppercase font-bold"><MapPin size={14} className="text-[#D4AF37]"/> Jakarta, Indonesia</p>
-              <p className="flex items-center gap-2 uppercase font-black font-bold uppercase font-bold"><Phone size={14} className="text-[#D4AF37]"/> +62 852-2444-4164</p>
-              <p className="flex items-center gap-2 uppercase font-black font-bold uppercase font-bold"><Mail size={14} className="text-[#D4AF37]"/> boutique@devi-official.com</p>
+
+        {/* KOLOM TENGAH: LINKS (SESUAI CONTOH GAMBAR) */}
+        <div className="space-y-4">
+           <h4 className="text-[12px] font-black uppercase tracking-widest text-white">Links</h4>
+           <div className="flex flex-col gap-3 text-zinc-400 text-[11px] font-bold tracking-wide">
+              <button onClick={() => setView('shop')} className="text-left bg-transparent border-none text-zinc-400 hover:text-white transition-all cursor-pointer font-bold uppercase">Home</button>
+              <button onClick={() => setView('login')} className="text-left bg-transparent border-none text-zinc-400 hover:text-white transition-all cursor-pointer font-bold uppercase">Konfirmasi Pembayaran</button>
+              <button onClick={() => notify("Layanan Cek Ongkir segera hadir!")} className="text-left bg-transparent border-none text-zinc-400 hover:text-white transition-all cursor-pointer font-bold uppercase">Cek Ongkir..!</button>
            </div>
         </div>
-        <div className="space-y-6 text-center md:text-left font-bold uppercase font-bold uppercase font-bold uppercase font-bold">
-           <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-100 border-b border-white/5 pb-2 uppercase font-black font-bold uppercase font-bold">Maison Bank</h4>
-           <div className="flex flex-wrap gap-4 opacity-30 grayscale hover:opacity-100 transition-all cursor-pointer font-bold uppercase font-bold uppercase font-bold font-bold">
-              {Object.values(BANK_LOGOS).slice(0, 4).map((l, i) => <img key={i} src={l} className="h-4 object-contain font-black uppercase font-bold uppercase font-bold" alt="" />)}
+
+        {/* KOLOM KANAN: ALAMAT/KONTAK (SESUAI CONTOH GAMBAR) */}
+        <div className="space-y-4">
+           <h4 className="text-[12px] font-black uppercase tracking-widest text-white">Alamat</h4>
+           <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-3 text-zinc-400 text-[11px] font-bold">
+                 <Phone size={16} className="text-zinc-400"/>
+                 <span>+62 821-1726-977</span>
+              </div>
+              <div className="flex items-center gap-3 text-zinc-400 text-[11px] font-bold">
+                 <MessageCircle size={16} className="text-zinc-400"/>
+                 <span>+62 821-1726-977</span>
+              </div>
            </div>
         </div>
       </div>
-      <div className="max-w-7xl mx-auto mt-16 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 font-bold uppercase font-bold uppercase font-bold uppercase font-bold">
-         <div className="text-[8px] uppercase tracking-[0.4em] italic opacity-30 font-black font-bold uppercase font-bold uppercase">© 2024 DEVI_OFFICIAL LUXURY GROUP INC. ALL RIGHTS RESERVED.</div>
-         <button onClick={() => setView('login')} className="flex items-center gap-2 text-zinc-700 text-[9px] tracking-widest hover:text-[#D4AF37] transition-all border border-white/5 px-6 py-2 rounded-full bg-zinc-950 cursor-pointer shadow-inner uppercase font-black font-bold uppercase font-bold">
+
+      {/* FOOTER BOTTOM: COPYRIGHT & ADMIN */}
+      <div className="max-w-7xl mx-auto mt-20 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
+         <div className="text-[10px] text-zinc-500 font-bold tracking-widest uppercase">@2024 DEVI_OFFICIAL LUXURY INC</div>
+         <button onClick={() => setView('login')} className="flex items-center gap-2 text-zinc-700 text-[9px] tracking-widest hover:text-[#D4AF37] transition-all border border-white/5 px-6 py-2 rounded-full bg-zinc-950 cursor-pointer shadow-inner uppercase font-black font-bold">
             <ShieldAlert size={16} /> <span>ADMIN ACCESS</span>
          </button>
       </div>
