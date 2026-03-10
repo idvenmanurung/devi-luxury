@@ -35,6 +35,7 @@ import {
   ShoppingBag, 
   User, 
   Plus, 
+  Minus,
   Trash2, 
   X, 
   CheckCircle,
@@ -131,7 +132,7 @@ import {
 /**
  * ==========================================================================================
  * --- DEVI OFFICIAL LUXURY BOUTIQUE ECOSYSTEM ---
- * VERSION: 38.5.0 (NEW FOOTER DESIGN)
+ * VERSION: 38.7.0 (FAST LOAD OPTIMIZATION)
  * ==========================================================================================
  */
 
@@ -178,7 +179,7 @@ const BANK_LOGOS = {
 
 const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
-const db = initializeFirestore(firebaseApp, { experimentalForceLongPolling: true });
+const db = initializeFirestore(firebaseApp, { experimentalForceLongPolling: false }); // Disable force long polling for speed if possible
 
 const compressImage = (file, maxWidth = 1024) => {
   return new Promise((resolve) => {
@@ -230,17 +231,24 @@ export default function App() {
     setTimeout(() => setNotifications(prev => prev.filter(n => n.id !== id)), 3000);
   };
 
+  // Auth Initialization - FAST LOAD
   useEffect(() => {
     const initAuth = async () => {
-      try { await signInAnonymously(auth); } 
-      catch (err) { console.error("Kesalahan Sistem Autentikasi", err); } 
-      finally { setTimeout(() => setLoading(false), 1500); }
+      try { 
+        await signInAnonymously(auth); 
+        // Langsung set loading false setelah auth berhasil tanpa menunggu timeout
+        setLoading(false);
+      } catch (err) { 
+        console.error("Kesalahan Sistem Autentikasi", err); 
+        setLoading(false);
+      }
     };
     initAuth();
     const unsubscribe = onAuthStateChanged(auth, (u) => setUser(u));
     return () => unsubscribe();
   }, []);
 
+  // Data Fetching
   useEffect(() => {
     if (!user) return;
     const pRef = collection(db, 'artifacts', appId, 'public', 'data', 'products');
@@ -290,7 +298,7 @@ export default function App() {
       <div className="pt-14 md:pt-20">
         <main>
           {view === 'shop' && (
-            <div className="animate-in fade-in duration-700">
+            <div className="animate-in fade-in duration-500">
               <HeroSection onExplore={() => document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' })} />
               <ProductGrid products={filteredProducts} onView={(p) => { setSelectedProduct(p); setView('detail'); window.scrollTo(0,0); }} />
               <MembershipBanner />
@@ -301,8 +309,8 @@ export default function App() {
             <ProductDetailView 
               product={selectedProduct} 
               onBack={() => setView('shop')} 
-              onBuy={(size, age, price) => { 
-                setSelectedProduct({...selectedProduct, chosenSize: size, chosenAge: age, chosenPrice: price}); 
+              onBuy={(size, age, price, qty) => { 
+                setSelectedProduct({...selectedProduct, chosenSize: size, chosenAge: age, chosenPrice: price, quantity: qty}); 
                 setView('checkout'); 
                 window.scrollTo(0,0);
               }}
@@ -335,14 +343,14 @@ export default function App() {
           )}
         </main>
       </div>
-      <Footer setView={setView} />
+      <Footer setView={setView} notify={notify} />
     </div>
   );
 }
 
 function PremiumLoader() {
   return (
-    <div className="h-screen bg-[#050505] flex flex-col items-center justify-center gap-4 text-white font-bold">
+    <div className="h-screen bg-[#050505] flex flex-col items-center justify-center gap-4 text-white font-bold animate-pulse">
       <div className="w-10 h-10 border-2 border-[#D4AF37]/20 border-t-[#D4AF37] rounded-full animate-spin"></div>
       <h2 className="font-serif text-base text-[#D4AF37] tracking-[0.2em] uppercase font-black">DEVI OFFICIAL</h2>
     </div>
@@ -351,7 +359,7 @@ function PremiumLoader() {
 
 function Header({ cartCount, isAdmin, setView, searchTerm, setSearchTerm }) {
   return (
-    <header className="fixed top-0 left-0 w-full z-[100] h-14 md:h-16 bg-white border-b border-zinc-100 flex items-center px-4 font-bold uppercase text-black">
+    <header className="fixed top-0 left-0 w-full z-[100] h-14 md:h-16 bg-white/90 backdrop-blur-md border-b border-zinc-100 flex items-center px-4 font-bold uppercase text-black">
       <div className="max-w-7xl mx-auto w-full flex items-center justify-between font-bold">
         <div className="hidden md:flex flex-1">
           <div className="relative">
@@ -380,24 +388,40 @@ function Header({ cartCount, isAdmin, setView, searchTerm, setSearchTerm }) {
 
 function HeroSection({ onExplore }) {
   return (
-    <section className="relative h-[45vh] md:h-[70vh] flex items-center justify-center overflow-hidden bg-black font-bold uppercase">
-      <img src="https://images.unsplash.com/photo-1549439602-43ebcb232811?q=80&w=2070&auto=format&fit=crop" className="absolute inset-0 w-full h-full object-cover opacity-60 font-bold" alt="" />
-      <div className="relative z-10 text-center text-white px-6 font-bold uppercase">
+    <section className="relative h-[50vh] md:h-[75vh] flex items-center justify-center overflow-hidden bg-zinc-950 font-bold uppercase">
+      {/* Background image dengan loading prioritas tinggi */}
+      <img 
+        src="https://images.unsplash.com/photo-1549439602-43ebcb232811?q=80&w=2070&auto=format&fit=crop" 
+        className="absolute inset-0 w-full h-full object-cover opacity-70 font-bold" 
+        alt="Helenaraya Collection"
+      />
+      <div className="relative z-10 text-center text-white px-6 font-bold uppercase animate-in slide-in-from-bottom duration-700">
         <p className="text-[9px] tracking-[0.6em] text-[#D4AF37] mb-2 font-black uppercase">Butik Mewah</p>
-        <h2 className="text-3xl md:text-6xl font-serif italic mb-4 font-black">Helenaraya Collection</h2>
-        <button onClick={onExplore} className="px-8 py-3 bg-[#D4AF37] text-black text-[10px] font-black tracking-widest rounded-full border-none cursor-pointer uppercase shadow-lg active:scale-95 transition-all">Jelajahi Sekarang</button>
+        <h2 className="text-3xl md:text-7xl font-serif italic mb-6 font-black tracking-tight leading-tight">Helenaraya Collection</h2>
+        <button onClick={onExplore} className="px-10 py-4 bg-[#D4AF37] text-black text-[10px] font-black tracking-widest rounded-full border-none cursor-pointer uppercase shadow-2xl active:scale-95 transition-all hover:brightness-110">Jelajahi Sekarang</button>
       </div>
     </section>
   );
 }
 
 function ProductGrid({ products, onView }) {
+  // Pre-load images for the grid
   return (
-    <section id="catalog" className="max-w-7xl mx-auto px-4 py-10 grid grid-cols-2 lg:grid-cols-4 gap-6 font-bold uppercase">
-      {products.map(p => (
-        <div key={p.id} className="cursor-pointer group flex flex-col items-center font-bold" onClick={() => onView(p)}>
-          <div className="aspect-[3/4] w-full rounded-2xl overflow-hidden bg-zinc-50 mb-3 shadow-sm group-hover:shadow-lg transition-all font-bold">
-            <img src={p.imageURLs?.[0] || p.imageURL} className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700" alt=""/>
+    <section id="catalog" className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-2 lg:grid-cols-4 gap-6 font-bold uppercase min-h-[400px]">
+      {products.length === 0 ? (
+        <div className="col-span-full flex flex-col items-center justify-center py-20 gap-4">
+           <Loader2 className="animate-spin text-[#D4AF37]" size={32} />
+           <p className="text-[10px] tracking-widest text-zinc-400">MEMUAT PRODUK...</p>
+        </div>
+      ) : products.map(p => (
+        <div key={p.id} className="cursor-pointer group flex flex-col items-center font-bold animate-in fade-in duration-500" onClick={() => onView(p)}>
+          <div className="aspect-[3/4] w-full rounded-2xl overflow-hidden bg-zinc-100 mb-3 shadow-sm group-hover:shadow-lg transition-all font-bold">
+            <img 
+              src={p.imageURLs?.[0] || p.imageURL} 
+              className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700" 
+              alt={p.name}
+              loading="lazy" 
+            />
           </div>
           <div className="text-center space-y-1 w-full font-bold uppercase">
             <h3 className="text-[10px] font-serif tracking-wide text-zinc-500 truncate font-black uppercase">{String(p.name)}</h3>
@@ -426,6 +450,7 @@ function ProductDetailView({ product, onBack, onBuy, onAddToCart, notify }) {
   const [selectedAge, setSelectedAge] = useState('1-2 Thn');
   const [currentPrice, setCurrentPrice] = useState(Number(product.price));
   const [activeImg, setActiveImg] = useState(0);
+  const [quantity, setQuantity] = useState(1);
 
   const images = useMemo(() => {
     const list = product.imageURLs ? product.imageURLs.filter(url => url && url.trim() !== '') : [];
@@ -441,23 +466,28 @@ function ProductDetailView({ product, onBack, onBuy, onAddToCart, notify }) {
     }
   }, [selectedSize, product]);
 
+  const updateQuantity = (val) => {
+    const newQty = quantity + val;
+    if (newQty >= 1) setQuantity(newQty);
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 font-bold uppercase text-black font-bold uppercase">
-      <button onClick={onBack} className="flex items-center gap-2 text-zinc-400 mb-6 text-[10px] bg-transparent border-none cursor-pointer uppercase font-black"><ChevronLeft size={16}/> Kembali</button>
+      <button onClick={onBack} className="flex items-center gap-2 text-zinc-400 mb-6 text-[10px] bg-transparent border-none cursor-pointer uppercase font-black hover:text-black transition-colors"><ChevronLeft size={16}/> Kembali</button>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 font-bold uppercase">
-        <div className="space-y-4 font-bold uppercase">
+        <div className="space-y-4 font-bold uppercase animate-in slide-in-from-left duration-500">
           <div className="aspect-[4/5] bg-zinc-50 rounded-3xl overflow-hidden shadow-md border border-zinc-100 font-bold">
             <img src={images[activeImg]} className="w-full h-full object-cover" alt="" />
           </div>
           <div className="flex gap-3 overflow-x-auto no-scrollbar font-bold uppercase">
             {images.map((img, i) => (
-              <div key={i} onClick={() => setActiveImg(i)} className={`w-16 h-16 rounded-xl overflow-hidden cursor-pointer border-2 transition-all ${activeImg === i ? 'border-[#D4AF37]' : 'border-transparent'}`}><img src={img} className="w-full h-full object-cover font-bold uppercase" /></div>
+              <div key={i} onClick={() => setActiveImg(i)} className={`w-16 h-16 flex-shrink-0 rounded-xl overflow-hidden cursor-pointer border-2 transition-all ${activeImg === i ? 'border-[#D4AF37]' : 'border-transparent'}`}><img src={img} className="w-full h-full object-cover font-bold uppercase" /></div>
             ))}
           </div>
         </div>
-        <div className="space-y-8 font-bold uppercase">
+        <div className="space-y-8 font-bold uppercase animate-in slide-in-from-right duration-500">
           <div className="font-bold uppercase">
-            <h2 className="text-2xl md:text-4xl font-serif mb-2 font-black uppercase">{product.name}</h2>
+            <h2 className="text-2xl md:text-4xl font-serif mb-2 font-black uppercase tracking-tight">{product.name}</h2>
             <div className="flex items-center gap-2 mb-4 font-bold uppercase"><Star className="text-yellow-400 fill-yellow-400" size={14}/> <Star className="text-yellow-400 fill-yellow-400" size={14}/> <Star className="text-yellow-400 fill-yellow-400" size={14}/> <Star className="text-yellow-400 fill-yellow-400" size={14}/> <Star className="text-yellow-400 fill-yellow-400" size={14}/> <span className="text-xs text-zinc-400 font-black uppercase">(2)</span></div>
             <p className="text-3xl font-black text-[#D4AF37] uppercase">{formatIDR(currentPrice)}</p>
           </div>
@@ -482,9 +512,18 @@ function ProductDetailView({ product, onBack, onBuy, onAddToCart, notify }) {
             </div>
           </div>
 
+          <div className="space-y-4 font-bold uppercase">
+             <label className="text-[10px] text-zinc-400 font-black tracking-widest uppercase font-bold uppercase">JUMLAH STOK</label>
+             <div className="flex items-center gap-1 border border-zinc-200 rounded-lg w-fit overflow-hidden">
+                <button onClick={() => updateQuantity(-1)} className="px-4 py-3 bg-zinc-50 hover:bg-zinc-100 transition-all border-none cursor-pointer text-zinc-600"><Minus size={14}/></button>
+                <div className="w-12 text-center text-xs font-black font-sans">{quantity}</div>
+                <button onClick={() => updateQuantity(1)} className="px-4 py-3 bg-zinc-50 hover:bg-zinc-100 transition-all border-none cursor-pointer text-zinc-600"><Plus size={14}/></button>
+             </div>
+          </div>
+
           <div className="flex flex-col gap-3 pt-4 font-bold uppercase">
-            <button onClick={() => onBuy(selectedSize, selectedAge, currentPrice)} className="bg-[#10b981] text-white py-4 rounded-xl font-black text-[11px] border-none cursor-pointer shadow-lg active:scale-95 transition-all uppercase">BELI SEKARANG</button>
-            <button onClick={() => onAddToCart({...product, chosenSize: selectedSize, chosenAge: selectedAge, chosenPrice: currentPrice})} className="bg-white border border-zinc-200 py-3 rounded-xl font-black text-[10px] cursor-pointer hover:bg-zinc-50 transition-all font-bold uppercase uppercase">TAMBAH KE KERANJANG</button>
+            <button onClick={() => onBuy(selectedSize, selectedAge, currentPrice, quantity)} className="bg-[#10b981] text-white py-4 rounded-xl font-black text-[11px] border-none cursor-pointer shadow-lg active:scale-95 transition-all uppercase hover:brightness-105">BELI SEKARANG</button>
+            <button onClick={() => onAddToCart({...product, chosenSize: selectedSize, chosenAge: selectedAge, chosenPrice: currentPrice, quantity})} className="bg-white border border-zinc-200 py-3 rounded-xl font-black text-[10px] cursor-pointer hover:bg-zinc-50 transition-all font-bold uppercase uppercase">TAMBAH KE KERANJANG</button>
           </div>
 
           <div className="p-6 bg-zinc-50 rounded-2xl border border-zinc-100 space-y-4 font-bold uppercase">
@@ -505,7 +544,8 @@ function CheckoutWizard({ product, rekening, shippingMethods, onComplete, onBack
   const [selectedCourier, setSelectedCourier] = useState(shippingMethods[0] || DEFAULT_SHIPPING[0]);
   const [payment, setPayment] = useState({ invoice: `INV-DEVI-${Math.floor(Date.now() / 1000).toString().slice(-6)}`, transferTo: '', bankAsal: '', senderName: '', status: 'Belum Dibayar' });
 
-  const subtotal = Number(product.chosenPrice || product.price);
+  const qty = product.quantity || 1;
+  const subtotal = Number(product.chosenPrice || product.price) * qty;
   const total = subtotal + (selectedCourier?.price || 0);
 
   const handleFileSelect = async (e) => {
@@ -526,7 +566,7 @@ function CheckoutWizard({ product, rekening, shippingMethods, onComplete, onBack
       await addDoc(orderRef, {
         ...payment, ...shipping,
         productName: product.name, productSize: product.chosenSize, productAge: product.chosenAge,
-        subtotal, courier: selectedCourier.name, shippingFee: selectedCourier.price, total,
+        quantity: qty, subtotal, courier: selectedCourier.name, shippingFee: selectedCourier.price, total,
         proofImage: localProofBase64, createdAt: serverTimestamp()
       });
       setStep(5);
@@ -651,6 +691,7 @@ function CheckoutWizard({ product, rekening, shippingMethods, onComplete, onBack
                 <p className="font-black uppercase leading-tight font-bold">{product.name}</p>
                 <p className="text-zinc-400 uppercase font-black">Umur: {product.chosenAge}</p>
                 <p className="text-zinc-400 uppercase font-black">Size: {product.chosenSize}</p>
+                <p className="text-zinc-400 uppercase font-black">Jumlah: {qty}x</p>
                 <p className="font-black text-[#D4AF37] font-bold">{formatIDR(subtotal)}</p>
               </div>
             </div>
@@ -1058,7 +1099,7 @@ function NotificationItem({ notification }) {
 }
 
 function CartView({ items, onRemove, onCheckout }) {
-  const total = items.reduce((s, i) => s + Number(i.chosenPrice || i.price), 0);
+  const total = items.reduce((s, i) => s + Number(i.chosenPrice || i.price) * (i.quantity || 1), 0);
   return (
     <div className="max-w-3xl mx-auto py-16 px-4 font-bold uppercase text-black font-bold uppercase font-bold uppercase font-bold uppercase font-bold">
        <div className="text-center mb-12 space-y-2 animate-in slide-in-from-bottom font-bold uppercase font-bold uppercase font-bold">
@@ -1078,7 +1119,11 @@ function CartView({ items, onRemove, onCheckout }) {
                     <img src={item.imageURLs?.[0] || item.imageURL} className="w-20 h-24 rounded-2xl object-cover shadow-md border border-zinc-50 font-bold uppercase font-bold font-bold"/>
                     <div className="space-y-1.5 flex-1 font-bold uppercase font-bold font-bold uppercase font-bold uppercase">
                        <h4 className="text-[11px] font-serif font-bold uppercase tracking-tight text-zinc-800 font-black uppercase font-bold uppercase font-bold">{String(item.name).toUpperCase()}</h4>
-                       <div className="flex gap-2 font-bold uppercase font-bold uppercase font-bold font-bold"><span className="text-[7px] font-black px-2 py-0.5 bg-zinc-100 rounded-full border border-zinc-200 uppercase font-black font-bold">Umur {String(item.chosenAge)}</span><span className="text-[7px] font-black px-2 py-0.5 bg-zinc-100 rounded-full border border-zinc-200 uppercase font-black font-bold">Size {String(item.chosenSize)}</span></div>
+                       <div className="flex gap-2 font-bold uppercase font-bold uppercase font-bold font-bold">
+                          <span className="text-[7px] font-black px-2 py-0.5 bg-zinc-100 rounded-full border border-zinc-200 uppercase font-black font-bold">Umur {String(item.chosenAge)}</span>
+                          <span className="text-[7px] font-black px-2 py-0.5 bg-zinc-100 rounded-full border border-zinc-200 uppercase font-black font-bold">Size {String(item.chosenSize)}</span>
+                          <span className="text-[7px] font-black px-2 py-0.5 bg-black text-[#D4AF37] rounded-full uppercase font-black font-bold">{item.quantity || 1}x</span>
+                       </div>
                        <p className="text-xs font-black text-black italic font-bold uppercase font-bold font-bold">{formatIDR(item.chosenPrice || item.price)}</p>
                     </div>
                  </div>
@@ -1098,17 +1143,15 @@ function CartView({ items, onRemove, onCheckout }) {
   );
 }
 
-function Footer({ setView }) {
+function Footer({ setView, notify }) {
   return (
     <footer className="bg-[#030303] text-white pt-20 pb-10 px-6 border-t-[4px] border-[#D4AF37] font-bold uppercase">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start gap-12">
-        {/* KOLOM KIRI: LOGO & DESKRIPSI (TAMBAHAN UNTUK BRADING) */}
         <div className="md:w-1/3 space-y-6">
            <h2 className="text-2xl font-serif font-black italic tracking-widest text-[#D4AF37] leading-none uppercase">DEVI OFFICIAL</h2>
            <p className="text-zinc-500 text-[10px] leading-relaxed italic opacity-70 font-black uppercase">Mengangkat standar fashion modest ke level kemewahan mutlak. Kemewahan abadi berawal dari tanggung jawab sosial dalam setiap produksi.</p>
         </div>
 
-        {/* KOLOM TENGAH: LINKS (SESUAI CONTOH GAMBAR) */}
         <div className="space-y-4">
            <h4 className="text-[12px] font-black uppercase tracking-widest text-white">Links</h4>
            <div className="flex flex-col gap-3 text-zinc-400 text-[11px] font-bold tracking-wide">
@@ -1118,7 +1161,6 @@ function Footer({ setView }) {
            </div>
         </div>
 
-        {/* KOLOM KANAN: ALAMAT/KONTAK (SESUAI CONTOH GAMBAR) */}
         <div className="space-y-4">
            <h4 className="text-[12px] font-black uppercase tracking-widest text-white">Alamat</h4>
            <div className="flex flex-col gap-4">
@@ -1134,7 +1176,6 @@ function Footer({ setView }) {
         </div>
       </div>
 
-      {/* FOOTER BOTTOM: COPYRIGHT & ADMIN */}
       <div className="max-w-7xl mx-auto mt-20 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
          <div className="text-[10px] text-zinc-500 font-bold tracking-widest uppercase">@2024 DEVI_OFFICIAL LUXURY INC</div>
          <button onClick={() => setView('login')} className="flex items-center gap-2 text-zinc-700 text-[9px] tracking-widest hover:text-[#D4AF37] transition-all border border-white/5 px-6 py-2 rounded-full bg-zinc-950 cursor-pointer shadow-inner uppercase font-black font-bold">
