@@ -132,7 +132,7 @@ import {
 /**
  * ==========================================================================================
  * --- DEVI OFFICIAL LUXURY BOUTIQUE ECOSYSTEM ---
- * VERSION: 38.8.0 (FIXED PHONE & EXPEDITION DISPLAY)
+ * VERSION: 39.1.0 (BUG FIX: DUPLICATE COMPONENT & ENHANCED STABILITY)
  * ==========================================================================================
  */
 
@@ -222,7 +222,7 @@ export default function App() {
   const [shippingMethods, setShippingMethods] = useState(DEFAULT_SHIPPING);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [isShellReady, setIsShellReady] = useState(false);
   const [notifications, setNotifications] = useState([]);
 
   const notify = (message, type = 'info') => {
@@ -235,10 +235,10 @@ export default function App() {
     const initAuth = async () => {
       try { 
         await signInAnonymously(auth); 
-        setLoading(false);
       } catch (err) { 
         console.error("Kesalahan Sistem Autentikasi", err); 
-        setLoading(false);
+      } finally {
+        setIsShellReady(true);
       }
     };
     initAuth();
@@ -280,11 +280,11 @@ export default function App() {
     });
   }, [products, searchTerm]);
 
-  if (loading) return <PremiumLoader />;
+  if (!isShellReady) return <PremiumLoader />;
 
   return (
     <div className="min-h-screen bg-white text-zinc-900 font-sans antialiased overflow-x-hidden selection:bg-[#D4AF37] selection:text-white">
-      <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[5000] flex flex-col gap-2 w-full max-w-xs px-4 pointer-events-none">
+      <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-2 w-full max-w-xs px-4 pointer-events-none">
         {notifications.map(n => (
           <NotificationItem key={n.id} notification={n} />
         ))}
@@ -295,7 +295,7 @@ export default function App() {
       <div className="pt-14 md:pt-20">
         <main>
           {view === 'shop' && (
-            <div className="animate-in fade-in duration-500">
+            <div className="animate-in fade-in duration-300">
               <HeroSection onExplore={() => document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' })} />
               <ProductGrid products={filteredProducts} onView={(p) => { setSelectedProduct(p); setView('detail'); window.scrollTo(0,0); }} />
               <MembershipBanner />
@@ -307,28 +307,32 @@ export default function App() {
               product={selectedProduct} 
               onBack={() => setView('shop')} 
               onBuy={(size, age, price, qty) => { 
-                setSelectedProduct({...selectedProduct, chosenSize: size, chosenAge: age, chosenPrice: price, quantity: qty}); 
+                const item = {...selectedProduct, chosenSize: size, chosenAge: age, chosenPrice: price, quantity: qty};
+                setCart(prev => [...prev, item]);
                 setView('checkout'); 
                 window.scrollTo(0,0);
               }}
-              onAddToCart={(p) => { setCart([...cart, p]); notify(`Ditambahkan ke Keranjang.`, "success"); }}
+              onAddToCart={(p) => { 
+                setCart(prev => [...prev, p]); 
+                notify(`Ditambahkan ke Bag.`, "success"); 
+              }}
               notify={notify}
             />
           )}
 
-          {view === 'checkout' && selectedProduct && (
+          {view === 'checkout' && cart.length > 0 && (
             <CheckoutWizard 
-              product={selectedProduct} 
+              cartItems={cart} 
               rekening={rekening} 
               shippingMethods={shippingMethods}
-              onComplete={() => { setView('shop'); }} 
-              onBack={() => setView('shop')} 
+              onComplete={() => { setCart([]); setView('shop'); }} 
+              onBack={() => setView('cart')} 
               notify={notify} 
             />
           )}
 
           {view === 'cart' && (
-            <CartView items={cart} onRemove={(idx) => { const nc = [...cart]; nc.splice(idx,1); setCart(nc); }} onCheckout={() => { if(cart.length > 0) { setSelectedProduct(cart[0]); setView('checkout'); } }} />
+            <CartView items={cart} onRemove={(idx) => { const nc = [...cart]; nc.splice(idx,1); setCart(nc); }} onCheckout={() => setView('checkout')} />
           )}
 
           {view === 'login' && (
@@ -347,7 +351,7 @@ export default function App() {
 
 function PremiumLoader() {
   return (
-    <div className="h-screen bg-[#050505] flex flex-col items-center justify-center gap-4 text-white font-bold animate-pulse">
+    <div className="h-screen bg-[#050505] flex flex-col items-center justify-center gap-4 text-white font-bold">
       <div className="w-10 h-10 border-2 border-[#D4AF37]/20 border-t-[#D4AF37] rounded-full animate-spin"></div>
       <h2 className="font-serif text-base text-[#D4AF37] tracking-[0.2em] uppercase font-black">DEVI OFFICIAL</h2>
     </div>
@@ -356,7 +360,7 @@ function PremiumLoader() {
 
 function Header({ cartCount, isAdmin, setView, searchTerm, setSearchTerm }) {
   return (
-    <header className="fixed top-0 left-0 w-full z-[100] h-14 md:h-16 bg-white/90 backdrop-blur-md border-b border-zinc-100 flex items-center px-4 font-bold uppercase text-black">
+    <header className="fixed top-0 left-0 w-full z-[100] h-14 md:h-16 bg-white/95 backdrop-blur-md border-b border-zinc-100 flex items-center px-4 font-bold uppercase text-black">
       <div className="max-w-7xl mx-auto w-full flex items-center justify-between font-bold">
         <div className="hidden md:flex flex-1">
           <div className="relative">
@@ -385,38 +389,33 @@ function Header({ cartCount, isAdmin, setView, searchTerm, setSearchTerm }) {
 
 function HeroSection({ onExplore }) {
   return (
-    <section className="relative h-[50vh] md:h-[75vh] flex items-center justify-center overflow-hidden bg-zinc-950 font-bold uppercase">
-      <img 
-        src="https://images.unsplash.com/photo-1549439602-43ebcb232811?q=80&w=2070&auto=format&fit=crop" 
-        className="absolute inset-0 w-full h-full object-cover opacity-70 font-bold" 
-        alt="Helenaraya Collection"
-      />
-      <div className="relative z-10 text-center text-white px-6 font-bold uppercase animate-in slide-in-from-bottom duration-700">
-        <p className="text-[9px] tracking-[0.6em] text-[#D4AF37] mb-2 font-black uppercase">Butik Mewah</p>
-        <h2 className="text-3xl md:text-7xl font-serif italic mb-6 font-black tracking-tight leading-tight">Helenaraya Collection</h2>
-        <button onClick={onExplore} className="px-10 py-4 bg-[#D4AF37] text-black text-[10px] font-black tracking-widest rounded-full border-none cursor-pointer uppercase shadow-2xl active:scale-95 transition-all hover:brightness-110">Jelajahi Sekarang</button>
+    <section className="relative h-[45vh] md:h-[70vh] flex items-center justify-center overflow-hidden bg-zinc-950 font-bold uppercase">
+      <img src="https://images.unsplash.com/photo-1549439602-43ebcb232811?q=80&w=2070&auto=format&fit=crop" className="absolute inset-0 w-full h-full object-cover opacity-60 font-bold" alt="" />
+      <div className="relative z-10 text-center text-white px-6 font-bold uppercase">
+        <p className="text-[9px] tracking-[0.6em] text-[#D4AF37] mb-2 font-black uppercase tracking-[0.5em]">Luxury Boutique</p>
+        <h2 className="text-3xl md:text-6xl font-serif italic mb-4 font-black">Helenaraya Collection</h2>
+        <button onClick={onExplore} className="px-8 py-3 bg-[#D4AF37] text-black text-[10px] font-black tracking-widest rounded-full border-none cursor-pointer uppercase shadow-lg active:scale-95 transition-all">Jelajahi Sekarang</button>
       </div>
     </section>
   );
 }
 
 function ProductGrid({ products, onView }) {
+  if (products.length === 0) {
+    return (
+      <section className="max-w-7xl mx-auto px-4 py-32 flex flex-col items-center justify-center gap-4 text-zinc-300">
+         <Loader2 size={32} className="animate-spin text-[#D4AF37]" />
+         <p className="text-[9px] tracking-[0.4em] font-black uppercase">Menyiapkan Koleksi...</p>
+      </section>
+    );
+  }
+
   return (
-    <section id="catalog" className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-2 lg:grid-cols-4 gap-6 font-bold uppercase min-h-[400px]">
-      {products.length === 0 ? (
-        <div className="col-span-full flex flex-col items-center justify-center py-20 gap-4">
-           <Loader2 className="animate-spin text-[#D4AF37]" size={32} />
-           <p className="text-[10px] tracking-widest text-zinc-400">MEMUAT PRODUK...</p>
-        </div>
-      ) : products.map(p => (
-        <div key={p.id} className="cursor-pointer group flex flex-col items-center font-bold animate-in fade-in duration-500" onClick={() => onView(p)}>
-          <div className="aspect-[3/4] w-full rounded-2xl overflow-hidden bg-zinc-100 mb-3 shadow-sm group-hover:shadow-lg transition-all font-bold">
-            <img 
-              src={p.imageURLs?.[0] || p.imageURL} 
-              className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700" 
-              alt={p.name}
-              loading="lazy" 
-            />
+    <section id="catalog" className="max-w-7xl mx-auto px-4 py-10 grid grid-cols-2 lg:grid-cols-4 gap-6 font-bold uppercase">
+      {products.map(p => (
+        <div key={p.id} className="cursor-pointer group flex flex-col items-center font-bold" onClick={() => onView(p)}>
+          <div className="aspect-[3/4] w-full rounded-2xl overflow-hidden bg-zinc-50 mb-3 shadow-sm group-hover:shadow-lg transition-all font-bold relative">
+            <img src={p.imageURLs?.[0] || p.imageURL} className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700" alt="" loading="lazy" />
           </div>
           <div className="text-center space-y-1 w-full font-bold uppercase">
             <h3 className="text-[10px] font-serif tracking-wide text-zinc-500 truncate font-black uppercase">{String(p.name)}</h3>
@@ -461,28 +460,23 @@ function ProductDetailView({ product, onBack, onBuy, onAddToCart, notify }) {
     }
   }, [selectedSize, product]);
 
-  const updateQuantity = (val) => {
-    const newQty = quantity + val;
-    if (newQty >= 1) setQuantity(newQty);
-  };
-
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 font-bold uppercase text-black font-bold uppercase">
       <button onClick={onBack} className="flex items-center gap-2 text-zinc-400 mb-6 text-[10px] bg-transparent border-none cursor-pointer uppercase font-black hover:text-black transition-colors"><ChevronLeft size={16}/> Kembali</button>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 font-bold uppercase">
-        <div className="space-y-4 font-bold uppercase animate-in slide-in-from-left duration-500">
+        <div className="space-y-4 font-bold uppercase">
           <div className="aspect-[4/5] bg-zinc-50 rounded-3xl overflow-hidden shadow-md border border-zinc-100 font-bold">
             <img src={images[activeImg]} className="w-full h-full object-cover" alt="" />
           </div>
           <div className="flex gap-3 overflow-x-auto no-scrollbar font-bold uppercase">
             {images.map((img, i) => (
-              <div key={i} onClick={() => setActiveImg(i)} className={`w-16 h-16 flex-shrink-0 rounded-xl overflow-hidden cursor-pointer border-2 transition-all ${activeImg === i ? 'border-[#D4AF37]' : 'border-transparent'}`}><img src={img} className="w-full h-full object-cover font-bold uppercase" /></div>
+              <div key={i} onClick={() => setActiveImg(i)} className={`w-16 h-16 rounded-xl overflow-hidden cursor-pointer border-2 transition-all ${activeImg === i ? 'border-[#D4AF37]' : 'border-transparent'}`}><img src={img} className="w-full h-full object-cover font-bold uppercase" /></div>
             ))}
           </div>
         </div>
-        <div className="space-y-8 font-bold uppercase animate-in slide-in-from-right duration-500">
+        <div className="space-y-8 font-bold uppercase">
           <div className="font-bold uppercase">
-            <h2 className="text-2xl md:text-4xl font-serif mb-2 font-black uppercase tracking-tight">{product.name}</h2>
+            <h2 className="text-2xl md:text-4xl font-serif mb-2 font-black uppercase">{product.name}</h2>
             <div className="flex items-center gap-2 mb-4 font-bold uppercase"><Star className="text-yellow-400 fill-yellow-400" size={14}/> <Star className="text-yellow-400 fill-yellow-400" size={14}/> <Star className="text-yellow-400 fill-yellow-400" size={14}/> <Star className="text-yellow-400 fill-yellow-400" size={14}/> <Star className="text-yellow-400 fill-yellow-400" size={14}/> <span className="text-xs text-zinc-400 font-black uppercase">(2)</span></div>
             <p className="text-3xl font-black text-[#D4AF37] uppercase">{formatIDR(currentPrice)}</p>
           </div>
@@ -510,9 +504,9 @@ function ProductDetailView({ product, onBack, onBuy, onAddToCart, notify }) {
           <div className="space-y-4 font-bold uppercase">
              <label className="text-[10px] text-zinc-400 font-black tracking-widest uppercase font-bold uppercase">JUMLAH STOK</label>
              <div className="flex items-center gap-1 border border-zinc-200 rounded-lg w-fit overflow-hidden">
-                <button onClick={() => updateQuantity(-1)} className="px-4 py-3 bg-zinc-50 hover:bg-zinc-100 transition-all border-none cursor-pointer text-zinc-600"><Minus size={14}/></button>
+                <button onClick={() => setQuantity(q => Math.max(1, q-1))} className="px-4 py-3 bg-zinc-50 hover:bg-zinc-100 transition-all border-none cursor-pointer text-zinc-600"><Minus size={14}/></button>
                 <div className="w-12 text-center text-xs font-black font-sans">{quantity}</div>
-                <button onClick={() => updateQuantity(1)} className="px-4 py-3 bg-zinc-50 hover:bg-zinc-100 transition-all border-none cursor-pointer text-zinc-600"><Plus size={14}/></button>
+                <button onClick={() => setQuantity(q => q+1)} className="px-4 py-3 bg-zinc-50 hover:bg-zinc-100 transition-all border-none cursor-pointer text-zinc-600"><Plus size={14}/></button>
              </div>
           </div>
 
@@ -531,7 +525,7 @@ function ProductDetailView({ product, onBack, onBuy, onAddToCart, notify }) {
   );
 }
 
-function CheckoutWizard({ product, rekening, shippingMethods, onComplete, onBack, notify }) {
+function CheckoutWizard({ cartItems, rekening, shippingMethods, onComplete, onBack, notify }) {
   const [step, setStep] = useState(1);
   const [sending, setSending] = useState(false);
   const [localProofBase64, setLocalProofBase64] = useState(null);
@@ -539,8 +533,7 @@ function CheckoutWizard({ product, rekening, shippingMethods, onComplete, onBack
   const [selectedCourier, setSelectedCourier] = useState(shippingMethods[0] || DEFAULT_SHIPPING[0]);
   const [payment, setPayment] = useState({ invoice: `INV-DEVI-${Math.floor(Date.now() / 1000).toString().slice(-6)}`, transferTo: '', bankAsal: '', senderName: '', status: 'Belum Dibayar' });
 
-  const qty = product.quantity || 1;
-  const subtotal = Number(product.chosenPrice || product.price) * qty;
+  const subtotal = useMemo(() => cartItems.reduce((acc, item) => acc + (Number(item.chosenPrice || item.price) * (item.quantity || 1)), 0), [cartItems]);
   const total = subtotal + (selectedCourier?.price || 0);
 
   const handleFileSelect = async (e) => {
@@ -555,13 +548,24 @@ function CheckoutWizard({ product, rekening, shippingMethods, onComplete, onBack
 
   const submitOrder = async () => {
     if(!payment.transferTo || !payment.bankAsal || !payment.senderName || !localProofBase64) return notify("Lengkapi formulir pembayaran!", "error");
+    if(!shipping.name || !shipping.phone || !shipping.address) return notify("Lengkapi informasi pengiriman!", "error");
+
     setSending(true);
     try {
       const orderRef = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
+      const itemsList = cartItems.map(i => ({
+        name: i.name,
+        size: i.chosenSize,
+        age: i.chosenAge,
+        qty: i.quantity || 1,
+        price: Number(i.chosenPrice || i.price)
+      }));
+
       await addDoc(orderRef, {
         ...payment, ...shipping,
-        productName: product.name, productSize: product.chosenSize, productAge: product.chosenAge,
-        quantity: qty, subtotal, courier: selectedCourier.name, shippingFee: selectedCourier.price, total,
+        items: itemsList,
+        productName: itemsList.map(i => `${i.name} (x${i.qty})`).join(', '),
+        subtotal, courier: selectedCourier.name, shippingFee: selectedCourier.price, total,
         proofImage: localProofBase64, createdAt: serverTimestamp()
       });
       setStep(5);
@@ -623,11 +627,7 @@ function CheckoutWizard({ product, rekening, shippingMethods, onComplete, onBack
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 font-bold uppercase font-bold uppercase">
                 {rekening.map(rek => (
                   <div key={rek.id} onClick={()=>setPayment({...payment, transferTo: `${rek.bankName} - ${rek.accountNumber} - ${rek.accountHolder}`})} className={`p-4 rounded-xl border-2 cursor-pointer flex flex-col items-center gap-2 transition-all font-bold uppercase ${payment.transferTo.includes(rek.accountNumber) ? 'border-black bg-zinc-100' : 'border-zinc-100'}`}>
-                    <img 
-                        src={BANK_LOGOS[rek.bankName]} 
-                        className="h-8 object-contain font-bold uppercase" 
-                        onError={(e) => { e.target.src = 'https://via.placeholder.com/100x60?text=BANK'; }} 
-                    />
+                    <img src={BANK_LOGOS[rek.bankName]} className="h-8 object-contain font-bold uppercase" onError={(e) => { e.target.src = 'https://via.placeholder.com/100x60?text=BANK'; }} />
                     <p className="text-sm text-center font-black uppercase">{rek.bankName}</p>
                     <p className="text-xl font-mono font-black tracking-tighter">{rek.accountNumber}</p>
                   </div>
@@ -641,12 +641,11 @@ function CheckoutWizard({ product, rekening, shippingMethods, onComplete, onBack
                   <p className="font-black text-zinc-950 text-base uppercase leading-none">{shipping.name}</p>
                   <p className="text-[11px] text-zinc-500 font-bold uppercase leading-relaxed">{shipping.address}</p>
                   <p className="text-[11px] text-zinc-500 font-bold uppercase">{shipping.city}, {shipping.postalCode}</p>
-                  <p className="text-[11px] text-zinc-950 font-black">HP: {shipping.phone}</p>
+                  <p className="text-[11px] text-zinc-950 font-black tracking-widest">HP: {shipping.phone}</p>
                   <div className="pt-3 border-t border-zinc-200 mt-3 flex items-center gap-2">
                     <Truck size={12} className="text-[#D4AF37]" />
                     <p className="text-[10px] text-zinc-900 font-black italic uppercase tracking-wider">{selectedCourier?.name}</p>
                   </div>
-                  <p className="text-[10px] text-zinc-300 italic pt-2 font-bold">Menunggu Untuk Dikirim</p>
                 </div>
               </div>
             </div>
@@ -666,14 +665,6 @@ function CheckoutWizard({ product, rekening, shippingMethods, onComplete, onBack
                   {sending ? <Loader2 className="animate-spin" /> : 'KIRIM PESANAN SEKARANG'}
                 </button>
               </div>
-
-              {/* SUMMARY IN STEP 4 FOR FINAL VERIFICATION */}
-              <div className="max-w-lg mx-auto bg-zinc-50 p-6 rounded-3xl border border-zinc-100 space-y-3">
-                <h4 className="text-[9px] text-zinc-400 font-black uppercase">Detail Pengiriman :</h4>
-                <p className="text-[11px] font-black">{shipping.name} | {shipping.phone}</p>
-                <p className="text-[10px] text-zinc-500 leading-tight uppercase">{shipping.address}, {shipping.city}</p>
-                <p className="text-[10px] font-black text-[#D4AF37] uppercase">Kurir: {selectedCourier?.name}</p>
-              </div>
             </div>
           )}
 
@@ -689,25 +680,75 @@ function CheckoutWizard({ product, rekening, shippingMethods, onComplete, onBack
 
         {step < 5 && (
           <aside className="bg-white border rounded-3xl p-6 shadow-sm sticky top-24 font-bold uppercase font-bold uppercase">
-            <h4 className="text-xs font-black mb-4 uppercase flex items-center gap-2 font-bold uppercase"><ShoppingBag size={14}/> Ringkasan Bag</h4>
-            <div className="flex gap-4 mb-4 font-bold uppercase">
-              <img src={product.imageURLs?.[0] || product.imageURL} className="w-16 h-20 rounded-xl object-cover shadow-sm font-bold uppercase" />
-              <div className="text-[10px] space-y-1 font-bold uppercase flex-1 font-bold uppercase">
-                <p className="font-black uppercase leading-tight font-bold">{product.name}</p>
-                <p className="text-zinc-400 uppercase font-black">Umur: {product.chosenAge}</p>
-                <p className="text-zinc-400 uppercase font-black">Size: {product.chosenSize}</p>
-                <p className="text-zinc-400 uppercase font-black">Jumlah: {qty}x</p>
-                <p className="font-black text-[#D4AF37] font-bold">{formatIDR(subtotal)}</p>
-              </div>
+            <h4 className="text-xs font-black mb-4 uppercase flex items-center gap-2 font-bold uppercase"><ShoppingBag size={14}/> Ringkasan Bag ({cartItems.length})</h4>
+            <div className="space-y-4 max-h-[40vh] overflow-y-auto no-scrollbar pr-2">
+              {cartItems.map((item, idx) => (
+                <div key={idx} className="flex gap-4 mb-2 font-bold uppercase border-b border-zinc-50 pb-2 last:border-0">
+                  <img src={item.imageURLs?.[0] || item.imageURL} className="w-12 h-16 rounded-lg object-cover shadow-sm font-bold uppercase flex-shrink-0" />
+                  <div className="text-[9px] space-y-1 font-bold uppercase flex-1 font-bold uppercase">
+                    <p className="font-black uppercase leading-tight font-bold text-zinc-800">{item.name}</p>
+                    <p className="text-zinc-400 uppercase font-black">{item.chosenSize} | {item.chosenAge}</p>
+                    <div className="flex justify-between items-center pt-1">
+                      <span className="text-zinc-400 font-black">{item.quantity || 1}x</span>
+                      <span className="font-black text-[#D4AF37]">{formatIDR(Number(item.chosenPrice || item.price) * (item.quantity || 1))}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-            <div className="border-t pt-4 text-[10px] space-y-2 uppercase font-bold font-bold uppercase">
+            <div className="border-t pt-4 text-[10px] space-y-2 uppercase font-bold font-bold uppercase mt-4">
               <div className="flex justify-between text-zinc-500 uppercase font-black font-bold uppercase"><span>Subtotal</span><span>{formatIDR(subtotal)}</span></div>
-              <div className="flex justify-between text-zinc-500 uppercase font-black font-bold uppercase"><span>Biaya Pengiriman</span><span>{formatIDR(selectedCourier?.price || 0)}</span></div>
+              <div className="flex justify-between text-zinc-500 uppercase font-black font-bold uppercase"><span>Kurir ({selectedCourier?.name})</span><span>{formatIDR(selectedCourier?.price || 0)}</span></div>
               <div className="flex justify-between text-lg font-black pt-2 border-t border-zinc-100 text-black font-black uppercase"><span>TOTAL</span><span>{formatIDR(total)}</span></div>
             </div>
           </aside>
         )}
       </div>
+    </div>
+  );
+}
+
+function CartView({ items, onRemove, onCheckout }) {
+  const total = items.reduce((s, i) => s + Number(i.chosenPrice || i.price) * (i.quantity || 1), 0);
+  return (
+    <div className="max-w-3xl mx-auto py-16 px-4 font-bold uppercase text-black font-bold uppercase font-bold uppercase font-bold uppercase font-bold">
+       <div className="text-center mb-12 space-y-2 animate-in slide-in-from-bottom font-bold uppercase font-bold uppercase font-bold">
+          <h2 className="text-4xl font-serif italic uppercase font-black uppercase font-bold font-bold uppercase">Maison <span className="text-[#D4AF37]">Bag</span></h2>
+          <div className="w-12 h-[2px] bg-[#D4AF37] mx-auto opacity-40 font-bold uppercase font-bold"></div>
+       </div>
+       {items.length === 0 ? (
+         <div className="text-center py-32 border-2 border-dashed border-zinc-100 rounded-[2.5rem] bg-zinc-50/30 flex flex-col items-center font-bold uppercase font-bold font-bold">
+            <ShoppingBag size={64} className="text-zinc-100 mb-6 font-bold uppercase font-bold" />
+            <p className="text-zinc-300 font-black text-[10px] tracking-widest uppercase font-black font-bold uppercase">Tas Kosong</p>
+         </div>
+       ) : (
+         <div className="space-y-6 font-bold uppercase font-bold uppercase font-bold">
+            {items.map((item, idx) => (
+              <div key={idx} className="p-4 bg-white border border-zinc-100 rounded-3xl flex items-center justify-between gap-6 shadow-sm font-bold uppercase font-bold font-bold">
+                 <div className="flex items-center gap-5 flex-1 font-bold uppercase font-bold uppercase font-bold uppercase">
+                    <img src={item.imageURLs?.[0] || item.imageURL} className="w-20 h-24 rounded-2xl object-cover shadow-md border border-zinc-50 font-bold uppercase font-bold font-bold"/>
+                    <div className="space-y-1.5 flex-1 font-bold uppercase font-bold font-bold uppercase font-bold uppercase">
+                       <h4 className="text-[11px] font-serif font-bold uppercase tracking-tight text-zinc-800 font-black uppercase font-bold uppercase font-bold">{String(item.name).toUpperCase()}</h4>
+                       <div className="flex gap-2 font-bold uppercase font-bold uppercase font-bold font-bold">
+                          <span className="text-[7px] font-black px-2 py-0.5 bg-zinc-100 rounded-full border border-zinc-200 uppercase font-black font-bold">Umur {String(item.chosenAge)}</span>
+                          <span className="text-[7px] font-black px-2 py-0.5 bg-zinc-100 rounded-full border border-zinc-200 uppercase font-black font-bold">Size {String(item.chosenSize)}</span>
+                          <span className="text-[7px] font-black px-2 py-0.5 bg-black text-[#D4AF37] rounded-full uppercase font-black font-bold">{item.quantity || 1}x</span>
+                       </div>
+                       <p className="text-xs font-black text-black italic font-bold uppercase font-bold font-bold">{formatIDR(item.chosenPrice || item.price)}</p>
+                    </div>
+                 </div>
+                 <button onClick={()=>onRemove(idx)} className="p-3 text-zinc-300 hover:text-red-500 bg-zinc-50 rounded-2xl border-none cursor-pointer font-black font-bold uppercase font-bold uppercase font-bold"><Trash2 size={18}/></button>
+              </div>
+            ))}
+            <div className="pt-10 border-t border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-10 font-bold uppercase font-bold font-bold uppercase">
+               <div className="text-center md:text-left space-y-0.5 font-bold uppercase font-bold uppercase font-bold">
+                  <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest uppercase font-black uppercase font-bold">Total Harga</p>
+                  <p className="text-4xl md:text-6xl font-serif font-black italic tracking-tighter text-zinc-950 uppercase font-black font-bold font-bold">{formatIDR(total)}</p>
+               </div>
+               <button onClick={onCheckout} className="w-full md:w-auto bg-black text-[#D4AF37] px-16 py-6 rounded-full font-black uppercase text-[11px] tracking-widest shadow-2xl border-none cursor-pointer flex items-center justify-center gap-4 font-black uppercase font-bold uppercase">Checkout Sekarang <ArrowRight size={20} /></button>
+            </div>
+         </div>
+       )}
     </div>
   );
 }
@@ -822,10 +863,22 @@ function AdminDashboard({ products, orders, rekening, shippingMethods, appId, on
                 <div><p className="text-zinc-400 uppercase font-black">Pembeli</p><p className="font-black">{selectedOrder.name}</p></div>
                 <div><p className="text-zinc-400 uppercase font-black">Nomor HP</p><p className="font-black text-green-600">{selectedOrder.phone || '-'}</p></div>
               </div>
-              <div className="grid grid-cols-2 gap-4 text-[10px] border-b pb-4 font-black uppercase">
-                <div><p className="text-zinc-400 uppercase font-black">Item</p><p className="font-black">{selectedOrder.productName} ({selectedOrder.quantity}x)</p></div>
-                <div><p className="text-zinc-400 uppercase font-black">Ekspedisi</p><p className="font-black text-[#D4AF37]">{selectedOrder.courier || '-'}</p></div>
+              
+              <div className="bg-zinc-50 p-4 rounded-xl space-y-2 border border-zinc-100">
+                <p className="text-[9px] text-zinc-400 font-black uppercase">Produk Dipesan:</p>
+                {selectedOrder.items ? selectedOrder.items.map((it, idx) => (
+                   <div key={idx} className="flex justify-between items-center border-b border-zinc-200/50 py-1 last:border-0">
+                      <p className="text-[10px] font-black">{it.name} ({it.size}/{it.age})</p>
+                      <p className="text-[10px] font-black text-[#D4AF37]">x{it.qty}</p>
+                   </div>
+                )) : <p className="text-[10px] font-black">{selectedOrder.productName}</p>}
               </div>
+
+              <div className="grid grid-cols-2 gap-4 text-[10px] border-b pb-4 font-black uppercase">
+                <div><p className="text-zinc-400 uppercase font-black">Kurir</p><p className="font-black text-[#D4AF37]">{selectedOrder.courier || '-'}</p></div>
+                <div><p className="text-zinc-400 uppercase font-black">Total Bayar</p><p className="font-black text-lg">{formatIDR(selectedOrder.total)}</p></div>
+              </div>
+
               <div className="text-[10px] bg-zinc-50 p-4 rounded-xl font-black uppercase">
                 <p className="text-zinc-400 mb-1 uppercase font-black">Alamat Lengkap</p>
                 <p className="font-black uppercase leading-relaxed">{selectedOrder.address}, {selectedOrder.city} ({selectedOrder.postalCode})</p>
@@ -981,9 +1034,9 @@ function AdminDashboard({ products, orders, rekening, shippingMethods, appId, on
                      <p className="text-[9px] text-[#D4AF37] font-black uppercase font-bold">{formatIDR(o.total)}</p>
                    </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <p className="text-[8px] text-zinc-400 font-bold uppercase">{o.courier}</p>
-                  <button onClick={async(e)=>{e.stopPropagation(); if(confirm('Hapus order?')) await deleteDoc(doc(db,'artifacts',appId,'public','data','orders',o.id));}} className="text-zinc-300 hover:text-red-500 bg-transparent border-none cursor-pointer font-black font-bold uppercase"><Trash2 size={16}/></button>
+                <div className="flex flex-col items-end gap-1">
+                   <p className="text-[8px] text-zinc-400 font-black uppercase">{o.courier}</p>
+                   <button onClick={async(e)=>{e.stopPropagation(); if(confirm('Hapus order?')) await deleteDoc(doc(db,'artifacts',appId,'public','data','orders',o.id));}} className="text-zinc-300 hover:text-red-500 bg-transparent border-none cursor-pointer font-black font-bold uppercase"><Trash2 size={16}/></button>
                 </div>
               </div>
             ))}
@@ -1074,6 +1127,16 @@ function AdminDashboard({ products, orders, rekening, shippingMethods, appId, on
   );
 }
 
+function NotificationItem({ notification }) {
+  const { message, type } = notification;
+  return (
+    <div className={`p-4 rounded-2xl shadow-2xl border animate-in slide-in-from-top-5 backdrop-blur-md flex items-center gap-3 font-bold uppercase pointer-events-auto font-bold uppercase font-bold uppercase font-bold ${type === 'success' ? 'bg-green-50/95 border-green-100 text-green-950 font-black uppercase' : type === 'error' ? 'bg-red-50/95 border-red-100 text-red-950 font-black uppercase' : 'bg-white/95 border-zinc-100 text-black font-black uppercase'}`}>
+      <div className={`p-2 rounded-lg shadow-sm font-bold uppercase font-bold ${type === 'success' ? 'bg-green-400 text-white' : 'bg-zinc-900 text-[#D4AF37]'}`}>{type === 'success' ? <CheckIcon size={14}/> : <Bell size={14}/>}</div>
+      <p className="text-[10px] font-black tracking-widest uppercase font-black uppercase font-bold">{message}</p>
+    </div>
+  );
+}
+
 function AdminLogin({ creds, onLoginSuccess, onBack, notify }) {
   const [u, setU] = useState(''); const [p, setP] = useState('');
   const handleLogin = (e) => {
@@ -1096,61 +1159,6 @@ function AdminLogin({ creds, onLoginSuccess, onBack, notify }) {
           <button type="submit" className="w-full bg-black text-[#D4AF37] py-4 rounded-full font-black uppercase text-[10px] tracking-widest shadow-2xl font-black uppercase font-bold uppercase">AUTHORIZE ACCESS</button>
         </form>
       </div>
-    </div>
-  );
-}
-
-function NotificationItem({ notification }) {
-  const { message, type } = notification;
-  return (
-    <div className={`p-4 rounded-2xl shadow-2xl border animate-in slide-in-from-top-5 backdrop-blur-md flex items-center gap-3 font-bold uppercase pointer-events-auto font-bold uppercase font-bold uppercase font-bold ${type === 'success' ? 'bg-green-50/95 border-green-100 text-green-950 font-black uppercase' : type === 'error' ? 'bg-red-50/95 border-red-100 text-red-950 font-black uppercase' : 'bg-white/95 border-zinc-100 text-black font-black uppercase'}`}>
-      <div className={`p-2 rounded-lg shadow-sm font-bold uppercase font-bold ${type === 'success' ? 'bg-green-400 text-white' : 'bg-zinc-900 text-[#D4AF37]'}`}>{type === 'success' ? <CheckIcon size={14}/> : <Bell size={14}/>}</div>
-      <p className="text-[10px] font-black tracking-widest uppercase font-black uppercase font-bold">{message}</p>
-    </div>
-  );
-}
-
-function CartView({ items, onRemove, onCheckout }) {
-  const total = items.reduce((s, i) => s + Number(i.chosenPrice || i.price) * (i.quantity || 1), 0);
-  return (
-    <div className="max-w-3xl mx-auto py-16 px-4 font-bold uppercase text-black font-bold uppercase font-bold uppercase font-bold uppercase font-bold">
-       <div className="text-center mb-12 space-y-2 animate-in slide-in-from-bottom font-bold uppercase font-bold uppercase font-bold">
-          <h2 className="text-4xl font-serif italic uppercase font-black uppercase font-bold font-bold uppercase">Maison <span className="text-[#D4AF37]">Bag</span></h2>
-          <div className="w-12 h-[2px] bg-[#D4AF37] mx-auto opacity-40 font-bold uppercase font-bold"></div>
-       </div>
-       {items.length === 0 ? (
-         <div className="text-center py-32 border-2 border-dashed border-zinc-100 rounded-[2.5rem] bg-zinc-50/30 flex flex-col items-center font-bold uppercase font-bold font-bold">
-            <ShoppingBag size={64} className="text-zinc-100 mb-6 font-bold uppercase font-bold" />
-            <p className="text-zinc-300 font-black text-[10px] tracking-widest uppercase font-black font-bold uppercase">Tas Kosong</p>
-         </div>
-       ) : (
-         <div className="space-y-6 font-bold uppercase font-bold uppercase font-bold">
-            {items.map((item, idx) => (
-              <div key={idx} className="p-4 bg-white border border-zinc-100 rounded-3xl flex items-center justify-between gap-6 shadow-sm font-bold uppercase font-bold font-bold">
-                 <div className="flex items-center gap-5 flex-1 font-bold uppercase font-bold uppercase font-bold uppercase">
-                    <img src={item.imageURLs?.[0] || item.imageURL} className="w-20 h-24 rounded-2xl object-cover shadow-md border border-zinc-50 font-bold uppercase font-bold font-bold"/>
-                    <div className="space-y-1.5 flex-1 font-bold uppercase font-bold font-bold uppercase font-bold uppercase">
-                       <h4 className="text-[11px] font-serif font-bold uppercase tracking-tight text-zinc-800 font-black uppercase font-bold uppercase font-bold">{String(item.name).toUpperCase()}</h4>
-                       <div className="flex gap-2 font-bold uppercase font-bold uppercase font-bold font-bold">
-                          <span className="text-[7px] font-black px-2 py-0.5 bg-zinc-100 rounded-full border border-zinc-200 uppercase font-black font-bold">Umur {String(item.chosenAge)}</span>
-                          <span className="text-[7px] font-black px-2 py-0.5 bg-zinc-100 rounded-full border border-zinc-200 uppercase font-black font-bold">Size {String(item.chosenSize)}</span>
-                          <span className="text-[7px] font-black px-2 py-0.5 bg-black text-[#D4AF37] rounded-full uppercase font-black font-bold">{item.quantity || 1}x</span>
-                       </div>
-                       <p className="text-xs font-black text-black italic font-bold uppercase font-bold font-bold">{formatIDR(item.chosenPrice || item.price)}</p>
-                    </div>
-                 </div>
-                 <button onClick={()=>onRemove(idx)} className="p-3 text-zinc-300 hover:text-red-500 bg-zinc-50 rounded-2xl border-none cursor-pointer font-black font-bold uppercase font-bold uppercase font-bold"><Trash2 size={18}/></button>
-              </div>
-            ))}
-            <div className="pt-10 border-t border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-10 font-bold uppercase font-bold font-bold uppercase">
-               <div className="text-center md:text-left space-y-0.5 font-bold uppercase font-bold uppercase font-bold">
-                  <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest uppercase font-black uppercase font-bold">Total Harga</p>
-                  <p className="text-4xl md:text-6xl font-serif font-black italic tracking-tighter text-zinc-950 uppercase font-black font-bold font-bold">{formatIDR(total)}</p>
-               </div>
-               <button onClick={onCheckout} className="w-full md:w-auto bg-black text-[#D4AF37] px-16 py-6 rounded-full font-black uppercase text-[11px] tracking-widest shadow-2xl border-none cursor-pointer flex items-center justify-center gap-4 font-black uppercase font-bold uppercase">Checkout Sekarang <ArrowRight size={20} /></button>
-            </div>
-         </div>
-       )}
     </div>
   );
 }
